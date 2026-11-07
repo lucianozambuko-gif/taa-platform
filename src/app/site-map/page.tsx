@@ -17,7 +17,8 @@ const PAGES: Row[] = [
   ["Resources / FAQs", "/faqs", "Built", "Common questions"],
   ["News / insights", "/news", "Built", "Article listing and article template"],
   ["Contact / locations", "/contact", "Template", "Awaits address and phone"],
-  ["Privacy, terms and learner policies", "/privacy", "Template", "Awaits Information Officer approval"],
+  ["Privacy notice", "/privacy", "Template", "Awaits Information Officer approval"],
+  ["Terms and learner policies", "/terms", "Template", "Awaits Academy approval"],
   ["Login / learner dashboard", "/dashboard", "Built", "Enrolled courses, progress, recommendations"],
 ];
 const SUPPORTING: Row[] = [

@@ -4,6 +4,7 @@ import { KindBadge } from "@/components/CourseBits";
 import { rand } from "@/lib/format";
 import { getUserAndProfile } from "@/lib/supabase/server";
 import { isBackOffice } from "@/lib/roles";
+import { markMessagesRead } from "./actions";
 import type { Course } from "@/lib/types";
 
 export const metadata = { title: "My learning" };
@@ -40,6 +41,8 @@ export default async function DashboardPage() {
     .order("created_at", { ascending: false })
     .limit(10);
   const orders = orderRows ?? [];
+  const { data: messages } = await supabase.from("notifications").select("id, subject, body, link, created_at, read_at").eq("user_id", user.id).order("created_at", { ascending: false }).limit(6);
+  const unread = (messages ?? []).filter((m) => !m.read_at).length;
 
   type L = { id: string; title: string; position: number; minutes: number };
   type Row = { id: string; created_at: string; result: string | null; result_note: string | null; courses: Course & { modules: { position: number; lessons: L[] }[] } };
@@ -118,6 +121,24 @@ export default async function DashboardPage() {
                 )}
               </div>
             ))}
+            {(messages ?? []).length > 0 && (
+              <div className="panel stack" style={{ gap: 10 }}>
+                <div className="row" style={{ justifyContent: "space-between" }}>
+                  <h3>Messages {unread > 0 && <span className="badge b-warn">{unread} new</span>}</h3>
+                  {unread > 0 && <form action={markMessagesRead}><button className="btn btn-ghost btn-sm">Mark as read</button></form>}
+                </div>
+                {(messages ?? []).map((m) => (
+                  <div key={m.id} style={{ borderBottom: "1px solid var(--line)", paddingBottom: 8 }}>
+                    <div className="row" style={{ justifyContent: "space-between", flexWrap: "nowrap", gap: 10 }}>
+                      <b style={{ fontWeight: m.read_at ? 600 : 800 }}>{m.subject}</b>
+                      <span className="small muted" style={{ whiteSpace: "nowrap" }}>{new Date(m.created_at).toLocaleDateString("en-ZA", { day: "numeric", month: "short" })}</span>
+                    </div>
+                    <p className="small muted">{m.body}</p>
+                    {m.link && <Link className="small" href={m.link}>Open →</Link>}
+                  </div>
+                ))}
+              </div>
+            )}
             <div className="panel stack">
               <h3>Certificates</h3>
               {rows.filter((r) => (r.courses.has_lms && r.pct === 100 && r.courses.certificate_auto) || r.result === "competent").map((r) => (

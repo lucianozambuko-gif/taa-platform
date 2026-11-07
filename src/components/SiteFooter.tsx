@@ -23,7 +23,8 @@ export default function SiteFooter() {
           <Link href="/about">About &amp; accreditations</Link><br />
           <Link href="/news">News &amp; insights</Link><br />
           <Link href="/contact">Contact &amp; locations</Link><br />
-          <Link href="/privacy">Privacy notice (POPIA)</Link>
+          <Link href="/privacy">Privacy notice (POPIA)</Link><br />
+          <Link href="/terms">Terms and learner policies</Link>
         </div>
         <div>
           <h4>This build</h4>

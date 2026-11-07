@@ -1,7 +1,8 @@
 import Link from "next/link";
 import PlaceholderNote from "@/components/PlaceholderNote";
+import { seoFor } from "@/lib/seo";
 
-export const metadata = { title: "About and accreditations" };
+export const generateMetadata = () => seoFor("/about");
 
 const ROWS: [string, string, string][] = [
   ["Accrediting body", "[To be supplied]", "Per current approval letter"],

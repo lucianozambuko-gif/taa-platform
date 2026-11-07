@@ -1,7 +1,8 @@
 "use server";
 
 import { createAdminClient } from "@/lib/supabase/server";
-import { ROUTING } from "@/lib/format";
+import { LEAD_LABEL, ROUTING } from "@/lib/format";
+import { notify } from "@/lib/notify";
 
 export type LeadState = { ok?: boolean; ref?: string; routedTo?: string; error?: string };
 
@@ -56,5 +57,13 @@ export async function submitLead(_: LeadState, fd: FormData): Promise<LeadState>
     .select("ref")
     .single();
   if (error || !data) return { error: "We couldn't save your request. Please try again, or WhatsApp us." };
+  const label = LEAD_LABEL[type] ?? "Enquiry";
+  if (email)
+    await notify({
+      toEmail: email, audience: "enquirer", kind: "lead_received",
+      subject: `We received your ${label.toLowerCase()} (${data.ref})`,
+      body: `Hi ${name.split(" ")[0]}, thank you for contacting Training Africa Academy. Your reference is ${data.ref}. Our ${routedTo.toLowerCase()} will reply within one working day.${type === "learnership" ? " Please have your ID and latest school results ready." : ""}`,
+    });
+  await notify({ audience: "staff", kind: "lead_new", subject: `New ${label.toLowerCase()} ${data.ref} for ${routedTo}`, body: `${name}${text(fd, "company", 160) ? ` · ${text(fd, "company", 160)}` : ""} · source ${text(fd, "source", 80) || "website"}`, link: "/admin?tab=leads" });
   return { ok: true, ref: data.ref, routedTo };
 }

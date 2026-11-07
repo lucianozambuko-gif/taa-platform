@@ -1,8 +1,9 @@
 import LeadForm from "@/components/LeadForm";
 import TrackedLink from "@/components/TrackedLink";
 import { listCourses } from "@/lib/courses";
+import { seoFor } from "@/lib/seo";
 
-export const metadata = { title: "Training for employers" };
+export const generateMetadata = () => seoFor("/employers");
 export const dynamic = "force-dynamic";
 
 export default async function EmployersPage({ searchParams }: { searchParams: Promise<{ course?: string }> }) {

@@ -5,7 +5,8 @@ import { LEAD_LABEL, rand } from "@/lib/format";
 import { getUserAndProfile } from "@/lib/supabase/server";
 import type { Course } from "@/lib/types";
 import { BACK_OFFICE, ROLE_HELP, ROLE_LABEL, canOpen, isBackOffice, type Role } from "@/lib/roles";
-import { assignCourse, revokeEnrolment, setUserRole, togglePublished, unassignFacilitator, updatePrice } from "./actions";
+import { RetentionForm } from "./ContentForms";
+import { anonymiseUser, assignCourse, revokeEnrolment, setUserRole, togglePublished, unassignFacilitator, updatePrice } from "./actions";
 import LeadsTab from "./tabs/Leads";
 import OrdersTab from "./tabs/Orders";
 import VenueTab from "./tabs/Venue";
@@ -57,12 +58,13 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
       supabase.from("leads").select("ref, type, name, company, created_at").order("created_at", { ascending: false }).limit(5),
       supabase.from("orders").select("invoice_no, status, amount_cents, created_at, courses(title)").order("created_at", { ascending: false }).limit(5),
     ]);
-    const [{ data: people }, { data: audits }, { data: pendingResults }, { data: events }, { data: wonLeads }] = await Promise.all([
+    const [{ data: people }, { data: audits }, { data: pendingResults }, { data: events }, { data: wonLeads }, { data: outbox }] = await Promise.all([
       isAdmin ? supabase.rpc("admin_users") : Promise.resolve({ data: [] }),
       supabase.from("audit_log").select("action, detail, created_at").order("created_at", { ascending: false }).limit(8),
       supabase.from("enrolments").select("id, courses!inner(certificate_auto)").is("result", null).eq("courses.certificate_auto", false),
       supabase.from("site_events").select("kind").gte("created_at", since),
       supabase.from("leads").select("id").eq("status", "won").gte("created_at", since),
+      supabase.from("notifications").select("audience, kind, subject, to_email, status, created_at").order("created_at", { ascending: false }).limit(12),
     ]);
     const downloads = (events ?? []).filter((e) => e.kind === "brochure_download").length;
     const waClicks = (events ?? []).filter((e) => e.kind === "whatsapp_click").length;
@@ -129,18 +131,37 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
             {!activity.length && <p className="muted small">Sign-ups, orders, enquiries and staff changes appear here.</p>}
           </div>
         </div>
+        {(outbox ?? []).length > 0 && (
+          <div className="panel tscroll" style={{ marginTop: 16 }}>
+            <h3>Notifications sent by the system</h3>
+            <p className="small muted">Payment, enrolment, access, result, refund and booking messages to learners and enquirers, and new-lead and new-order alerts to staff. {process.env.RESEND_API_KEY ? "Emails are being delivered." : "Learners see these in their dashboard. Emails start sending once an email provider key is added."}</p>
+            <table className="tbl" style={{ marginTop: 8 }}>
+              <thead><tr><th>When</th><th>To</th><th>Message</th><th>Status</th></tr></thead>
+              <tbody>
+                {(outbox ?? []).map((n, i) => (
+                  <tr key={i}>
+                    <td className="small">{date(n.created_at)}</td>
+                    <td className="small">{n.audience === "staff" ? "Staff" : n.audience === "enquirer" ? "Enquirer" : "Learner"}{n.to_email ? <><br /><span className="muted">{n.to_email}</span></> : null}</td>
+                    <td className="small">{n.subject}</td>
+                    <td><span className={`badge ${n.status === "sent" ? "b-good" : n.status === "failed" ? "b-bad" : "b-short"}`}>{n.status === "in_app" ? "in dashboard" : n.status}</span></td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
         <p className="small muted" style={{ marginTop: 12 }}>Brochure downloads and WhatsApp clicks are counted here and also sent to Google Analytics 4. Learner progress is on the Learners tab.</p>
       </>
     );
   } else if (tab === "learners") {
     const [{ data: enrols }, { data: courseList }, { data: prog }, { data: profs }] = await Promise.all([
-      supabase.from("enrolments").select("id, user_id, source, created_at, result, courses(id, title, has_lms, modules(lessons(id)))").order("created_at", { ascending: false }).limit(200),
+      supabase.from("enrolments").select("id, user_id, source, created_at, result, company, courses(id, title, has_lms, modules(lessons(id)))").order("created_at", { ascending: false }).limit(200),
       supabase.from("courses").select("id, title").order("title"),
       supabase.from("lesson_progress").select("user_id, lesson_id, completed_at"),
       supabase.from("profiles").select("id, full_name, phone"),
     ]);
     const nameOf = new Map((profs ?? []).map((p) => [p.id, p]));
-    type E = { id: string; user_id: string; source: string; created_at: string; result: string | null; courses: { id: string; title: string; has_lms: boolean; modules: { lessons: { id: string }[] }[] } };
+    type E = { id: string; user_id: string; source: string; created_at: string; result: string | null; company: string | null; courses: { id: string; title: string; has_lms: boolean; modules: { lessons: { id: string }[] }[] } };
     const rows = ((enrols ?? []) as unknown as E[]).map((e) => {
       const ids = e.courses.modules.flatMap((m) => m.lessons.map((l) => l.id));
       const mine = (prog ?? []).filter((p) => p.user_id === e.user_id && ids.includes(p.lesson_id));
@@ -152,7 +173,10 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
         <EnrolForm courses={courseList ?? []} />
         <div className="row" style={{ justifyContent: "space-between" }}>
           <p className="small muted">Completion records: progress, results and last activity for every enrolment. Paid enrolments are removed through a refund on the Orders tab.</p>
-          <a className="btn btn-ghost btn-sm" href="/admin/export/learners">Download CSV</a>
+          <div className="row" style={{ gap: 6 }}>
+            <a className="btn btn-ghost btn-sm" href="/admin/report">Employer progress report</a>
+            <a className="btn btn-ghost btn-sm" href="/admin/export/learners">Download CSV</a>
+          </div>
         </div>
         <div className="panel tscroll" style={{ padding: "6px 10px" }}>
           <table className="tbl">
@@ -163,7 +187,7 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
                   <td><b>{nameOf.get(r.user_id)?.full_name ?? "—"}</b><br /><span className="small muted">{nameOf.get(r.user_id)?.phone ?? ""}</span></td>
                   <td>{r.courses.title}</td>
                   <td className="small">{date(r.created_at)}</td>
-                  <td>{r.source === "admin" ? "Admin" : r.source === "employer" ? "Employer" : "Online payment"}</td>
+                  <td>{r.source === "admin" ? "Given by staff" : r.source === "employer" ? `Employer${r.company ? `: ${r.company}` : ""}` : "Online payment"}</td>
                   <td>{r.pct == null ? <span className="muted small">Classroom</span> : <span className={`badge ${r.pct === 100 ? "b-good" : "b-short"}`}>{r.pct === 100 ? "Completed" : `${r.pct}%`}</span>}</td>
                   <td>{r.result === "competent" ? <span className="badge b-good">Competent</span> : r.result === "not_yet_competent" ? <span className="badge b-warn">Not yet competent</span> : <span className="small muted">—</span>}</td>
                   <td className="small">{r.last ? date(r.last) : "—"}</td>
@@ -211,7 +235,7 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
         </form>
         <div className="panel tscroll" style={{ padding: "6px 10px" }}>
           <table className="tbl">
-            <thead><tr><th>Person</th><th>Joined</th><th>Last sign-in</th><th>Courses</th><th>Role</th><th>Teaches</th></tr></thead>
+            <thead><tr><th>Person</th><th>Joined</th><th>Last sign-in</th><th>Courses</th><th>Role</th><th>Teaches</th><th>POPIA</th></tr></thead>
             <tbody>
               {list.map((u) => (
                 <tr key={u.id}>
@@ -254,9 +278,22 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
                       </div>
                     )}
                   </td>
+                  <td style={{ minWidth: 170 }}>
+                    <span className="small muted">Marketing: {(u as U & { marketing_opt_in?: boolean }).marketing_opt_in ? "opted in" : "no"}</span>
+                    {u.id !== user.id && !u.email.endsWith("@invalid.local") && (
+                      <details>
+                        <summary className="small" style={{ cursor: "pointer" }}>Delete personal info</summary>
+                        <form action={anonymiseUser} className="stack" style={{ gap: 6, marginTop: 6 }}>
+                          <input type="hidden" name="user_id" value={u.id} />
+                          <label className="small"><input type="checkbox" name="confirm" required /> Remove name, email and phone. Payment records are kept without their name.</label>
+                          <button className="btn btn-ghost btn-sm">Anonymise</button>
+                        </form>
+                      </details>
+                    )}
+                  </td>
                 </tr>
               ))}
-              {!list.length && <tr><td colSpan={6} className="muted">No accounts match.</td></tr>}
+              {!list.length && <tr><td colSpan={7} className="muted">No accounts match.</td></tr>}
             </tbody>
           </table>
         </div>
@@ -265,10 +302,15 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
           {(Object.keys(ROLE_LABEL) as Role[]).map((r) => <p key={r} className="small"><b>{ROLE_LABEL[r]}:</b> <span className="muted">{ROLE_HELP[r]}</span></p>)}
           <p className="small muted">Anyone who signs up starts as a learner. Every role change goes into the audit log.</p>
         </div>
+        <div className="panel stack" style={{ gap: 8 }}>
+          <h3>POPIA retention</h3>
+          <p className="small muted">Remove names and contact details from enquiries that were closed (won or lost) a long time ago. Use &quot;Delete personal info&quot; above when someone asks to be removed. Both are recorded in the audit log.</p>
+          <RetentionForm />
+        </div>
       </div>
     );
   } else if (tab === "leads") {
-    body = <LeadsTab supabase={supabase} userId={user.id} sp={sp} />;
+    body = <LeadsTab supabase={supabase} userId={user.id} sp={sp} isAdmin={isAdmin} />;
   } else if (tab === "orders") {
     body = <OrdersTab supabase={supabase} sp={sp} />;
   } else if (tab === "venue") {
@@ -291,7 +333,7 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
             <tbody>
               {((courses ?? []) as Course[]).map((c) => (
                 <tr key={c.id}>
-                  <td><Link href={`/admin/courses/${c.id}`}><b>{c.title}</b></Link><br /><span className="mono muted">{c.code}</span> · <Link className="small" href={`/admin/courses/${c.id}`}>Edit</Link></td>
+                  <td><Link href={`/admin/courses/${c.id}`}><b>{c.title}</b></Link><br /><span className="mono muted">{c.code}</span> · <Link className="small" href={`/admin/courses/${c.id}`}>Edit</Link> · <Link className="small" href={`/admin/courses/${c.id}/lessons`}>Lessons</Link></td>
                   <td><KindBadge course={c} /></td>
                   <td>
                     {c.price_basis === "fixed" ? (
@@ -348,7 +390,7 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
       <div className="wrap">
         <div className="sec-head">
           <div><div className="eyebrow">Back office</div><h1 style={{ fontSize: "clamp(1.8rem,3.6vw,2.5rem)", marginTop: 6 }}>Academy dashboard</h1></div>
-          <span className="small muted">Signed in as {profile?.full_name ?? user.email} · {ROLE_LABEL[role]}</span>
+          <span className="small muted">Signed in as {profile?.full_name ?? user.email} · {ROLE_LABEL[role]} · <Link href="/admin/guide">Staff guide</Link></span>
         </div>
         <nav className="tabs" aria-label="Admin sections">
           {allowed.map(({ key, label }) => (

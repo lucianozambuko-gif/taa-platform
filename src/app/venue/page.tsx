@@ -2,8 +2,9 @@ import LeadForm from "@/components/LeadForm";
 import VenueCalendar from "@/components/VenueCalendar";
 import { ROOMS } from "@/lib/roles";
 import { createClient } from "@/lib/supabase/server";
+import { seoFor } from "@/lib/seo";
 
-export const metadata = { title: "Assessment centre and venue hire" };
+export const generateMetadata = () => seoFor("/venue");
 
 export const dynamic = "force-dynamic";
 

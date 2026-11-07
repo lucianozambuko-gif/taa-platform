@@ -25,7 +25,12 @@ export default async function EditCoursePage({ params, searchParams }: { params:
         <div className="crumbs"><Link href="/admin?tab=courses">Admin · Courses</Link><span>/</span><span>{course ? course.title : "New course"}</span></div>
         <div className="row" style={{ justifyContent: "space-between" }}>
           <h1 style={{ fontSize: "clamp(1.6rem,3.4vw,2.2rem)" }}>{course ? "Edit course" : "Add a course"}</h1>
-          {course && <Link className="btn btn-ghost btn-sm" href={`/courses/${course.slug}`} target="_blank">View on site</Link>}
+          {course && (
+            <div className="row" style={{ gap: 8 }}>
+              <Link className="btn btn-primary btn-sm" href={`/admin/courses/${course.id}/lessons`}>Online lessons</Link>
+              <Link className="btn btn-ghost btn-sm" href={`/courses/${course.slug}`} target="_blank">View on site</Link>
+            </div>
+          )}
         </div>
         {created && <p className="form-ok">Course created. Add its details below, then tick Published when it's ready.</p>}
         <CourseForm course={course} />

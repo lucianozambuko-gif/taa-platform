@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { getUserAndProfile } from "@/lib/supabase/server";
 import type { Role } from "@/lib/roles";
+import { notify } from "@/lib/notify";
 
 /** Allows admins plus the listed staff roles; everyone else is sent home. */
 async function requireRole(...roles: Role[]) {
@@ -137,8 +138,11 @@ export async function adminEnrol(_: EnrolState, fd: FormData): Promise<EnrolStat
   const { data: foundId } = await supabase.rpc("admin_user_by_email", { e: email });
   const found = foundId ? { id: foundId as string } : undefined;
   if (!found) return { error: `No learner account uses ${email}. Ask them to sign up first, then give access here.` };
-  const { error } = await supabase.from("enrolments").insert({ user_id: found.id, course_id: courseId, source: "admin" });
+  const company = String(fd.get("company") ?? "").trim() || null;
+  const { error } = await supabase.from("enrolments").insert({ user_id: found.id, course_id: courseId, source: company ? "employer" : "admin", company });
   if (error) return { error: error.code === "23505" ? "That learner is already enrolled in this course." : error.message };
+  const { data: c } = await supabase.from("courses").select("title, slug, has_lms").eq("id", courseId).single();
+  await notify({ userId: found.id, audience: "learner", kind: "access", subject: `You now have access to ${c?.title}`, body: `Training Africa Academy has enrolled you in ${c?.title}.${c?.has_lms ? " You can start the online lessons now." : " We'll confirm your start date and venue."}`, link: c?.has_lms ? `/learn/${c.slug}` : "/dashboard" });
   await supabase.from("audit_log").insert({ actor: user.id, action: "admin_enrol", entity: "enrolment", entity_id: courseId, detail: { email } });
   revalidatePath("/admin");
   return { message: `Done. ${email} now has the course in their dashboard.` };
@@ -205,6 +209,7 @@ export async function refundOrder(fd: FormData) {
   if (!order || order.status !== "paid") return;
   await supabase.from("orders").update({ status: "refunded", refunded_at: new Date().toISOString(), staff_note: note || null }).eq("id", id);
   if (revoke) await supabase.from("enrolments").delete().eq("order_id", id);
+  await notify({ userId: order.user_id, audience: "learner", kind: "refund", subject: `Refund processed: ${order.invoice_no}`, body: `Your refund for invoice ${order.invoice_no} has been processed and will reach your account in 3 to 7 working days.${revoke ? " Access to the course has ended." : ""}`, link: `/orders/${id}` });
   await supabase.from("audit_log").insert({ actor: user.id, action: "refund", entity: "order", entity_id: id, detail: { code: order.invoice_no, revoked: revoke } });
   revalidatePath("/admin");
 }
@@ -308,7 +313,12 @@ export async function saveBooking(_: VenueState, fd: FormData): Promise<VenueSta
     .select("id")
     .single();
   if (error) return { error: error.message };
-  if (leadId && status === "confirmed") await supabase.from("leads").update({ status: "won", updated_at: new Date().toISOString() }).eq("id", leadId);
+  if (leadId && status === "confirmed") {
+    await supabase.from("leads").update({ status: "won", updated_at: new Date().toISOString() }).eq("id", leadId);
+    const { data: lead } = await supabase.from("leads").select("name, email, ref").eq("id", leadId).single();
+    if (lead?.email)
+      await notify({ toEmail: lead.email, audience: "enquirer", kind: "venue_confirmed", subject: `Booking confirmed: ${room}, ${date}`, body: `Hi ${lead.name.split(" ")[0]}, your booking of ${room} on ${date} (${slot === "full" ? "full day" : slot}) is confirmed. Reference ${lead.ref}. Our centre coordinator will send the invoice and access details.` });
+  }
   if (leadId && status === "held") await supabase.from("leads").update({ status: "quoted", updated_at: new Date().toISOString() }).eq("id", leadId);
   await supabase.from("audit_log").insert({ actor: user.id, action: `venue_${status}`, entity: "venue_booking", entity_id: data.id, detail: { title: `${room} · ${date} · ${slot}` } });
   revalidatePath("/admin");
@@ -394,4 +404,64 @@ export async function deleteRedirect(fd: FormData) {
   await supabase.from("redirects").delete().eq("from_path", from);
   await supabase.from("audit_log").insert({ actor: user.id, action: "redirect_remove", entity: "redirect", detail: { title: from } });
   revalidatePath("/admin");
+}
+
+/** FAQs as text: "Q: question" then the answer on the following lines; blank line between items. */
+export async function saveFaqs(_: ContentState, fd: FormData): Promise<ContentState> {
+  const { supabase, user } = await requireContent();
+  const blocks = String(fd.get("faqs") ?? "").replace(/\r/g, "").split(/\n\s*\n/).map((b) => b.trim()).filter(Boolean);
+  const faqs: { q: string; a: string }[] = [];
+  for (const [i, b] of blocks.entries()) {
+    const [first, ...rest] = b.split("\n");
+    if (!/^q[:.]/i.test(first)) return { error: `Item ${i + 1} must start with "Q:".` };
+    const a = rest.join(" ").replace(/^a[:.]\s*/i, "").trim();
+    if (!a) return { error: `Item ${i + 1} needs an answer under the question.` };
+    faqs.push({ q: first.replace(/^q[:.]\s*/i, ""), a });
+  }
+  const { error } = await supabase.from("site_content").upsert({ key: "faqs", value: faqs, updated_by: user.id, updated_at: new Date().toISOString() });
+  if (error) return { error: error.message };
+  await supabase.from("audit_log").insert({ actor: user.id, action: "faqs_update", entity: "site", detail: { count: faqs.length } });
+  revalidatePath("/faqs");
+  return { message: `Saved ${faqs.length} questions.` };
+}
+
+/** Page titles and search descriptions for the main pages. */
+export async function saveSeo(_: ContentState, fd: FormData): Promise<ContentState> {
+  const { supabase, user } = await requireContent();
+  const seo: Record<string, { title?: string; description?: string }> = {};
+  for (const [k, v] of fd.entries()) {
+    const m = k.match(/^(title|description)::(.+)$/);
+    const val = String(v).trim();
+    if (m && val) (seo[m[2]] ??= {})[m[1] as "title" | "description"] = val.slice(0, m[1] === "title" ? 70 : 300);
+  }
+  const { error } = await supabase.from("site_content").upsert({ key: "seo", value: seo, updated_by: user.id, updated_at: new Date().toISOString() });
+  if (error) return { error: error.message };
+  await supabase.from("audit_log").insert({ actor: user.id, action: "seo_update", entity: "site", detail: { pages: Object.keys(seo).length } });
+  revalidatePath("/", "layout");
+  return { message: "Saved. Search engines pick up changes on their next visit." };
+}
+
+// ---------------------------------------------------------------------------
+// POPIA: requests to delete personal information, and retention clean-up
+// ---------------------------------------------------------------------------
+export async function anonymiseUser(fd: FormData) {
+  const { supabase } = await requireAdmin();
+  if (fd.get("confirm") !== "on") return;
+  await supabase.rpc("anonymise_user", { target: String(fd.get("user_id") ?? "") });
+  revalidatePath("/admin");
+}
+
+export async function anonymiseLead(fd: FormData) {
+  const { supabase } = await requireAdmin();
+  await supabase.rpc("anonymise_lead", { target: String(fd.get("id") ?? "") });
+  revalidatePath("/admin");
+}
+
+export async function purgeOldLeads(_: ContentState, fd: FormData): Promise<ContentState> {
+  const { supabase } = await requireAdmin();
+  const months = Number(fd.get("months"));
+  const { data, error } = await supabase.rpc("purge_old_leads", { months });
+  if (error) return { error: error.message.includes("minimum") ? "Choose at least 6 months." : error.message };
+  revalidatePath("/admin");
+  return { message: `Removed personal details from ${data ?? 0} closed enquiries older than ${months} months.` };
 }

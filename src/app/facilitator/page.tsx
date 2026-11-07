@@ -83,7 +83,7 @@ export default async function FacilitatorPage({ searchParams }: { searchParams: 
             <div className="eyebrow">Facilitator area</div>
             <h1 style={{ fontSize: "clamp(1.8rem,3.6vw,2.5rem)", marginTop: 6 }}>My courses and learners</h1>
           </div>
-          <span className="small muted">Signed in as {profile?.full_name ?? user.email} · {role === "admin" ? "Admin" : "Facilitator"}</span>
+          <span className="small muted">Signed in as {profile?.full_name ?? user.email} · {role === "admin" ? "Admin" : "Facilitator"} · <Link href="/admin/guide">Staff guide</Link></span>
         </div>
 
         <div className="kpis">

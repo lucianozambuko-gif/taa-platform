@@ -14,6 +14,8 @@ import "./globals.css";
 export const metadata: Metadata = {
   title: { default: "Training Africa Academy", template: "%s | Training Africa Academy" },
   description: "Skills courses, accredited programmes and learnerships in Johannesburg and online.",
+  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || "https://taa-platform-six.vercel.app"),
+  ...(process.env.GOOGLE_SITE_VERIFICATION ? { verification: { google: process.env.GOOGLE_SITE_VERIFICATION } } : {}),
 };
 
 export const viewport: Viewport = { width: "device-width", initialScale: 1, viewportFit: "cover" };
@@ -40,6 +42,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         />
       </head>
       <body>
+        <a className="skip-link" href="#main">Skip to content</a>
         <Analytics gaId={ga} />
         {announcement.on && announcement.text && (
           <div className="announce">
@@ -47,7 +50,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
           </div>
         )}
         <SiteHeader />
-        <main>{children}</main>
+        <main id="main">{children}</main>
         <SiteFooter />
         {signedIn && <Suspense fallback={null}><BottomNav role={role} /></Suspense>}
         <TrackedLink

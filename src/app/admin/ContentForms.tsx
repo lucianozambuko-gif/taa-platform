@@ -2,7 +2,7 @@
 
 import { useActionState } from "react";
 import type { Announcement, Stat, Testimonial } from "@/lib/siteContent";
-import { addRedirect, saveSiteContent, type ContentState } from "./actions";
+import { addRedirect, purgeOldLeads, saveFaqs, saveSeo, saveSiteContent, type ContentState } from "./actions";
 
 export function SiteContentForm({ stats, testimonials, announcement, sample }: { stats: Stat[]; testimonials: Testimonial[]; announcement: Announcement; sample: boolean }) {
   const [state, action, pending] = useActionState<ContentState, FormData>(saveSiteContent, {});
@@ -58,6 +58,55 @@ export function RedirectForm() {
       {state.error && <p className="form-error">{state.error}</p>}
       {state.message && <p className="form-ok">{state.message}</p>}
       <div><button className="btn btn-primary btn-sm" disabled={pending}>{pending ? "Saving…" : "Add redirect"}</button></div>
+    </form>
+  );
+}
+
+export function FaqForm({ text }: { text: string }) {
+  const [state, action, pending] = useActionState<ContentState, FormData>(saveFaqs, {});
+  return (
+    <form action={action} className="stack" style={{ gap: 10 }}>
+      <textarea name="faqs" rows={14} defaultValue={text} style={{ fontSize: ".9rem" }} />
+      <span className="small muted">Write each question on a line starting with Q:, the answer underneath, and a blank line before the next question.</span>
+      {state.error && <p className="form-error">{state.error}</p>}
+      {state.message && <p className="form-ok">{state.message}</p>}
+      <div><button className="btn btn-primary btn-sm" disabled={pending}>{pending ? "Saving…" : "Save FAQs"}</button></div>
+    </form>
+  );
+}
+
+export function SeoForm({ pages, overrides }: { pages: { path: string; title: string; description: string }[]; overrides: Record<string, { title?: string; description?: string }> }) {
+  const [state, action, pending] = useActionState<ContentState, FormData>(saveSeo, {});
+  return (
+    <form action={action} className="stack" style={{ gap: 10 }}>
+      {pages.map((p) => (
+        <details key={p.path} className="card" style={{ padding: "10px 14px" }}>
+          <summary style={{ cursor: "pointer" }}><span className="mono small">{p.path}</span> · <b>{overrides[p.path]?.title || p.title}</b></summary>
+          <div className="stack" style={{ gap: 8, marginTop: 10 }}>
+            <div className="field"><label>Page title (up to 60 characters)</label><input name={`title::${p.path}`} maxLength={70} defaultValue={overrides[p.path]?.title ?? ""} placeholder={p.title} /></div>
+            <div className="field"><label>Search description (up to 160 characters)</label><input name={`description::${p.path}`} maxLength={300} defaultValue={overrides[p.path]?.description ?? ""} placeholder={p.description} /></div>
+          </div>
+        </details>
+      ))}
+      <span className="small muted">Leave a field empty to use the default shown in grey. Course and article pages have their own title and description fields.</span>
+      {state.error && <p className="form-error">{state.error}</p>}
+      {state.message && <p className="form-ok">{state.message}</p>}
+      <div><button className="btn btn-primary btn-sm" disabled={pending}>{pending ? "Saving…" : "Save page titles"}</button></div>
+    </form>
+  );
+}
+
+export function RetentionForm() {
+  const [state, action, pending] = useActionState<ContentState, FormData>(purgeOldLeads, {});
+  return (
+    <form action={action} className="row" style={{ gap: 8, alignItems: "end" }}>
+      <div className="field" style={{ flex: "0 1 220px" }}>
+        <label>Closed enquiries older than</label>
+        <select name="months" defaultValue="24"><option value="12">12 months</option><option value="24">24 months</option><option value="36">36 months</option></select>
+      </div>
+      <button className="btn btn-ghost btn-sm" disabled={pending}>{pending ? "Working…" : "Remove personal details"}</button>
+      {state.error && <p className="form-error small">{state.error}</p>}
+      {state.message && <p className="form-ok small">{state.message}</p>}
     </form>
   );
 }

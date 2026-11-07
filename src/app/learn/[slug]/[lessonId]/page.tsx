@@ -25,6 +25,13 @@ export default async function LessonPage({ params }: { params: Promise<{ slug: s
     .select("video_url, captions_url, body, download_url, quiz")
     .eq("lesson_id", lesson.id)
     .maybeSingle();
+  // Uploaded files live in private storage: give the enrolled learner a short-lived link.
+  const signed = async (v: string | null | undefined) => {
+    if (!v?.startsWith("storage:")) return v ?? null;
+    const { data } = await supabase.storage.from("lesson-files").createSignedUrl(v.slice(8), 60 * 60 * 3);
+    return data?.signedUrl ?? null;
+  };
+  const [videoUrl, captionsUrl, downloadUrl] = await Promise.all([signed(content?.video_url), signed(content?.captions_url), signed(content?.download_url)]);
   // Strip answers before sending questions to the browser.
   const questions = ((content?.quiz ?? []) as QuizQuestion[]).map(({ q, o }) => ({ q, o }));
 
@@ -70,10 +77,10 @@ export default async function LessonPage({ params }: { params: Promise<{ slug: s
             )}
             {lesson.kind === "video" && (
               <>
-                {content?.video_url ? (
+                {videoUrl ? (
                   <LessonVideo
-                    src={content.video_url}
-                    captions={content.captions_url}
+                    src={videoUrl}
+                    captions={captionsUrl}
                     title={lesson.title}
                     poster={<><div className="art" /><div className="ttl"><small>Lesson {index + 1} of {lessons.length}</small>{lesson.title}</div></>}
                   />
@@ -91,8 +98,8 @@ export default async function LessonPage({ params }: { params: Promise<{ slug: s
               <div className="panel stack">
                 <h2 style={{ fontSize: "1.35rem" }}>{lesson.title}</h2>
                 {content?.body && <p className="muted">{content.body}</p>}
-                {content?.download_url ? (
-                  <div><a className="btn btn-ghost" href={content.download_url} target="_blank" rel="noopener">Download PDF</a></div>
+                {downloadUrl ? (
+                  <div><a className="btn btn-ghost" href={downloadUrl} target="_blank" rel="noopener">Download</a></div>
                 ) : (
                   <p className="small muted">The PDF will be available here once the Academy uploads it.</p>
                 )}

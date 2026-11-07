@@ -2,8 +2,9 @@ import LeadForm from "@/components/LeadForm";
 import PlaceholderNote from "@/components/PlaceholderNote";
 import TrackedLink from "@/components/TrackedLink";
 import { whatsappLink } from "@/lib/format";
+import { seoFor } from "@/lib/seo";
 
-export const metadata = { title: "Contact and locations" };
+export const generateMetadata = () => seoFor("/contact");
 
 export default function ContactPage() {
   return (

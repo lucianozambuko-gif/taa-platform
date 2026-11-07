@@ -2,8 +2,9 @@ import Link from "next/link";
 import { CourseCard } from "@/components/CourseBits";
 import FilterPanel from "@/components/FilterPanel";
 import { DURATION_BANDS, intakeKeys, listCourses, type CourseFilters } from "@/lib/courses";
+import { seoFor } from "@/lib/seo";
 
-export const metadata = { title: "Find a course" };
+export const generateMetadata = () => seoFor("/courses");
 export const dynamic = "force-dynamic";
 
 const SUBJECTS = ["Cleaning & hygiene", "Health & safety", "Soft skills"];

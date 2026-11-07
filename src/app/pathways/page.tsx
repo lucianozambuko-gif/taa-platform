@@ -1,7 +1,8 @@
 import { CourseCard } from "@/components/CourseBits";
 import { listCourses } from "@/lib/courses";
+import { seoFor } from "@/lib/seo";
 
-export const metadata = { title: "Career and learning pathways" };
+export const generateMetadata = () => seoFor("/pathways");
 export const dynamic = "force-dynamic";
 
 const PATHS: { title: string; goal: string; slugs: string[] }[] = [

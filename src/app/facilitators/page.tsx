@@ -1,6 +1,7 @@
 import PlaceholderNote from "@/components/PlaceholderNote";
+import { seoFor } from "@/lib/seo";
 
-export const metadata = { title: "Facilitators and training approach" };
+export const generateMetadata = () => seoFor("/facilitators");
 
 const PEOPLE: [string, string, string][] = [
   ["[Facilitator name]", "Cleaning and hygiene", "[Years of industry experience and qualifications, as supplied]"],

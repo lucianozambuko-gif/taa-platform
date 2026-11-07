@@ -2,6 +2,9 @@ import Link from "next/link";
 import { CourseCard } from "@/components/CourseBits";
 import { listCourses } from "@/lib/courses";
 import { getSiteContent } from "@/lib/siteContent";
+import { seoFor } from "@/lib/seo";
+
+export const generateMetadata = () => seoFor("/");
 
 export const dynamic = "force-dynamic";
 

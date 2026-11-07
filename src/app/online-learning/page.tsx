@@ -1,7 +1,8 @@
 import { CourseCard } from "@/components/CourseBits";
 import { listCourses } from "@/lib/courses";
+import { seoFor } from "@/lib/seo";
 
-export const metadata = { title: "Online learning" };
+export const generateMetadata = () => seoFor("/online-learning");
 export const dynamic = "force-dynamic";
 
 export default async function OnlineLearningPage() {

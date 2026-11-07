@@ -1,11 +1,11 @@
 import { LEAD_LABEL } from "@/lib/format";
-import { updateLead } from "../actions";
+import { anonymiseLead, updateLead } from "../actions";
 import { type DB, SELECT, waLink, when } from "./shared";
 
 const STATUS_BADGE: Record<string, string> = { new: "b-warn", contacted: "b-short", quoted: "b-short", won: "b-good", lost: "b-bad" };
 
 /** Every enquiry with owner, status and notes. Sales staff can filter to their own leads. */
-export default async function LeadsTab({ supabase, userId, sp }: { supabase: DB; userId: string; sp: Record<string, string | undefined> }) {
+export default async function LeadsTab({ supabase, userId, sp, isAdmin }: { supabase: DB; userId: string; sp: Record<string, string | undefined>; isAdmin: boolean }) {
   const [{ data: leads }, { data: staff }] = await Promise.all([
     supabase.from("leads").select("*, courses(title)").order("created_at", { ascending: false }).limit(300),
     supabase.rpc("staff_directory"),
@@ -81,6 +81,7 @@ export default async function LeadsTab({ supabase, userId, sp }: { supabase: DB;
                 </label>
                 <button className="btn btn-primary btn-sm">Save</button>
               </div>
+              {isAdmin && !l.name.startsWith("Removed") && <button formAction={anonymiseLead} className="btn btn-ghost btn-sm" style={{ alignSelf: "flex-start" }} title="POPIA request: remove this person's details">Remove personal data</button>}
               {l.assigned_to && <p className="small muted">Owner: {nameOf.get(l.assigned_to) ?? "Staff"}{l.updated_at ? ` · updated ${when(l.updated_at)}` : ""}</p>}
             </form>
           );

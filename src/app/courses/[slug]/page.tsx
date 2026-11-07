@@ -1,22 +1,28 @@
 import Link from "next/link";
-import { notFound } from "next/navigation";
 import { CourseCard, KindBadge, PriceBlock } from "@/components/CourseBits";
 import TrackedLink from "@/components/TrackedLink";
 import { getCourse, getOutline, relatedCourses } from "@/lib/courses";
 import { rand, vatIncluded, whatsappLink } from "@/lib/format";
 import { createClient } from "@/lib/supabase/server";
+import { redirectOrNotFound } from "@/lib/redirects";
 import { ROLE_LABEL, type Role } from "@/lib/roles";
 
 export const dynamic = "force-dynamic";
 
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }) {
   const course = await getCourse((await params).slug);
-  return { title: course?.title ?? "Course", description: course?.summary ?? undefined };
+  return {
+    title: course?.title ?? "Course",
+    description: course?.summary ?? undefined,
+    alternates: course ? { canonical: `/courses/${course.slug}` } : undefined,
+    openGraph: course ? { title: course.title, description: course.summary ?? undefined, url: `/courses/${course.slug}`, type: "website", locale: "en_ZA" } : undefined,
+  };
 }
 
 export default async function CoursePage({ params }: { params: Promise<{ slug: string }> }) {
-  const course = await getCourse((await params).slug);
-  if (!course) notFound();
+  const { slug } = await params;
+  const course = await getCourse(slug);
+  if (!course) return redirectOrNotFound(`/courses/${slug}`);
   const [outline, related] = await Promise.all([getOutline(course.id), relatedCourses(course)]);
 
   const supabase = await createClient();

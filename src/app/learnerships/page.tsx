@@ -1,7 +1,8 @@
 import { CourseCard } from "@/components/CourseBits";
 import { listCourses } from "@/lib/courses";
+import { seoFor } from "@/lib/seo";
 
-export const metadata = { title: "Qualifications and learnerships" };
+export const generateMetadata = () => seoFor("/learnerships");
 export const dynamic = "force-dynamic";
 
 export default async function LearnershipsPage() {
