@@ -1,0 +1,37 @@
+export type Course = {
+  id: string;
+  slug: string;
+  code: string;
+  title: string;
+  subject: string;
+  kind: "short" | "accredited" | "qualification";
+  format: "Online" | "Blended" | "Classroom" | "Workplace";
+  format_note: string | null;
+  location: string;
+  price_cents: number | null;
+  price_basis: "fixed" | "quote" | "learnership";
+  duration: string | null;
+  summary: string | null;
+  outcomes: string[];
+  entry_requirements: string | null;
+  assessment: string | null;
+  practical: string | null;
+  certificate: string | null;
+  audience: string | null;
+  learner_types: string[];
+  intakes: string[];
+  accreditation_body: string | null;
+  saqa_id: string | null;
+  nqf_level: string | null;
+  credits: string | null;
+  accreditation_approved: boolean;
+  brochure_url: string | null;
+  has_lms: boolean;
+  featured: boolean;
+  published: boolean;
+};
+
+export type Lesson = { id: string; position: number; title: string; kind: "video" | "quiz" | "download"; minutes: number };
+export type Module = { id: string; position: number; title: string; lessons: Lesson[] };
+
+export type QuizQuestion = { q: string; o: string[]; a: number };
