@@ -1,7 +1,9 @@
 import Link from "next/link";
 import { getUserAndProfile } from "@/lib/supabase/server";
 import { signOut } from "@/app/(auth)/actions";
+import { Suspense } from "react";
 import DisplaySettings from "./DisplaySettings";
+import NavAutoClose from "./NavAutoClose";
 
 export default async function SiteHeader() {
   const { user, profile } = await getUserAndProfile();
@@ -14,6 +16,7 @@ export default async function SiteHeader() {
             Training Africa<small>Academy</small>
           </span>
         </Link>
+        <Suspense fallback={null}><NavAutoClose /></Suspense>
         <div className="header-tools">
           <DisplaySettings />
           <input type="checkbox" id="navtoggle" className="navtoggle" aria-label="Show menu" />
