@@ -72,7 +72,11 @@ export default async function ReturnPage({ searchParams }: { searchParams: Promi
           {simulationAllowed && (
             <form action={simulatePayment} className="notice" style={{ alignItems: "center", flexWrap: "wrap" }}>
               <input type="hidden" name="order" value={order.id} />
-              <span>Sandbox testing on a local machine? PayFast can't reach this computer to confirm the payment.</span>
+              <span>
+                {process.env.PAYFAST_MERCHANT_ID
+                  ? "Sandbox testing? If PayFast can't reach this site, confirm the payment here."
+                  : "Demo mode: PayFast sandbox details aren't set up yet, so confirm the payment here."}
+              </span>
               <button className="btn btn-ghost btn-sm">Simulate payment confirmation</button>
             </form>
           )}

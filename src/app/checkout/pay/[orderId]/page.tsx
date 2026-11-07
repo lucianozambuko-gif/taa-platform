@@ -18,6 +18,9 @@ export default async function PayPage({ params }: { params: Promise<{ orderId: s
     .single();
   if (!order) notFound();
   if (order.status === "paid") redirect(`/checkout/return?order=${order.id}`);
+  // Without PayFast merchant details PayFast rejects the request, so go straight to the
+  // payment status page (where sandbox simulation is offered if enabled).
+  if (!process.env.PAYFAST_MERCHANT_ID || !process.env.PAYFAST_MERCHANT_KEY) redirect(`/checkout/return?order=${order.id}`);
 
   const course = order.courses as unknown as { title: string; code: string };
   const [first, ...rest] = (profile?.full_name ?? "Learner").trim().split(/\s+/);
