@@ -123,6 +123,10 @@ export default async function CoursePage({ params }: { params: Promise<{ slug: s
           </aside>
         </div>
       </div>
+      <div className="mobile-buy">
+        <PriceBlock course={course} />
+        {cta}
+      </div>
     </section>
   );
 }

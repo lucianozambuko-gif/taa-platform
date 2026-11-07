@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { CourseCard } from "@/components/CourseBits";
+import FilterPanel from "@/components/FilterPanel";
 import { listCourses, type CourseFilters } from "@/lib/courses";
 
 export const metadata = { title: "Find a course" };
@@ -31,7 +32,8 @@ export default async function CoursesPage({ searchParams }: { searchParams: Prom
         <div className="eyebrow">Find a course</div>
         <h1 style={{ fontSize: "clamp(1.8rem,3.6vw,2.6rem)", margin: "6px 0 24px" }}>Course catalogue</h1>
         <div className="cat">
-          <form className="filters panel" action="/courses" aria-label="Filters">
+          <FilterPanel active={Object.values(filters).filter(Boolean).length}>
+          <form className="filter-body" action="/courses" aria-label="Filters">
             <div className="field">
               <label htmlFor="f-q">Keyword</label>
               <input id="f-q" name="q" defaultValue={filters.q ?? ""} placeholder="e.g. safety" />
@@ -48,6 +50,7 @@ export default async function CoursesPage({ searchParams }: { searchParams: Prom
             <button className="btn btn-primary">Apply filters</button>
             <Link href="/courses" className="small">Clear all filters</Link>
           </form>
+          </FilterPanel>
           <div style={{ minWidth: 0 }}>
             <div className="results-bar">
               <p><b className="tnum">{courses.length}</b> <span className="muted">courses found</span></p>
