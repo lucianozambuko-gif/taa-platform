@@ -2,7 +2,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { rand } from "@/lib/format";
 import { createClient } from "@/lib/supabase/server";
-import { simulatePayment } from "../actions";
+import { demoPaymentsAllowed, simulatePayment } from "../actions";
 
 export const metadata = { title: "Payment status" };
 export const dynamic = "force-dynamic";
@@ -26,7 +26,7 @@ export default async function ReturnPage({ searchParams }: { searchParams: Promi
     );
 
   const course = order.courses as unknown as { title: string; slug: string; has_lms: boolean };
-  const simulationAllowed = process.env.ALLOW_SANDBOX_SIMULATION === "true" && process.env.PAYFAST_MODE !== "live";
+  const simulationAllowed = await demoPaymentsAllowed();
 
   if (order.status === "paid")
     return (
@@ -55,8 +55,8 @@ export default async function ReturnPage({ searchParams }: { searchParams: Promi
     return (
       <section className="block"><div className="wrap" style={{ maxWidth: 620 }}><div className="panel stack" style={{ gap: 14 }}>
         <span className="badge b-bad" style={{ alignSelf: "flex-start" }}>Payment not completed</span>
-        <h1 style={{ fontSize: "1.6rem" }}>Your payment was cancelled</h1>
-        <p className="muted">You have not been charged. You can try again with card or Instant EFT.</p>
+        <h1 style={{ fontSize: "1.6rem" }}>Your payment did not go through</h1>
+        <p className="muted">It was declined or cancelled, and you have not been charged. You can try again with card or Instant EFT.</p>
         <div className="row"><Link className="btn btn-primary" href={`/checkout/pay/${order.id}`}>Try again</Link><Link className="btn btn-ghost" href={`/courses/${course.slug}`}>Back to course</Link></div>
       </div></div></section>
     );
