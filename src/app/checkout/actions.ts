@@ -12,6 +12,8 @@ export async function startCheckout(formData: FormData) {
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) redirect(`/login?next=/checkout/${slug}`);
+  const { data: me } = await supabase.from("profiles").select("role").eq("id", user.id).maybeSingle();
+  if (me?.role === "admin" || me?.role === "facilitator") redirect(`/courses/${slug}`);
 
   const { data: course } = await supabase
     .from("courses")

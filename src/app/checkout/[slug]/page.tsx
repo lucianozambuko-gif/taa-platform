@@ -14,6 +14,7 @@ export default async function CheckoutPage({ params }: { params: Promise<{ slug:
   if (!course || course.price_basis !== "fixed" || course.price_cents == null) notFound();
   const { supabase, user, profile } = await getUserAndProfile();
   if (!user) redirect(`/login?next=/checkout/${slug}`);
+  if (profile?.role === "admin" || profile?.role === "facilitator") redirect(`/courses/${slug}`);
   const { data: enrolled } = await supabase.from("enrolments").select("id").eq("course_id", course.id).eq("user_id", user.id).maybeSingle();
   if (enrolled) redirect(course.has_lms ? `/learn/${slug}` : "/dashboard");
 

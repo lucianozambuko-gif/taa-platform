@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from "next";
+import { Suspense } from "react";
 import SiteHeader from "@/components/SiteHeader";
 import SiteFooter from "@/components/SiteFooter";
 import TrackedLink from "@/components/TrackedLink";
@@ -41,7 +42,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         <SiteHeader />
         <main>{children}</main>
         <SiteFooter />
-        {signedIn && <BottomNav role={role} />}
+        {signedIn && <Suspense fallback={null}><BottomNav role={role} /></Suspense>}
         <TrackedLink
           className="wa-float"
           href={whatsappLink("Hi Training Africa Academy, I'd like help choosing a course.")}

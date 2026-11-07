@@ -7,8 +7,8 @@ export default function EnrolForm({ courses }: { courses: { id: string; title: s
   const [state, action, pending] = useActionState<EnrolState, FormData>(adminEnrol, {});
   return (
     <form action={action} className="panel stack" style={{ gap: 12 }}>
-      <h3>Enrol a learner</h3>
-      <p className="small muted">For payments by EFT or employer purchase order. The learner must have an account.</p>
+      <h3>Give a learner course access</h3>
+      <p className="small muted">Only for payments received outside the website (EFT or employer purchase order). Online card payments enrol learners automatically. The learner needs an account.</p>
       <div className="grid g2" style={{ gap: 12 }}>
         <div className="field"><label htmlFor="en-email">Learner email</label><input id="en-email" name="email" type="email" required /></div>
         <div className="field">
@@ -21,7 +21,7 @@ export default function EnrolForm({ courses }: { courses: { id: string; title: s
       </div>
       {state.error && <p className="form-error">{state.error}</p>}
       {state.message && <p className="form-ok">{state.message}</p>}
-      <div><button className="btn btn-primary btn-sm" disabled={pending}>{pending ? "Enrolling…" : "Enrol learner"}</button></div>
+      <div><button className="btn btn-primary btn-sm" disabled={pending}>{pending ? "Saving…" : "Give access"}</button></div>
     </form>
   );
 }

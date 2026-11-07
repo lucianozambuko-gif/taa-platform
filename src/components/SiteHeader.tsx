@@ -30,9 +30,13 @@ export default async function SiteHeader() {
           <Link href="/venue">Assessment centre</Link>
           {user ? (
             <>
-              {profile?.role !== "facilitator" && <Link href="/dashboard">My learning</Link>}
-              {(profile?.role === "facilitator" || profile?.role === "admin") && <Link href="/facilitator">Teaching</Link>}
-              {profile?.role === "admin" && <Link href="/admin">Admin</Link>}
+              {profile?.role === "admin" ? (
+                <Link href="/admin">Admin</Link>
+              ) : profile?.role === "facilitator" ? (
+                <Link href="/facilitator">Teaching</Link>
+              ) : (
+                <Link href="/dashboard">My learning</Link>
+              )}
               <form action={signOut}>
                 <button className="btn btn-ghost btn-sm" type="submit">Sign out</button>
               </form>

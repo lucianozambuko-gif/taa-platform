@@ -144,26 +144,27 @@ export async function adminEnrol(_: EnrolState, fd: FormData): Promise<EnrolStat
   return { message: `Enrolled ${email}. The course is now in their dashboard.` };
 }
 
-export type StaffState = { error?: string; message?: string };
-
-/** Gives an existing account a role (learner, facilitator or admin) and, for facilitators, a course. */
-export async function saveStaff(_: StaffState, fd: FormData): Promise<StaffState> {
+/** Changes an account's role. Admins can't remove their own admin role. */
+export async function setUserRole(fd: FormData) {
   const { supabase, user } = await requireAdmin();
-  const email = String(fd.get("email") ?? "").trim().toLowerCase();
+  const id = String(fd.get("user_id") ?? "");
   const role = String(fd.get("role") ?? "");
-  const courseId = String(fd.get("course_id") ?? "");
-  if (!email || !["learner", "facilitator", "admin"].includes(role)) return { error: "Enter an email and choose a role." };
-  const { data: id } = await supabase.rpc("admin_user_by_email", { e: email });
-  if (!id) return { error: `No account uses ${email}. Ask them to sign up first.` };
-  if (id === user.id && role !== "admin") return { error: "You can't remove your own admin role." };
-  const { error } = await supabase.from("profiles").update({ role }).eq("id", id);
-  if (error) return { error: error.message };
-  if (role === "facilitator" && courseId) {
-    await supabase.from("course_facilitators").upsert({ course_id: courseId, user_id: id }, { onConflict: "course_id,user_id", ignoreDuplicates: true });
-  }
-  await supabase.from("audit_log").insert({ actor: user.id, action: "role_change", entity: "profile", entity_id: id, detail: { email, role, course_id: courseId || null } });
+  if (!id || !["learner", "facilitator", "admin"].includes(role) || (id === user.id && role !== "admin")) return;
+  await supabase.from("profiles").update({ role }).eq("id", id);
+  if (role !== "facilitator") await supabase.from("course_facilitators").delete().eq("user_id", id);
+  await supabase.from("audit_log").insert({ actor: user.id, action: "role_change", entity: "profile", entity_id: id, detail: { role } });
   revalidatePath("/admin");
-  return { message: role === "facilitator" && courseId ? `${email} is a facilitator and assigned to the course.` : `${email} is now ${role === "admin" ? "an admin" : `a ${role}`}.` };
+}
+
+/** Assigns a facilitator to teach a course. */
+export async function assignCourse(fd: FormData) {
+  const { supabase, user } = await requireAdmin();
+  const id = String(fd.get("user_id") ?? "");
+  const courseId = String(fd.get("course_id") ?? "");
+  if (!id || !courseId) return;
+  await supabase.from("course_facilitators").upsert({ course_id: courseId, user_id: id }, { onConflict: "course_id,user_id", ignoreDuplicates: true });
+  await supabase.from("audit_log").insert({ actor: user.id, action: "facilitator_assign", entity: "course", entity_id: courseId, detail: { user_id: id } });
+  revalidatePath("/admin");
 }
 
 export async function unassignFacilitator(fd: FormData) {

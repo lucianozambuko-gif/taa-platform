@@ -23,6 +23,7 @@ export default async function DashboardPage() {
   const { supabase, user, profile } = await getUserAndProfile();
   if (!user) redirect("/login?next=/dashboard");
   if (profile?.role === "facilitator") redirect("/facilitator");
+  if (profile?.role === "admin") redirect("/admin");
 
   const { data: enrolments } = await supabase
     .from("enrolments")
