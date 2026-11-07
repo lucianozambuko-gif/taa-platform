@@ -454,3 +454,9 @@ html[data-saver="on"] .cover::after, html[data-saver="on"] .player .art { displa
 header.site .navlinks { order: 2; }
 header.site:has(.navtoggle:checked) .navlinks { display: flex; }
 @media (max-width: 900px) { .header-tools { margin-left: auto; } .header-tools .menu-btn { margin-left: 0; } }
+
+/* Facilitator assessment form */
+.assess{display:flex;flex-wrap:wrap;gap:8px;align-items:center;min-width:280px}
+.assess select,.assess input{padding:7px 9px;border:1.5px solid var(--line);border-radius:6px;background:var(--surface);color:var(--ink);font:inherit;font-size:.88rem}
+.assess input{flex:1;min-width:160px}
+.role-chip{display:inline-block;font-size:.72rem;font-weight:700;letter-spacing:.05em;text-transform:uppercase;padding:3px 8px;border-radius:999px;background:var(--accent-soft,var(--sunk));color:var(--accent)}

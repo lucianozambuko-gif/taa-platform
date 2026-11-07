@@ -4,13 +4,14 @@ import { KindBadge } from "@/components/CourseBits";
 import { LEAD_LABEL, rand } from "@/lib/format";
 import { getUserAndProfile } from "@/lib/supabase/server";
 import type { Course } from "@/lib/types";
-import { togglePublished, updateLeadStatus, updatePrice } from "./actions";
+import { togglePublished, unassignFacilitator, updateLeadStatus, updatePrice } from "./actions";
+import StaffForm from "./StaffForm";
 import EnrolForm from "./EnrolForm";
 
 export const metadata = { title: "Admin" };
 export const dynamic = "force-dynamic";
 
-const TABS: [string, string][] = [["overview", "Overview"], ["leads", "Leads"], ["orders", "Orders"], ["learners", "Learners & progress"], ["courses", "Courses"], ["audit", "Audit log"]];
+const TABS: [string, string][] = [["overview", "Overview"], ["leads", "Leads"], ["orders", "Orders"], ["learners", "Learners & progress"], ["staff", "Staff and roles"], ["courses", "Courses"], ["audit", "Audit log"]];
 const STATUS_BADGE: Record<string, string> = { paid: "b-good", pending: "b-warn", failed: "b-bad", cancelled: "b-short", new: "b-warn" };
 const date = (iso: string) => new Date(iso).toLocaleString("en-ZA", { dateStyle: "medium", timeStyle: "short" });
 
@@ -104,13 +105,13 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
     );
   } else if (tab === "learners") {
     const [{ data: enrols }, { data: courseList }, { data: prog }, { data: profs }] = await Promise.all([
-      supabase.from("enrolments").select("id, user_id, source, created_at, courses(id, title, has_lms, modules(lessons(id)))").order("created_at", { ascending: false }).limit(200),
+      supabase.from("enrolments").select("id, user_id, source, created_at, result, courses(id, title, has_lms, modules(lessons(id)))").order("created_at", { ascending: false }).limit(200),
       supabase.from("courses").select("id, title").order("title"),
       supabase.from("lesson_progress").select("user_id, lesson_id, completed_at"),
       supabase.from("profiles").select("id, full_name, phone"),
     ]);
     const nameOf = new Map((profs ?? []).map((p) => [p.id, p]));
-    type E = { id: string; user_id: string; source: string; created_at: string; courses: { id: string; title: string; has_lms: boolean; modules: { lessons: { id: string }[] }[] } };
+    type E = { id: string; user_id: string; source: string; created_at: string; result: string | null; courses: { id: string; title: string; has_lms: boolean; modules: { lessons: { id: string }[] }[] } };
     const rows = ((enrols ?? []) as unknown as E[]).map((e) => {
       const ids = e.courses.modules.flatMap((m) => m.lessons.map((l) => l.id));
       const mine = (prog ?? []).filter((p) => p.user_id === e.user_id && ids.includes(p.lesson_id));
@@ -122,7 +123,7 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
         <EnrolForm courses={courseList ?? []} />
         <div className="panel tscroll" style={{ padding: "6px 10px" }}>
           <table className="tbl">
-            <thead><tr><th>Learner</th><th>Course</th><th>Enrolled</th><th>How</th><th>Progress</th><th>Last activity</th></tr></thead>
+            <thead><tr><th>Learner</th><th>Course</th><th>Enrolled</th><th>How</th><th>Progress</th><th>Result</th><th>Last activity</th></tr></thead>
             <tbody>
               {rows.map((r) => (
                 <tr key={r.id}>
@@ -131,13 +132,56 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
                   <td className="small">{date(r.created_at)}</td>
                   <td>{r.source === "admin" ? "Admin" : r.source === "employer" ? "Employer" : "Online payment"}</td>
                   <td>{r.pct == null ? <span className="muted small">Classroom</span> : <span className={`badge ${r.pct === 100 ? "b-good" : "b-short"}`}>{r.pct === 100 ? "Completed" : `${r.pct}%`}</span>}</td>
+                  <td>{r.result === "competent" ? <span className="badge b-good">Competent</span> : r.result === "not_yet_competent" ? <span className="badge b-warn">Not yet competent</span> : <span className="small muted">—</span>}</td>
                   <td className="small">{r.last ? date(r.last) : "—"}</td>
                 </tr>
               ))}
-              {!rows.length && <tr><td colSpan={6} className="muted">No enrolments yet.</td></tr>}
+              {!rows.length && <tr><td colSpan={7} className="muted">No enrolments yet.</td></tr>}
             </tbody>
           </table>
         </div>
+      </div>
+    );
+  } else if (tab === "staff") {
+    const [{ data: staff }, { data: courseList }, { data: assigns }] = await Promise.all([
+      supabase.rpc("admin_staff"),
+      supabase.from("courses").select("id, title").order("title"),
+      supabase.from("course_facilitators").select("course_id, user_id"),
+    ]);
+    const titleOf = new Map((courseList ?? []).map((c) => [c.id, c.title]));
+    type S = { id: string; email: string; full_name: string | null; role: string };
+    body = (
+      <div className="stack" style={{ gap: 16 }}>
+        <StaffForm courses={courseList ?? []} />
+        <div className="panel tscroll" style={{ padding: "6px 10px" }}>
+          <table className="tbl">
+            <thead><tr><th>Name</th><th>Role</th><th>Courses they teach</th></tr></thead>
+            <tbody>
+              {((staff ?? []) as S[]).map((s) => (
+                <tr key={s.id}>
+                  <td><b>{s.full_name ?? "—"}</b><br /><span className="small muted">{s.email}</span></td>
+                  <td><span className="role-chip">{s.role === "facilitator" ? "Facilitator" : "Admin"}</span></td>
+                  <td>
+                    {s.role === "admin" ? <span className="small muted">All courses</span> : (
+                      <div className="stack" style={{ gap: 6 }}>
+                        {(assigns ?? []).filter((a) => a.user_id === s.id).map((a) => (
+                          <form key={a.course_id} action={unassignFacilitator} className="row" style={{ gap: 8 }}>
+                            <input type="hidden" name="course_id" value={a.course_id} />
+                            <input type="hidden" name="user_id" value={s.id} />
+                            <span className="small">{titleOf.get(a.course_id)}</span>
+                            <button className="btn btn-ghost btn-sm" style={{ padding: "2px 8px" }} aria-label={`Remove from ${titleOf.get(a.course_id)}`}>Remove</button>
+                          </form>
+                        ))}
+                        {!(assigns ?? []).some((a) => a.user_id === s.id) && <span className="small muted">None assigned</span>}
+                      </div>
+                    )}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+        <p className="small muted">Learners don't appear here. Any account that signs up is a learner by default.</p>
       </div>
     );
   } else if (tab === "leads") {

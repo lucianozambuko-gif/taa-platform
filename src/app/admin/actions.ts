@@ -143,3 +143,34 @@ export async function adminEnrol(_: EnrolState, fd: FormData): Promise<EnrolStat
   revalidatePath("/admin");
   return { message: `Enrolled ${email}. The course is now in their dashboard.` };
 }
+
+export type StaffState = { error?: string; message?: string };
+
+/** Gives an existing account a role (learner, facilitator or admin) and, for facilitators, a course. */
+export async function saveStaff(_: StaffState, fd: FormData): Promise<StaffState> {
+  const { supabase, user } = await requireAdmin();
+  const email = String(fd.get("email") ?? "").trim().toLowerCase();
+  const role = String(fd.get("role") ?? "");
+  const courseId = String(fd.get("course_id") ?? "");
+  if (!email || !["learner", "facilitator", "admin"].includes(role)) return { error: "Enter an email and choose a role." };
+  const { data: id } = await supabase.rpc("admin_user_by_email", { e: email });
+  if (!id) return { error: `No account uses ${email}. Ask them to sign up first.` };
+  if (id === user.id && role !== "admin") return { error: "You can't remove your own admin role." };
+  const { error } = await supabase.from("profiles").update({ role }).eq("id", id);
+  if (error) return { error: error.message };
+  if (role === "facilitator" && courseId) {
+    await supabase.from("course_facilitators").upsert({ course_id: courseId, user_id: id }, { onConflict: "course_id,user_id", ignoreDuplicates: true });
+  }
+  await supabase.from("audit_log").insert({ actor: user.id, action: "role_change", entity: "profile", entity_id: id, detail: { email, role, course_id: courseId || null } });
+  revalidatePath("/admin");
+  return { message: role === "facilitator" && courseId ? `${email} is a facilitator and assigned to the course.` : `${email} is now ${role === "admin" ? "an admin" : `a ${role}`}.` };
+}
+
+export async function unassignFacilitator(fd: FormData) {
+  const { supabase, user } = await requireAdmin();
+  const courseId = String(fd.get("course_id") ?? "");
+  const uid = String(fd.get("user_id") ?? "");
+  await supabase.from("course_facilitators").delete().eq("course_id", courseId).eq("user_id", uid);
+  await supabase.from("audit_log").insert({ actor: user.id, action: "facilitator_unassign", entity: "course", entity_id: courseId, detail: { user_id: uid } });
+  revalidatePath("/admin");
+}

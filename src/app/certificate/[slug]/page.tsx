@@ -15,8 +15,10 @@ export default async function CertificatePage({ params }: { params: Promise<{ sl
   if (!state) redirect(`/login?next=/certificate/${slug}`);
   const { course, enrolled, pct, supabase, user, lessons } = state;
   if (!enrolled) notFound();
+  const { data: enrolment } = await supabase.from("enrolments").select("result, assessed_at").eq("course_id", course.id).eq("user_id", user.id).maybeSingle();
+  const assessed = enrolment?.result === "competent";
 
-  if (!course.certificate_auto || pct < 100) {
+  if (!assessed && (!course.certificate_auto || pct < 100)) {
     return (
       <section className="block">
         <div className="wrap" style={{ maxWidth: 620 }}>
@@ -42,8 +44,8 @@ export default async function CertificatePage({ params }: { params: Promise<{ sl
     .in("lesson_id", lessons.map((l) => l.id))
     .order("completed_at", { ascending: false })
     .limit(1)
-    .single();
-  const completed = last ? new Date(last.completed_at) : new Date();
+    .maybeSingle();
+  const completed = assessed && enrolment?.assessed_at ? new Date(enrolment.assessed_at) : last ? new Date(last.completed_at) : new Date();
   const certNo = `TAA-${course.code.replace(/^TAA-/, "")}-${user.id.slice(0, 6).toUpperCase()}`;
 
   return (
@@ -56,14 +58,14 @@ export default async function CertificatePage({ params }: { params: Promise<{ sl
         <div className="certificate">
           <div className="cert-inner">
             <div className="cert-brand"><span className="mark">TA</span><span>Training Africa Academy</span></div>
-            <p className="cert-eyebrow">Certificate of completion</p>
+            <p className="cert-eyebrow">{assessed ? "Statement of results" : "Certificate of completion"}</p>
             <p className="cert-small">This certifies that</p>
             <h1 className="cert-name">{profile?.full_name || user.email}</h1>
-            <p className="cert-small">has successfully completed the online course</p>
+            <p className="cert-small">{assessed ? "has been assessed and found competent in" : "has successfully completed the online course"}</p>
             <h2 className="cert-course">{course.title}</h2>
-            <p className="cert-note">{course.certificate ?? "Certificate of completion (non-accredited)"}</p>
+            <p className="cert-note">{assessed ? (course.accreditation_approved && course.accreditation_body ? `Result to be submitted to ${course.accreditation_body}. The official certificate is issued by the accrediting body.` : "Academy statement of results.") : course.certificate ?? "Certificate of completion (non-accredited)"}</p>
             <div className="cert-foot">
-              <div><span>Completed</span><b>{fmt(completed)}</b></div>
+              <div><span>{assessed ? "Assessed" : "Completed"}</span><b>{fmt(completed)}</b></div>
               <div><span>Course code</span><b className="mono">{course.code}</b></div>
               <div><span>Certificate no.</span><b className="mono">{certNo}</b></div>
               <div className="cert-sign"><span className="line" /><span>[Authorised signatory]</span></div>

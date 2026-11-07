@@ -19,9 +19,12 @@ export const viewport: Viewport = { width: "device-width", initialScale: 1, view
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
   const ga = process.env.NEXT_PUBLIC_GA_ID;
   let signedIn = false;
+  let role = "learner";
   try {
     const supabase = await createClient();
-    signedIn = !!(await supabase.auth.getUser()).data.user;
+    const user = (await supabase.auth.getUser()).data.user;
+    signedIn = !!user;
+    if (user) role = (await supabase.from("profiles").select("role").eq("id", user.id).maybeSingle()).data?.role ?? "learner";
   } catch {}
   return (
     <html lang="en-ZA" suppressHydrationWarning>
@@ -38,7 +41,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         <SiteHeader />
         <main>{children}</main>
         <SiteFooter />
-        {signedIn && <BottomNav />}
+        {signedIn && <BottomNav role={role} />}
         <TrackedLink
           className="wa-float"
           href={whatsappLink("Hi Training Africa Academy, I'd like help choosing a course.")}
