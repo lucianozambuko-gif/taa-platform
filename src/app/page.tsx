@@ -1,11 +1,13 @@
 import Link from "next/link";
 import { CourseCard } from "@/components/CourseBits";
 import { listCourses } from "@/lib/courses";
+import { getSiteContent } from "@/lib/siteContent";
 
 export const dynamic = "force-dynamic";
 
 export default async function HomePage() {
-  const courses = await listCourses();
+  const [courses, site] = await Promise.all([listCourses(), getSiteContent()]);
+  const TONES = ["teal", "ochre", "plum"];
   const featured = courses.filter((c) => c.featured).slice(0, 3);
   return (
     <>
@@ -65,7 +67,23 @@ export default async function HomePage() {
               <div className="eyebrow">Why learners and employers choose us</div>
               <h2 style={{ marginTop: 6 }}>Trusted by people who need training that works on the job</h2>
             </div>
-            <span className="sample">Sample figures until supplied by the Academy</span>
+            {site.sample && <span className="sample">Sample figures until supplied by the Academy</span>}
+          </div>
+          <div className="stats">
+            {site.stats.map((st) => <div key={st.label}><b className="tnum">{st.value}</b><span className="muted small">{st.label}</span></div>)}
+          </div>
+          <div className="grid g3">{featured.map((c) => <CourseCard key={c.id} course={c} />)}</div>
+        </div>
+      </section>
+
+      <section className="block" style={{ paddingTop: 0 }}>
+        <div className="wrap stack" style={{ gap: 22 }}>
+          <div className="sec-head" style={{ marginBottom: 0 }}>
+            <div>
+              <div className="eyebrow">Why learners and employers choose us</div>
+              <h2 style={{ marginTop: 6 }}>Trusted by people who need training that works on the job</h2>
+            </div>
+            {site.sample && <span className="sample">Sample figures until supplied by the Academy</span>}
           </div>
           <div className="stats">
             <div><b className="tnum">[2,400+]</b><span className="muted small">learners trained</span></div>
@@ -74,11 +92,8 @@ export default async function HomePage() {
             <div><b className="tnum">[94%]</b><span className="muted small">would recommend us</span></div>
           </div>
           <div className="grid g3">
-            {[
-              ["The practical day made all the difference. I went back to work and trained two new colleagues the same week.", "[Learner name]", "Cleaning supervisor, Johannesburg", "teal"],
-              ["We sent 24 staff in two groups around our night shifts. The quote came the next day and the training ran on-site.", "[Client name]", "HR manager, facilities company", "ochre"],
-              ["I did the online course on my phone during lunch breaks and could pick up exactly where I stopped.", "[Learner name]", "Receptionist, Pretoria", "plum"],
-            ].map(([text, name, role, tone]) => (
+            {site.testimonials.map((t, i) => [t.quote, t.name, t.role, TONES[i % 3]] as const)
+            .map(([text, name, role, tone]) => (
               <figure className="quote" key={text} style={{ margin: 0 }}>
                 <blockquote>{text}</blockquote>
                 <figcaption>

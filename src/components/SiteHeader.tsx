@@ -4,6 +4,7 @@ import { signOut } from "@/app/(auth)/actions";
 import { Suspense } from "react";
 import DisplaySettings from "./DisplaySettings";
 import NavAutoClose from "./NavAutoClose";
+import { isBackOffice } from "@/lib/roles";
 
 export default async function SiteHeader() {
   const { user, profile } = await getUserAndProfile();
@@ -30,8 +31,8 @@ export default async function SiteHeader() {
           <Link href="/venue">Assessment centre</Link>
           {user ? (
             <>
-              {profile?.role === "admin" ? (
-                <Link href="/admin">Admin</Link>
+              {isBackOffice(profile?.role) ? (
+                <Link href="/admin">Back office</Link>
               ) : profile?.role === "facilitator" ? (
                 <Link href="/facilitator">Teaching</Link>
               ) : (

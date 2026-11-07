@@ -12,7 +12,7 @@ export default async function EditCoursePage({ params, searchParams }: { params:
   const { created } = await searchParams;
   const { supabase, user, profile } = await getUserAndProfile();
   if (!user) redirect("/login?next=/admin");
-  if (profile?.role !== "admin") redirect("/");
+  if (profile?.role !== "admin" && profile?.role !== "content") redirect("/");
   let course: Course | undefined;
   if (id !== "new") {
     const { data } = await supabase.from("courses").select("*").eq("id", id).maybeSingle();

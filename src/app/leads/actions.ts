@@ -31,7 +31,7 @@ export async function submitLead(_: LeadState, fd: FormData): Promise<LeadState>
   }
 
   const details: Record<string, unknown> = {};
-  for (const key of ["industry", "delivery", "note", "room", "date", "purpose", "education", "situation", "learners"]) {
+  for (const key of ["industry", "delivery", "note", "room", "date", "slot", "purpose", "education", "situation", "learners"]) {
     const value = text(fd, key, 4000);
     if (value) details[key] = value;
   }

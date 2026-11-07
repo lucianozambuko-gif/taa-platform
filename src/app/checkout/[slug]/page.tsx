@@ -3,18 +3,20 @@ import { notFound, redirect } from "next/navigation";
 import { getCourse } from "@/lib/courses";
 import { rand, vatIncluded } from "@/lib/format";
 import { getUserAndProfile } from "@/lib/supabase/server";
+import { isStaff } from "@/lib/roles";
 import { startCheckout } from "../actions";
 
 export const metadata = { title: "Enrol" };
 export const dynamic = "force-dynamic";
 
-export default async function CheckoutPage({ params }: { params: Promise<{ slug: string }> }) {
+export default async function CheckoutPage({ params, searchParams }: { params: Promise<{ slug: string }>; searchParams: Promise<{ error?: string; coupon?: string }> }) {
   const { slug } = await params;
+  const { error, coupon } = await searchParams;
   const course = await getCourse(slug);
   if (!course || course.price_basis !== "fixed" || course.price_cents == null) notFound();
   const { supabase, user, profile } = await getUserAndProfile();
   if (!user) redirect(`/login?next=/checkout/${slug}`);
-  if (profile?.role === "admin" || profile?.role === "facilitator") redirect(`/courses/${slug}`);
+  if (isStaff(profile?.role)) redirect(`/courses/${slug}`);
   const { data: enrolled } = await supabase.from("enrolments").select("id").eq("course_id", course.id).eq("user_id", user.id).maybeSingle();
   if (enrolled) redirect(course.has_lms ? `/learn/${slug}` : "/dashboard");
 
@@ -31,6 +33,11 @@ export default async function CheckoutPage({ params }: { params: Promise<{ slug:
               <div className="sumrow"><span className="muted">Name</span><span>{profile?.full_name ?? "—"}</span></div>
               <div className="sumrow"><span className="muted">Email</span><span>{user.email}</span></div>
               <div className="sumrow"><span className="muted">Mobile</span><span>{profile?.phone ?? "—"}</span></div>
+            </div>
+            <div className="field">
+              <label htmlFor="coupon">Coupon code (optional)</label>
+              <input id="coupon" name="coupon" autoComplete="off" placeholder="e.g. WELCOME10" style={{ textTransform: "uppercase" }} defaultValue={coupon ?? ""} />
+              {error === "coupon" && <p className="form-error small">That code isn't valid for this course, or it has expired.</p>}
             </div>
             <p className="small muted">
               You'll pay on PayFast's secure page by card or Instant EFT. As soon as payment is confirmed, the course appears in your dashboard.

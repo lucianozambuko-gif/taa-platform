@@ -3,6 +3,7 @@
 import { redirect } from "next/navigation";
 import { fulfilOrder } from "@/lib/orders";
 import { createClient } from "@/lib/supabase/server";
+import { isStaff } from "@/lib/roles";
 
 /** Creates a pending order for the signed-in learner and sends them to the payment step. */
 export async function startCheckout(formData: FormData) {
@@ -13,7 +14,7 @@ export async function startCheckout(formData: FormData) {
   } = await supabase.auth.getUser();
   if (!user) redirect(`/login?next=/checkout/${slug}`);
   const { data: me } = await supabase.from("profiles").select("role").eq("id", user.id).maybeSingle();
-  if (me?.role === "admin" || me?.role === "facilitator") redirect(`/courses/${slug}`);
+  if (isStaff(me?.role)) redirect(`/courses/${slug}`);
 
   const { data: course } = await supabase
     .from("courses")
@@ -26,13 +27,12 @@ export async function startCheckout(formData: FormData) {
   const { data: existing } = await supabase.from("enrolments").select("id").eq("course_id", course.id).eq("user_id", user.id).maybeSingle();
   if (existing) redirect("/dashboard");
 
-  // Price comes from the database, never from the form.
-  const { data: order, error } = await supabase
-    .from("orders")
-    .insert({ user_id: user.id, course_id: course.id, amount_cents: course.price_cents })
-    .select("id")
-    .single();
-  if (error || !order) throw new Error("Could not create the order. Please try again.");
+  // The database function sets the price from the course and applies only approved coupons.
+  const coupon = String(formData.get("coupon") ?? "").trim().toUpperCase();
+  const { data: orderId, error } = await supabase.rpc("create_order", { course: course.id, coupon: coupon || null });
+  if (error && coupon && /invalid coupon/.test(error.message)) redirect(`/checkout/${slug}?error=coupon&coupon=${encodeURIComponent(coupon)}`);
+  if (error || !orderId) throw new Error("Could not create the order. Please try again.");
+  const order = { id: orderId as string };
   redirect(`/checkout/pay/${order.id}`);
 }
 

@@ -8,6 +8,7 @@ import BottomNav from "@/components/BottomNav";
 import { displayBootScript } from "@/components/DisplaySettings";
 import { createClient } from "@/lib/supabase/server";
 import { whatsappLink } from "@/lib/format";
+import { getSiteContent } from "@/lib/siteContent";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -27,6 +28,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
     signedIn = !!user;
     if (user) role = (await supabase.from("profiles").select("role").eq("id", user.id).maybeSingle()).data?.role ?? "learner";
   } catch {}
+  const { announcement } = await getSiteContent();
   return (
     <html lang="en-ZA" suppressHydrationWarning>
       <head>
@@ -39,6 +41,11 @@ export default async function RootLayout({ children }: { children: React.ReactNo
       </head>
       <body>
         <Analytics gaId={ga} />
+        {announcement.on && announcement.text && (
+          <div className="announce">
+            {announcement.link ? <a href={announcement.link}>{announcement.text} →</a> : <span>{announcement.text}</span>}
+          </div>
+        )}
         <SiteHeader />
         <main>{children}</main>
         <SiteFooter />

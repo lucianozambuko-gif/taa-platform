@@ -3,15 +3,21 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { getUserAndProfile } from "@/lib/supabase/server";
+import type { Role } from "@/lib/roles";
 
-async function requireAdmin() {
+/** Allows admins plus the listed staff roles; everyone else is sent home. */
+async function requireRole(...roles: Role[]) {
   const { supabase, user, profile } = await getUserAndProfile();
-  if (!user || profile?.role !== "admin") redirect("/");
-  return { supabase, user };
+  const role = profile?.role as Role | undefined;
+  if (!user || !role || (role !== "admin" && !roles.includes(role))) redirect("/");
+  return { supabase, user, role };
 }
+const requireAdmin = () => requireRole();
+const requireContent = () => requireRole("content");
+const requireSales = () => requireRole("sales");
 
 export async function updatePrice(formData: FormData) {
-  const { supabase, user } = await requireAdmin();
+  const { supabase, user } = await requireContent();
   const id = String(formData.get("id") ?? "");
   const rands = Number(formData.get("price"));
   if (!Number.isFinite(rands) || rands <= 0) return;
@@ -23,7 +29,7 @@ export async function updatePrice(formData: FormData) {
 }
 
 export async function togglePublished(formData: FormData) {
-  const { supabase, user } = await requireAdmin();
+  const { supabase, user } = await requireContent();
   const id = String(formData.get("id") ?? "");
   const published = formData.get("published") === "true";
   await supabase.from("courses").update({ published: !published, updated_at: new Date().toISOString() }).eq("id", id);
@@ -32,7 +38,7 @@ export async function togglePublished(formData: FormData) {
 }
 
 export async function updateLeadStatus(formData: FormData) {
-  const { supabase, user } = await requireAdmin();
+  const { supabase, user } = await requireSales();
   const id = String(formData.get("id") ?? "");
   const status = String(formData.get("status") ?? "");
   if (!["new", "contacted", "quoted", "won", "lost"].includes(status)) return;
@@ -52,7 +58,7 @@ export type CourseFormState = { error?: string; saved?: boolean };
 
 /** Creates or updates a course. Accreditation details only show publicly once "approved" is ticked. */
 export async function saveCourse(_: CourseFormState, fd: FormData): Promise<CourseFormState> {
-  const { supabase, user } = await requireAdmin();
+  const { supabase, user } = await requireContent();
   const id = text(fd.get("id"));
   const title = text(fd.get("title"));
   const code = text(fd.get("code"));
@@ -124,24 +130,18 @@ export type EnrolState = { error?: string; message?: string };
 
 /** Admin enrolment: gives an existing learner account access to a course (e.g. paid by EFT or employer PO). */
 export async function adminEnrol(_: EnrolState, fd: FormData): Promise<EnrolState> {
-  const { supabase, user } = await requireAdmin();
+  const { supabase, user } = await requireSales();
   const email = String(fd.get("email") ?? "").trim().toLowerCase();
   const courseId = String(fd.get("course_id") ?? "");
   if (!email || !courseId) return { error: "Enter the learner's email and choose a course." };
-  const { createAdminClient } = await import("@/lib/supabase/server");
-  const admin = createAdminClient();
-  let found: { id: string } | undefined;
-  for (let page = 1; page <= 10 && !found; page++) {
-    const { data } = await admin.auth.admin.listUsers({ page, perPage: 200 });
-    found = data?.users.find((u) => u.email?.toLowerCase() === email);
-    if (!data || data.users.length < 200) break;
-  }
-  if (!found) return { error: `No learner account uses ${email}. Ask them to sign up first, then enrol them here.` };
+  const { data: foundId } = await supabase.rpc("admin_user_by_email", { e: email });
+  const found = foundId ? { id: foundId as string } : undefined;
+  if (!found) return { error: `No learner account uses ${email}. Ask them to sign up first, then give access here.` };
   const { error } = await supabase.from("enrolments").insert({ user_id: found.id, course_id: courseId, source: "admin" });
   if (error) return { error: error.code === "23505" ? "That learner is already enrolled in this course." : error.message };
   await supabase.from("audit_log").insert({ actor: user.id, action: "admin_enrol", entity: "enrolment", entity_id: courseId, detail: { email } });
   revalidatePath("/admin");
-  return { message: `Enrolled ${email}. The course is now in their dashboard.` };
+  return { message: `Done. ${email} now has the course in their dashboard.` };
 }
 
 /** Changes an account's role. Admins can't remove their own admin role. */
@@ -149,7 +149,7 @@ export async function setUserRole(fd: FormData) {
   const { supabase, user } = await requireAdmin();
   const id = String(fd.get("user_id") ?? "");
   const role = String(fd.get("role") ?? "");
-  if (!id || !["learner", "facilitator", "admin"].includes(role) || (id === user.id && role !== "admin")) return;
+  if (!id || !["learner", "facilitator", "sales", "content", "admin"].includes(role) || (id === user.id && role !== "admin")) return;
   await supabase.from("profiles").update({ role }).eq("id", id);
   if (role !== "facilitator") await supabase.from("course_facilitators").delete().eq("user_id", id);
   await supabase.from("audit_log").insert({ actor: user.id, action: "role_change", entity: "profile", entity_id: id, detail: { role } });
@@ -173,5 +173,225 @@ export async function unassignFacilitator(fd: FormData) {
   const uid = String(fd.get("user_id") ?? "");
   await supabase.from("course_facilitators").delete().eq("course_id", courseId).eq("user_id", uid);
   await supabase.from("audit_log").insert({ actor: user.id, action: "facilitator_unassign", entity: "course", entity_id: courseId, detail: { user_id: uid } });
+  revalidatePath("/admin");
+}
+
+// ---------------------------------------------------------------------------
+// Leads
+// ---------------------------------------------------------------------------
+/** Status, owner and notes for a lead. */
+export async function updateLead(fd: FormData) {
+  const { supabase, user } = await requireSales();
+  const id = String(fd.get("id") ?? "");
+  const status = String(fd.get("status") ?? "");
+  const owner = String(fd.get("assigned_to") ?? "");
+  const notes = String(fd.get("notes") ?? "").trim().slice(0, 2000);
+  if (!["new", "contacted", "quoted", "won", "lost"].includes(status)) return;
+  await supabase.from("leads").update({ status, assigned_to: owner || null, notes: notes || null, updated_at: new Date().toISOString() }).eq("id", id);
+  await supabase.from("audit_log").insert({ actor: user.id, action: "lead_update", entity: "lead", entity_id: id, detail: { status, assigned: !!owner } });
+  revalidatePath("/admin");
+}
+
+// ---------------------------------------------------------------------------
+// Orders
+// ---------------------------------------------------------------------------
+/** Records a refund made in the PayFast dashboard and, if chosen, removes course access. */
+export async function refundOrder(fd: FormData) {
+  const { supabase, user } = await requireSales();
+  const id = String(fd.get("id") ?? "");
+  const note = String(fd.get("note") ?? "").trim().slice(0, 500);
+  const revoke = fd.get("revoke") === "on";
+  const { data: order } = await supabase.from("orders").select("id, user_id, course_id, status, invoice_no").eq("id", id).single();
+  if (!order || order.status !== "paid") return;
+  await supabase.from("orders").update({ status: "refunded", refunded_at: new Date().toISOString(), staff_note: note || null }).eq("id", id);
+  if (revoke) await supabase.from("enrolments").delete().eq("order_id", id);
+  await supabase.from("audit_log").insert({ actor: user.id, action: "refund", entity: "order", entity_id: id, detail: { code: order.invoice_no, revoked: revoke } });
+  revalidatePath("/admin");
+}
+
+/** Marks an unpaid checkout as followed up (failed-payment recovery) or cancels it. */
+export async function followUpOrder(fd: FormData) {
+  const { supabase, user } = await requireSales();
+  const id = String(fd.get("id") ?? "");
+  const cancel = fd.get("cancel") === "1";
+  await supabase
+    .from("orders")
+    .update(cancel ? { status: "cancelled" } : { followed_up_at: new Date().toISOString() })
+    .eq("id", id)
+    .in("status", ["pending", "failed"]);
+  await supabase.from("audit_log").insert({ actor: user.id, action: cancel ? "order_cancel" : "order_follow_up", entity: "order", entity_id: id });
+  revalidatePath("/admin");
+}
+
+/** Removes a learner's access to a course (e.g. wrong course given). */
+export async function revokeEnrolment(fd: FormData) {
+  const { supabase, user } = await requireSales();
+  const id = String(fd.get("id") ?? "");
+  await supabase.from("enrolments").delete().eq("id", id);
+  await supabase.from("audit_log").insert({ actor: user.id, action: "access_removed", entity: "enrolment", entity_id: id });
+  revalidatePath("/admin");
+}
+
+// ---------------------------------------------------------------------------
+// Coupons: sales request, admin approves
+// ---------------------------------------------------------------------------
+export type CouponState = { error?: string; message?: string };
+
+export async function requestCoupon(_: CouponState, fd: FormData): Promise<CouponState> {
+  const { supabase, user, role } = await requireSales();
+  const code = String(fd.get("code") ?? "").trim().toUpperCase();
+  const pct = Number(fd.get("percent_off"));
+  const reason = String(fd.get("reason") ?? "").trim();
+  if (!/^[A-Z0-9-]{3,30}$/.test(code)) return { error: "Use 3 to 30 letters, numbers or dashes for the code." };
+  if (!(pct >= 1 && pct <= 90)) return { error: "Discount must be between 1% and 90%." };
+  if (!reason) return { error: "Give a reason so the approver knows why." };
+  const maxUses = Number(fd.get("max_uses"));
+  const status = role === "admin" ? "active" : "pending";
+  const { data, error } = await supabase
+    .from("coupons")
+    .insert({
+      code,
+      percent_off: pct,
+      course_id: String(fd.get("course_id") ?? "") || null,
+      max_uses: maxUses > 0 ? maxUses : null,
+      expires_on: String(fd.get("expires_on") ?? "") || null,
+      reason,
+      status,
+      created_by: user.id,
+      approved_by: role === "admin" ? user.id : null,
+    })
+    .select("id")
+    .single();
+  if (error) return { error: error.code === "23505" ? "That code already exists." : error.message };
+  await supabase.from("audit_log").insert({ actor: user.id, action: role === "admin" ? "coupon_create" : "coupon_request", entity: "coupon", entity_id: data.id, detail: { code, pct } });
+  revalidatePath("/admin");
+  return { message: role === "admin" ? `${code} is live.` : `${code} was sent to an admin for approval.` };
+}
+
+export async function setCouponStatus(fd: FormData) {
+  const { supabase, user } = await requireAdmin();
+  const id = String(fd.get("id") ?? "");
+  const status = String(fd.get("status") ?? "");
+  if (!["active", "disabled"].includes(status)) return;
+  await supabase.from("coupons").update({ status, approved_by: status === "active" ? user.id : undefined }).eq("id", id);
+  await supabase.from("audit_log").insert({ actor: user.id, action: status === "active" ? "coupon_approve" : "coupon_disable", entity: "coupon", entity_id: id });
+  revalidatePath("/admin");
+}
+
+// ---------------------------------------------------------------------------
+// Venue bookings
+// ---------------------------------------------------------------------------
+export type VenueState = { error?: string; message?: string };
+
+const overlaps = (a: string, b: string) => a === "full" || b === "full" || a === b;
+
+async function clash(supabase: Awaited<ReturnType<typeof requireSales>>["supabase"], room: string, date: string, slot: string) {
+  const { data } = await supabase.from("venue_bookings").select("slot, status, client").eq("room", room).eq("date", date);
+  return (data ?? []).find((b) => overlaps(b.slot, slot));
+}
+
+/** Confirms, holds or blocks a room. Refuses double bookings. */
+export async function saveBooking(_: VenueState, fd: FormData): Promise<VenueState> {
+  const { supabase, user } = await requireSales();
+  const room = String(fd.get("room") ?? "");
+  const date = String(fd.get("date") ?? "");
+  const slot = String(fd.get("slot") ?? "full");
+  const status = String(fd.get("status") ?? "confirmed");
+  const leadId = String(fd.get("lead_id") ?? "") || null;
+  if (!room || !/^\d{4}-\d{2}-\d{2}$/.test(date)) return { error: "Choose a room and a date." };
+  if (!["full", "morning", "afternoon"].includes(slot) || !["held", "confirmed", "blocked"].includes(status)) return { error: "Invalid booking." };
+  const taken = await clash(supabase, room, date, slot);
+  if (taken) return { error: `${room} is already ${taken.status} on ${date}${taken.client ? ` for ${taken.client}` : ""}.` };
+  const { data, error } = await supabase
+    .from("venue_bookings")
+    .insert({ room, date, slot, status, lead_id: leadId, client: String(fd.get("client") ?? "").trim() || null, note: String(fd.get("note") ?? "").trim() || null, created_by: user.id })
+    .select("id")
+    .single();
+  if (error) return { error: error.message };
+  if (leadId && status === "confirmed") await supabase.from("leads").update({ status: "won", updated_at: new Date().toISOString() }).eq("id", leadId);
+  if (leadId && status === "held") await supabase.from("leads").update({ status: "quoted", updated_at: new Date().toISOString() }).eq("id", leadId);
+  await supabase.from("audit_log").insert({ actor: user.id, action: `venue_${status}`, entity: "venue_booking", entity_id: data.id, detail: { title: `${room} · ${date} · ${slot}` } });
+  revalidatePath("/admin");
+  revalidatePath("/venue");
+  return { message: `${room} ${status} for ${date}.` };
+}
+
+export async function updateBooking(fd: FormData) {
+  const { supabase, user } = await requireSales();
+  const id = String(fd.get("id") ?? "");
+  const action = String(fd.get("action") ?? "");
+  const { data: b } = await supabase.from("venue_bookings").select("lead_id, room, date").eq("id", id).single();
+  if (!b) return;
+  if (action === "confirm") {
+    await supabase.from("venue_bookings").update({ status: "confirmed" }).eq("id", id);
+    if (b.lead_id) await supabase.from("leads").update({ status: "won", updated_at: new Date().toISOString() }).eq("id", b.lead_id);
+  } else if (action === "release") {
+    await supabase.from("venue_bookings").delete().eq("id", id);
+  } else return;
+  await supabase.from("audit_log").insert({ actor: user.id, action: `venue_${action}`, entity: "venue_booking", entity_id: id, detail: { title: `${b.room} · ${b.date}` } });
+  revalidatePath("/admin");
+  revalidatePath("/venue");
+}
+
+/** Declines a venue request: marks the lead lost with a note. */
+export async function declineVenueRequest(fd: FormData) {
+  const { supabase, user } = await requireSales();
+  const id = String(fd.get("lead_id") ?? "");
+  const reason = String(fd.get("reason") ?? "").trim();
+  await supabase.from("leads").update({ status: "lost", notes: reason ? `Declined: ${reason}` : "Declined", updated_at: new Date().toISOString() }).eq("id", id);
+  await supabase.from("audit_log").insert({ actor: user.id, action: "venue_decline", entity: "lead", entity_id: id });
+  revalidatePath("/admin");
+}
+
+// ---------------------------------------------------------------------------
+// Site content and redirects
+// ---------------------------------------------------------------------------
+export type ContentState = { error?: string; message?: string };
+
+export async function saveSiteContent(_: ContentState, fd: FormData): Promise<ContentState> {
+  const { supabase, user } = await requireContent();
+  const stats = [0, 1, 2, 3]
+    .map((i) => ({ value: String(fd.get(`stat_value_${i}`) ?? "").trim(), label: String(fd.get(`stat_label_${i}`) ?? "").trim() }))
+    .filter((s) => s.value && s.label);
+  const testimonials = [0, 1, 2]
+    .map((i) => ({ quote: String(fd.get(`t_quote_${i}`) ?? "").trim(), name: String(fd.get(`t_name_${i}`) ?? "").trim(), role: String(fd.get(`t_role_${i}`) ?? "").trim() }))
+    .filter((t) => t.quote && t.name);
+  const announcement = { text: String(fd.get("ann_text") ?? "").trim().slice(0, 160), link: String(fd.get("ann_link") ?? "").trim(), on: fd.get("ann_on") === "on" };
+  if (announcement.link && !/^(\/|https:\/\/)/.test(announcement.link)) return { error: "The announcement link must start with / or https://" };
+  const rows = [
+    { key: "home_stats", value: stats },
+    { key: "home_testimonials", value: testimonials },
+    { key: "announcement", value: announcement },
+    { key: "sample_figures", value: fd.get("sample_figures") === "on" },
+  ].map((r) => ({ ...r, updated_by: user.id, updated_at: new Date().toISOString() }));
+  const { error } = await supabase.from("site_content").upsert(rows);
+  if (error) return { error: error.message };
+  await supabase.from("audit_log").insert({ actor: user.id, action: "site_content_update", entity: "site", detail: { announcement: announcement.on } });
+  revalidatePath("/", "layout");
+  return { message: "Saved. The homepage is updated." };
+}
+
+export async function addRedirect(_: ContentState, fd: FormData): Promise<ContentState> {
+  const { supabase, user } = await requireContent();
+  let from = String(fd.get("from_path") ?? "").trim();
+  const to = String(fd.get("to_path") ?? "").trim();
+  try {
+    if (/^https?:\/\//.test(from)) from = new URL(from).pathname;
+  } catch {}
+  from = from.replace(/\/+$/, "") || "/";
+  if (!from.startsWith("/") || from === "/") return { error: "Enter the old page path, e.g. /short-courses" };
+  if (!/^(\/|https:\/\/)/.test(to)) return { error: "The new address must start with / or https://" };
+  const { error } = await supabase.from("redirects").upsert({ from_path: from, to_path: to });
+  if (error) return { error: error.message };
+  await supabase.from("audit_log").insert({ actor: user.id, action: "redirect_add", entity: "redirect", detail: { title: `${from} → ${to}` } });
+  revalidatePath("/admin");
+  return { message: `${from} now goes to ${to}.` };
+}
+
+export async function deleteRedirect(fd: FormData) {
+  const { supabase, user } = await requireContent();
+  const from = String(fd.get("from_path") ?? "");
+  await supabase.from("redirects").delete().eq("from_path", from);
+  await supabase.from("audit_log").insert({ actor: user.id, action: "redirect_remove", entity: "redirect", detail: { title: from } });
   revalidatePath("/admin");
 }

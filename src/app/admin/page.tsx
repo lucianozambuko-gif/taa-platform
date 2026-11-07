@@ -4,28 +4,38 @@ import { KindBadge } from "@/components/CourseBits";
 import { LEAD_LABEL, rand } from "@/lib/format";
 import { getUserAndProfile } from "@/lib/supabase/server";
 import type { Course } from "@/lib/types";
-import { assignCourse, setUserRole, togglePublished, unassignFacilitator, updateLeadStatus, updatePrice } from "./actions";
+import { BACK_OFFICE, ROLE_HELP, ROLE_LABEL, canOpen, isBackOffice, type Role } from "@/lib/roles";
+import { assignCourse, revokeEnrolment, setUserRole, togglePublished, unassignFacilitator, updatePrice } from "./actions";
+import LeadsTab from "./tabs/Leads";
+import OrdersTab from "./tabs/Orders";
+import VenueTab from "./tabs/Venue";
+import CouponsTab from "./tabs/Coupons";
+import SiteContentTab from "./tabs/SiteContent";
 import EnrolForm from "./EnrolForm";
 
-export const metadata = { title: "Admin" };
+const AUDIT: Record<string, string> = { price_change: "Price changed", publish: "Course published", unpublish: "Course hidden", lead_status: "Lead status updated", course_update: "Course edited", course_create: "Course added", admin_enrol: "Learner given access", assessment: "Assessment result recorded", role_change: "Role changed", export: "Data exported", lead_update: "Lead updated", refund: "Refund recorded", order_follow_up: "Unpaid order followed up", order_cancel: "Order cancelled", access_removed: "Course access removed", coupon_request: "Coupon requested", coupon_create: "Coupon created", coupon_approve: "Coupon approved", coupon_disable: "Coupon switched off", venue_confirmed: "Room booked", venue_held: "Room held", venue_blocked: "Room blocked", venue_confirm: "Booking confirmed", venue_release: "Booking released", venue_decline: "Venue request declined", site_content_update: "Homepage content updated", redirect_add: "Redirect added", redirect_remove: "Redirect removed", facilitator_assign: "Facilitator assigned", facilitator_unassign: "Facilitator removed" };
+
+export const metadata = { title: "Back office" };
 export const dynamic = "force-dynamic";
 
-const TABS: [string, string][] = [["overview", "Overview"], ["leads", "Leads"], ["orders", "Orders"], ["learners", "Learners & progress"], ["courses", "Courses"], ["users", "Users"], ["audit", "Audit log"]];
 const STATUS_BADGE: Record<string, string> = { paid: "b-good", pending: "b-warn", failed: "b-bad", cancelled: "b-short", new: "b-warn" };
 const date = (iso: string) => new Date(iso).toLocaleString("en-ZA", { dateStyle: "medium", timeStyle: "short" });
 
-export default async function AdminPage({ searchParams }: { searchParams: Promise<{ tab?: string; q?: string; role?: string }> }) {
+export default async function AdminPage({ searchParams }: { searchParams: Promise<Record<string, string | undefined>> }) {
   const { supabase, user, profile } = await getUserAndProfile();
   if (!user) redirect("/login?next=/admin");
-  if (profile?.role !== "admin")
+  const role = (profile?.role ?? "learner") as Role;
+  if (!isBackOffice(role))
     return (
       <section className="block"><div className="wrap" style={{ maxWidth: 620 }}><div className="panel stack">
-        <h1 style={{ fontSize: "1.6rem" }}>Admin access only</h1>
-        <p className="muted">Your account doesn't have the admin role. An existing administrator can grant it (see the README).</p>
+        <h1 style={{ fontSize: "1.6rem" }}>Staff access only</h1>
+        <p className="muted">The back office is for Academy staff. An admin can give your account a staff role under Users.</p>
       </div></div></section>
     );
   const sp = await searchParams;
-  const tab = sp.tab ?? "overview";
+  const allowed = BACK_OFFICE.filter((t) => t.roles.includes(role));
+  const tab = sp.tab && canOpen(role, sp.tab) ? sp.tab : allowed[0].key;
+  const isAdmin = role === "admin";
   const since = new Date(Date.now() - 30 * 864e5).toISOString();
 
   let body: React.ReactNode = null;
@@ -47,14 +57,18 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
       supabase.from("leads").select("ref, type, name, company, created_at").order("created_at", { ascending: false }).limit(5),
       supabase.from("orders").select("invoice_no, status, amount_cents, created_at, courses(title)").order("created_at", { ascending: false }).limit(5),
     ]);
-    const [{ data: people }, { data: audits }, { data: pendingResults }] = await Promise.all([
-      supabase.rpc("admin_users"),
+    const [{ data: people }, { data: audits }, { data: pendingResults }, { data: events }, { data: wonLeads }] = await Promise.all([
+      isAdmin ? supabase.rpc("admin_users") : Promise.resolve({ data: [] }),
       supabase.from("audit_log").select("action, detail, created_at").order("created_at", { ascending: false }).limit(8),
       supabase.from("enrolments").select("id, courses!inner(certificate_auto)").is("result", null).eq("courses.certificate_auto", false),
+      supabase.from("site_events").select("kind").gte("created_at", since),
+      supabase.from("leads").select("id").eq("status", "won").gte("created_at", since),
     ]);
+    const downloads = (events ?? []).filter((e) => e.kind === "brochure_download").length;
+    const waClicks = (events ?? []).filter((e) => e.kind === "whatsapp_click").length;
+    const leadConv = leads?.length ? Math.round(((wonLeads ?? []).length / leads.length) * 100) : 0;
     type P = { full_name: string | null; email: string; role: string; created_at: string };
     type AD = { code?: string; title?: string };
-    const AUDIT: Record<string, string> = { price_change: "Price changed", publish: "Course published", unpublish: "Course hidden", lead_status: "Lead status updated", course_update: "Course edited", course_create: "Course added", admin_enrol: "Learner given access", assessment: "Assessment result recorded", role_change: "Role changed", facilitator_assign: "Facilitator assigned", facilitator_unassign: "Facilitator removed" };
     type ER = { user_id: string; course_id: string; courses: { title: string; modules: { lessons: { id: string }[] }[] } };
     const perfMap = new Map<string, { title: string; enrolled: number; completed: number; sales: number }>();
     for (const e of (enrolRows ?? []) as unknown as ER[]) {
@@ -71,7 +85,7 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
       ...(recentOrders ?? []).map((o) => ({ at: o.created_at, kind: o.status === "paid" ? "Paid" : "Order", badge: o.status === "paid" ? "b-good" : "b-short", text: `${o.invoice_no} · ${(o.courses as unknown as { title: string }).title} · ${rand(o.amount_cents)}` })),
       ...((people ?? []) as P[]).slice(0, 5).map((u) => ({ at: u.created_at, kind: "Sign-up", badge: "b-short", text: `${u.full_name ?? u.email} created an account` })),
       ...(audits ?? []).map((a) => { const d = (a.detail ?? {}) as AD; return { at: a.created_at, kind: "Staff", badge: "b-short", text: `${AUDIT[a.action] ?? a.action}${d.title ? ` · ${d.title}` : d.code ? ` · ${d.code}` : ""}` }; }),
-    ].sort((a, b) => b.at.localeCompare(a.at)).slice(0, 10);
+    ].sort((a, b) => (b.at ?? "").localeCompare(a.at ?? "")).slice(0, 10);
     body = (
       <>
         <div className="kpis">
@@ -79,7 +93,10 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
           <div className="card kpi"><div className="eyebrow">Course sales</div><div className="v tnum">{rand(paid.reduce((a, o) => a + o.amount_cents, 0))}</div><div className="d">{paid.length} paid orders, 30 days</div></div>
           <div className="card kpi"><div className="eyebrow">Checkout abandonment</div><div className="v tnum">{abandonment}%</div><div className="d">{started - paid.length} of {started} checkouts unpaid</div></div>
           <div className="card kpi"><div className="eyebrow">Enrolled learners</div><div className="v tnum">{learners ?? 0}</div><div className="d">all time</div></div>
-          <div className="card kpi"><div className="eyebrow">Accounts</div><div className="v tnum">{(people ?? []).length}</div><div className="d"><Link href="/admin?tab=users">Manage users →</Link></div></div>
+          <div className="card kpi"><div className="eyebrow">Brochure downloads</div><div className="v tnum">{downloads}</div><div className="d">last 30 days</div></div>
+          <div className="card kpi"><div className="eyebrow">WhatsApp clicks</div><div className="v tnum">{waClicks}</div><div className="d">last 30 days</div></div>
+          <div className="card kpi"><div className="eyebrow">Lead conversion</div><div className="v tnum">{leadConv}%</div><div className="d">{(wonLeads ?? []).length} won of {leads?.length ?? 0} enquiries</div></div>
+          {isAdmin && <div className="card kpi"><div className="eyebrow">Accounts</div><div className="v tnum">{(people ?? []).length}</div><div className="d"><Link href="/admin?tab=users">Manage users →</Link></div></div>}
           <div className="card kpi"><div className="eyebrow">Awaiting assessment</div><div className="v tnum">{(pendingResults ?? []).length}</div><div className="d">classroom and accredited results</div></div>
         </div>
         <div className="panel" style={{ marginTop: 16 }}>
@@ -112,7 +129,7 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
             {!activity.length && <p className="muted small">Sign-ups, orders, enquiries and staff changes appear here.</p>}
           </div>
         </div>
-        <p className="small muted" style={{ marginTop: 12 }}>Brochure downloads and WhatsApp clicks are tracked in Google Analytics 4.</p>
+        <p className="small muted" style={{ marginTop: 12 }}>Brochure downloads and WhatsApp clicks are counted here and also sent to Google Analytics 4. Learner progress is on the Learners tab.</p>
       </>
     );
   } else if (tab === "learners") {
@@ -133,9 +150,13 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
     body = (
       <div className="stack" style={{ gap: 16 }}>
         <EnrolForm courses={courseList ?? []} />
+        <div className="row" style={{ justifyContent: "space-between" }}>
+          <p className="small muted">Completion records: progress, results and last activity for every enrolment. Paid enrolments are removed through a refund on the Orders tab.</p>
+          <a className="btn btn-ghost btn-sm" href="/admin/export/learners">Download CSV</a>
+        </div>
         <div className="panel tscroll" style={{ padding: "6px 10px" }}>
           <table className="tbl">
-            <thead><tr><th>Learner</th><th>Course</th><th>Enrolled</th><th>How</th><th>Progress</th><th>Result</th><th>Last activity</th></tr></thead>
+            <thead><tr><th>Learner</th><th>Course</th><th>Enrolled</th><th>How</th><th>Progress</th><th>Result</th><th>Last activity</th><th></th></tr></thead>
             <tbody>
               {rows.map((r) => (
                 <tr key={r.id}>
@@ -146,9 +167,10 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
                   <td>{r.pct == null ? <span className="muted small">Classroom</span> : <span className={`badge ${r.pct === 100 ? "b-good" : "b-short"}`}>{r.pct === 100 ? "Completed" : `${r.pct}%`}</span>}</td>
                   <td>{r.result === "competent" ? <span className="badge b-good">Competent</span> : r.result === "not_yet_competent" ? <span className="badge b-warn">Not yet competent</span> : <span className="small muted">—</span>}</td>
                   <td className="small">{r.last ? date(r.last) : "—"}</td>
+                  <td>{r.source !== "checkout" && <form action={revokeEnrolment}><input type="hidden" name="id" value={r.id} /><button className="btn btn-ghost btn-sm" title="Remove access given by mistake">Remove</button></form>}</td>
                 </tr>
               ))}
-              {!rows.length && <tr><td colSpan={7} className="muted">No enrolments yet.</td></tr>}
+              {!rows.length && <tr><td colSpan={8} className="muted">No enrolments yet.</td></tr>}
             </tbody>
           </table>
         </div>
@@ -167,15 +189,14 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
     const list = everyone.filter((u) => (roleFilter === "all" || u.role === roleFilter) && (!q || `${u.full_name ?? ""} ${u.email} ${u.phone ?? ""}`.toLowerCase().includes(q)));
     const count = (r: string) => everyone.filter((u) => u.role === r).length;
     const titleOf = new Map((courseList ?? []).map((c) => [c.id, c.title]));
-    const ROLE_LABEL: Record<string, string> = { learner: "Learner", facilitator: "Facilitator", admin: "Admin" };
-    const sel = { padding: "6px 8px", borderRadius: 6, border: "1.5px solid var(--line)", background: "var(--surface)", color: "var(--ink)" };
+        const sel = { padding: "6px 8px", borderRadius: 6, border: "1.5px solid var(--line)", background: "var(--surface)", color: "var(--ink)" };
     body = (
       <div className="stack" style={{ gap: 16 }}>
         <div className="kpis">
           <div className="card kpi"><div className="eyebrow">All accounts</div><div className="v tnum">{everyone.length}</div><div className="d">signed up on the site</div></div>
           <div className="card kpi"><div className="eyebrow">Learners</div><div className="v tnum">{count("learner")}</div><div className="d">{everyone.filter((u) => u.role === "learner" && !u.enrolments).length} not enrolled yet</div></div>
           <div className="card kpi"><div className="eyebrow">Facilitators</div><div className="v tnum">{count("facilitator")}</div><div className="d">teach assigned courses</div></div>
-          <div className="card kpi"><div className="eyebrow">Admins</div><div className="v tnum">{count("admin")}</div><div className="d">full control</div></div>
+          <div className="card kpi"><div className="eyebrow">Office staff</div><div className="v tnum">{count("admin") + count("sales") + count("content")}</div><div className="d">{count("admin")} admin · {count("sales")} sales · {count("content")} content</div></div>
         </div>
         <form className="panel row" style={{ gap: 10, alignItems: "end" }} action="/admin">
           <input type="hidden" name="tab" value="users" />
@@ -183,7 +204,7 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
           <div className="field" style={{ flex: "0 1 180px" }}>
             <label htmlFor="u-role">Role</label>
             <select id="u-role" name="role" defaultValue={roleFilter}>
-              <option value="all">Everyone</option><option value="learner">Learners</option><option value="facilitator">Facilitators</option><option value="admin">Admins</option>
+              <option value="all">Everyone</option>{Object.entries(ROLE_LABEL).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
             </select>
           </div>
           <button className="btn btn-primary btn-sm">Filter</button>
@@ -205,14 +226,14 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
                       <form action={setUserRole} className="row" style={{ gap: 6, flexWrap: "nowrap" }}>
                         <input type="hidden" name="user_id" value={u.id} />
                         <select name="role" defaultValue={u.role} aria-label={`Role for ${u.full_name ?? u.email}`} style={sel}>
-                          {Object.entries(ROLE_LABEL).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
+                          {Object.entries(ROLE_LABEL).map(([k, v]) => <option key={k} value={k} title={ROLE_HELP[k as Role]}>{v}</option>)}
                         </select>
                         <button className="btn btn-ghost btn-sm">Save</button>
                       </form>
                     )}
                   </td>
                   <td style={{ minWidth: 220 }}>
-                    {u.role !== "facilitator" ? <span className="small muted">{u.role === "admin" ? "All courses" : "—"}</span> : (
+                    {u.role !== "facilitator" ? <span className="small muted">{u.role === "admin" ? "All courses" : u.role === "learner" ? "—" : "Not a teaching role"}</span> : (
                       <div className="stack" style={{ gap: 6 }}>
                         {(assigns ?? []).filter((a) => a.user_id === u.id).map((a) => (
                           <form key={a.course_id} action={unassignFacilitator} className="row" style={{ gap: 6, flexWrap: "nowrap" }}>
@@ -239,63 +260,23 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
             </tbody>
           </table>
         </div>
-        <p className="small muted">Anyone who signs up starts as a learner. Make someone a facilitator, then add the courses they teach. Every change goes into the audit log.</p>
+        <div className="panel stack" style={{ gap: 6 }}>
+          <h3>What each role can do</h3>
+          {(Object.keys(ROLE_LABEL) as Role[]).map((r) => <p key={r} className="small"><b>{ROLE_LABEL[r]}:</b> <span className="muted">{ROLE_HELP[r]}</span></p>)}
+          <p className="small muted">Anyone who signs up starts as a learner. Every role change goes into the audit log.</p>
+        </div>
       </div>
     );
   } else if (tab === "leads") {
-    const { data: leads } = await supabase.from("leads").select("*, courses(title)").order("created_at", { ascending: false }).limit(200);
-    body = (
-      <div className="panel tscroll" style={{ padding: "6px 10px" }}>
-        <table className="tbl">
-          <thead><tr><th>Ref</th><th>Received</th><th>Type</th><th>Who</th><th>Course</th><th>Source</th><th>Routed to</th><th>Status</th></tr></thead>
-          <tbody>
-            {(leads ?? []).map((l) => (
-              <tr key={l.id}>
-                <td className="mono">{l.ref}</td>
-                <td className="small">{date(l.created_at)}</td>
-                <td>{LEAD_LABEL[l.type] ?? l.type}</td>
-                <td><b>{l.name}</b>{l.company ? <><br /><span className="small muted">{l.company}{l.staff_count ? ` · ${l.staff_count} people` : ""}</span></> : null}<br /><span className="small muted">{l.email ?? ""} {l.phone ?? ""}</span></td>
-                <td>{(l.courses as { title: string } | null)?.title ?? "—"}</td>
-                <td>{l.source}</td>
-                <td>{l.routed_to}</td>
-                <td>
-                  <form action={updateLeadStatus} className="row" style={{ gap: 6, flexWrap: "nowrap" }}>
-                    <input type="hidden" name="id" value={l.id} />
-                    <select name="status" defaultValue={l.status} aria-label={`Status for ${l.ref}`} style={{ padding: "5px 6px", borderRadius: 6, border: "1.5px solid var(--line)", background: "var(--surface)" }}>
-                      {["new", "contacted", "quoted", "won", "lost"].map((s) => <option key={s}>{s}</option>)}
-                    </select>
-                    <button className="btn btn-ghost btn-sm">Save</button>
-                  </form>
-                </td>
-              </tr>
-            ))}
-            {!leads?.length && <tr><td colSpan={8} className="muted">No enquiries yet. Submit one from the employer or venue page.</td></tr>}
-          </tbody>
-        </table>
-      </div>
-    );
+    body = <LeadsTab supabase={supabase} userId={user.id} sp={sp} />;
   } else if (tab === "orders") {
-    const { data: orders } = await supabase.from("orders").select("*, courses(title)").order("created_at", { ascending: false }).limit(200);
-    body = (
-      <div className="panel tscroll" style={{ padding: "6px 10px" }}>
-        <table className="tbl">
-          <thead><tr><th>Invoice</th><th>Date</th><th>Course</th><th>Amount</th><th>Payment ref</th><th>Status</th></tr></thead>
-          <tbody>
-            {(orders ?? []).map((o) => (
-              <tr key={o.id}>
-                <td className="mono">{o.invoice_no}</td>
-                <td className="small">{date(o.created_at)}</td>
-                <td>{(o.courses as { title: string } | null)?.title}</td>
-                <td className="tnum">{rand(o.amount_cents)}</td>
-                <td className="mono small">{o.gateway_payment_id ?? "—"}</td>
-                <td><span className={`badge ${STATUS_BADGE[o.status] ?? "b-short"}`}>{o.status}</span></td>
-              </tr>
-            ))}
-            {!orders?.length && <tr><td colSpan={6} className="muted">No orders yet.</td></tr>}
-          </tbody>
-        </table>
-      </div>
-    );
+    body = <OrdersTab supabase={supabase} sp={sp} />;
+  } else if (tab === "venue") {
+    body = <VenueTab supabase={supabase} sp={sp} />;
+  } else if (tab === "coupons") {
+    body = <CouponsTab supabase={supabase} isAdmin={isAdmin} />;
+  } else if (tab === "content") {
+    body = <SiteContentTab supabase={supabase} />;
   } else if (tab === "courses") {
     const { data: courses } = await supabase.from("courses").select("*").order("title");
     body = (
@@ -337,14 +318,25 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
       </>
     );
   } else {
-    const { data: rows } = await supabase.from("audit_log").select("*").order("created_at", { ascending: false }).limit(100);
+    const [{ data: rows }, { data: people }] = await Promise.all([
+      supabase.from("audit_log").select("*").order("created_at", { ascending: false }).limit(200),
+      supabase.rpc("admin_users"),
+    ]);
+    const nameOf = new Map(((people ?? []) as { id: string; full_name: string | null; email: string }[]).map((p) => [p.id, p.full_name ?? p.email]));
     body = (
       <div className="panel tscroll" style={{ padding: "6px 10px" }}>
         <table className="tbl">
-          <thead><tr><th>When</th><th>Action</th><th>Detail</th></tr></thead>
+          <thead><tr><th>When</th><th>Who</th><th>What</th><th>Detail</th></tr></thead>
           <tbody>
-            {(rows ?? []).map((r) => <tr key={r.id}><td className="small">{date(r.created_at)}</td><td>{r.action}</td><td className="mono small">{JSON.stringify(r.detail)}</td></tr>)}
-            {!rows?.length && <tr><td colSpan={3} className="muted">No changes recorded yet.</td></tr>}
+            {(rows ?? []).map((r) => (
+              <tr key={r.id}>
+                <td className="small">{date(r.created_at)}</td>
+                <td>{r.actor ? nameOf.get(r.actor) ?? "Staff" : "System"}</td>
+                <td>{AUDIT[r.action] ?? r.action}</td>
+                <td className="small muted">{Object.entries((r.detail ?? {}) as Record<string, unknown>).filter(([, v]) => v !== null && v !== "").map(([k, v]) => `${k}: ${typeof v === "object" ? JSON.stringify(v) : v}`).join(" · ")}</td>
+              </tr>
+            ))}
+            {!rows?.length && <tr><td colSpan={4} className="muted">No changes recorded yet.</td></tr>}
           </tbody>
         </table>
       </div>
@@ -355,11 +347,11 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
     <section className="block" style={{ paddingTop: 32 }}>
       <div className="wrap">
         <div className="sec-head">
-          <div><div className="eyebrow">Admin back office</div><h1 style={{ fontSize: "clamp(1.8rem,3.6vw,2.5rem)", marginTop: 6 }}>Academy dashboard</h1></div>
-          <span className="small muted">Signed in as {profile.full_name ?? user.email} · Admin</span>
+          <div><div className="eyebrow">Back office</div><h1 style={{ fontSize: "clamp(1.8rem,3.6vw,2.5rem)", marginTop: 6 }}>Academy dashboard</h1></div>
+          <span className="small muted">Signed in as {profile?.full_name ?? user.email} · {ROLE_LABEL[role]}</span>
         </div>
         <nav className="tabs" aria-label="Admin sections">
-          {TABS.map(([key, label]) => (
+          {allowed.map(({ key, label }) => (
             <Link key={key} href={`/admin?tab=${key}`} aria-current={tab === key ? "page" : undefined} style={{ padding: "10px 14px", fontWeight: 600, textDecoration: "none", color: tab === key ? "var(--accent)" : "var(--muted)", borderBottom: `2.5px solid ${tab === key ? "var(--accent)" : "transparent"}`, whiteSpace: "nowrap" }}>
               {label}
             </Link>

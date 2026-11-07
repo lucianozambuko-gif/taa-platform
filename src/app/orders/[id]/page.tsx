@@ -15,7 +15,7 @@ export default async function ReceiptPage({ params }: { params: Promise<{ id: st
   if (!user) redirect(`/login?next=/orders/${id}`);
   const { data: order } = await supabase
     .from("orders")
-    .select("id, invoice_no, status, amount_cents, gateway_payment_id, paid_at, created_at, courses(title, code)")
+    .select("id, invoice_no, status, amount_cents, discount_cents, coupon_code, refunded_at, gateway_payment_id, paid_at, created_at, courses(title, code)")
     .eq("id", id)
     .maybeSingle();
   if (!order) notFound();
@@ -45,7 +45,8 @@ export default async function ReceiptPage({ params }: { params: Promise<{ id: st
             <table className="tbl">
               <thead><tr><th>Description</th><th style={{ textAlign: "right" }}>Amount</th></tr></thead>
               <tbody>
-                <tr><td>{course.title} <span className="mono muted small">({course.code})</span></td><td className="tnum" style={{ textAlign: "right" }}>{rand(order.amount_cents)}</td></tr>
+                <tr><td>{course.title} <span className="mono muted small">({course.code})</span></td><td className="tnum" style={{ textAlign: "right" }}>{rand(order.amount_cents + (order.discount_cents ?? 0))}</td></tr>
+                {order.coupon_code && <tr><td className="muted">Discount ({order.coupon_code})</td><td className="tnum muted" style={{ textAlign: "right" }}>−{rand(order.discount_cents)}</td></tr>}
                 <tr><td className="muted">VAT included (15%)</td><td className="tnum muted" style={{ textAlign: "right" }}>{rand(vatIncluded(order.amount_cents))}</td></tr>
                 <tr><td><b>Total</b></td><td className="tnum" style={{ textAlign: "right" }}><b>{rand(order.amount_cents)}</b></td></tr>
               </tbody>

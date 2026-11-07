@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { KindBadge } from "@/components/CourseBits";
 import { rand } from "@/lib/format";
 import { getUserAndProfile } from "@/lib/supabase/server";
+import { isBackOffice } from "@/lib/roles";
 import type { Course } from "@/lib/types";
 
 export const metadata = { title: "My learning" };
@@ -23,7 +24,7 @@ export default async function DashboardPage() {
   const { supabase, user, profile } = await getUserAndProfile();
   if (!user) redirect("/login?next=/dashboard");
   if (profile?.role === "facilitator") redirect("/facilitator");
-  if (profile?.role === "admin") redirect("/admin");
+  if (isBackOffice(profile?.role)) redirect("/admin");
 
   const { data: enrolments } = await supabase
     .from("enrolments")

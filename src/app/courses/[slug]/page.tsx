@@ -5,6 +5,7 @@ import TrackedLink from "@/components/TrackedLink";
 import { getCourse, getOutline, relatedCourses } from "@/lib/courses";
 import { rand, vatIncluded, whatsappLink } from "@/lib/format";
 import { createClient } from "@/lib/supabase/server";
+import { ROLE_LABEL, type Role } from "@/lib/roles";
 
 export const dynamic = "force-dynamic";
 
@@ -35,7 +36,8 @@ export default async function CoursePage({ params }: { params: Promise<{ slug: s
   const wa = whatsappLink(`Hi Training Africa Academy, I'm interested in ${course.title} (${course.code}). Please send me the next dates and how to enrol.`);
 
   let cta: React.ReactNode;
-  if (role === "admin") cta = <Link className="btn btn-primary" href={`/admin/courses/${course.id}`}>Edit this course</Link>;
+  if (role === "admin" || role === "content") cta = <Link className="btn btn-primary" href={`/admin/courses/${course.id}`}>Edit this course</Link>;
+  else if (role === "sales") cta = <Link className="btn btn-primary" href="/admin?tab=learners">Give a learner access</Link>;
   else if (role === "facilitator") cta = <Link className="btn btn-primary" href={`/facilitator?course=${course.slug}`}>View my learners</Link>;
   else if (course.kind === "qualification") cta = <Link className="btn btn-primary" href={`/learnerships/apply?course=${course.slug}`}>Apply for the {course.intakes[0] ?? "next intake"}</Link>;
   else if (course.price_basis !== "fixed") cta = <Link className="btn btn-primary" href={`/employers?course=${course.slug}`}>Request a quotation</Link>;
@@ -144,7 +146,7 @@ export default async function CoursePage({ params }: { params: Promise<{ slug: s
         </div>
       </div>
       {role !== "learner" && (
-        <div className="wrap"><p className="small muted" style={{ marginTop: 16 }}>You're signed in as {role === "admin" ? "an admin" : "a facilitator"}, so you see staff options here. Learners see the enrol, apply or quote button instead.</p></div>
+        <div className="wrap"><p className="small muted" style={{ marginTop: 16 }}>You're signed in as staff ({ROLE_LABEL[role as Role] ?? role}), so you see staff options here. Learners see the enrol, apply or quote button instead.</p></div>
       )}
       <div className="mobile-buy">
         <PriceBlock course={course} />

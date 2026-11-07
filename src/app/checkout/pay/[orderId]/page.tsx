@@ -14,7 +14,7 @@ export default async function PayPage({ params }: { params: Promise<{ orderId: s
   if (!user) redirect("/login");
   const { data: order } = await supabase
     .from("orders")
-    .select("id, invoice_no, status, amount_cents, courses(title, code)")
+    .select("id, invoice_no, status, amount_cents, discount_cents, coupon_code, courses(title, code)")
     .eq("id", orderId)
     .single();
   if (!order) notFound();
@@ -35,6 +35,7 @@ export default async function PayPage({ params }: { params: Promise<{ orderId: s
             <div className="card" style={{ padding: 14 }}>
               <div className="sumrow"><span className="muted">Course</span><span>{course.title}</span></div>
               <div className="sumrow"><span className="muted">Invoice</span><span className="mono">{order.invoice_no}</span></div>
+              {order.coupon_code && <div className="sumrow tnum muted small"><span>Coupon {order.coupon_code}</span><span>−{rand(order.discount_cents)}</span></div>}
               <div className="sumrow total tnum"><span>Amount</span><span>{rand(order.amount_cents)}</span></div>
             </div>
             <form action={simulatePayment} className="stack" style={{ gap: 14 }}>

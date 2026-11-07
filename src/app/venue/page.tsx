@@ -1,17 +1,21 @@
 import LeadForm from "@/components/LeadForm";
+import VenueCalendar from "@/components/VenueCalendar";
+import { ROOMS } from "@/lib/roles";
+import { createClient } from "@/lib/supabase/server";
 
 export const metadata = { title: "Assessment centre and venue hire" };
 
-const ROOMS: [string, string, string][] = [
-  ["Training room A", "30 seated", "Classroom training, workshops"],
-  ["Training room B", "20 seated", "Classroom training, interviews"],
-  ["Practical cleaning lab", "12 learners", "Practical sessions and assessments"],
-  ["Computer room", "16 workstations", "Online assessments, digital skills"],
-  ["Boardroom", "10 seated", "Meetings, moderation sessions"],
-];
+export const dynamic = "force-dynamic";
 
-export default function VenuePage() {
+export default async function VenuePage() {
   const today = new Date().toISOString().slice(0, 10);
+  const start = new Date(today + "T00:00:00Z");
+  const end = new Date(start.getTime() + 20 * 864e5).toISOString().slice(0, 10);
+  let busy: { room: string; date: string; slot: string }[] = [];
+  try {
+    const supabase = await createClient();
+    busy = ((await supabase.rpc("venue_busy", { from_date: today, to_date: end })).data ?? []) as typeof busy;
+  } catch {}
   return (
     <>
       <section className="block" style={{ paddingTop: 36 }}>
@@ -37,6 +41,11 @@ export default function VenuePage() {
             </div>
             <p className="small muted">Projector, Wi-Fi, backup power and parking. Sample facilities until confirmed by the Academy.</p>
           </div>
+          <div className="panel stack" style={{ gridColumn: "1 / -1", gap: 10 }}>
+            <h2 style={{ fontSize: "1.35rem" }}>Availability, next three weeks</h2>
+            <p className="small muted">Updated live by our centre coordinator. Pick a free day below, then send your request.</p>
+            <VenueCalendar busy={busy} start={start} days={21} />
+          </div>
           <LeadForm
             type="venue"
             source="venue_page"
@@ -48,6 +57,7 @@ export default function VenuePage() {
             <div className="grid g2" style={{ gap: 12 }}>
               <div className="field"><label htmlFor="room">Room</label><select id="room" name="room">{ROOMS.map(([r]) => <option key={r}>{r}</option>)}</select></div>
               <div className="field"><label htmlFor="date">Date</label><input id="date" name="date" type="date" min={today} required /></div>
+              <div className="field"><label htmlFor="slot">Time</label><select id="slot" name="slot"><option value="full">Full day</option><option value="morning">Morning</option><option value="afternoon">Afternoon</option></select></div>
               <div className="field"><label htmlFor="staff_count">Attendees</label><input id="staff_count" name="staff_count" type="number" min={1} required /></div>
               <div className="field"><label htmlFor="purpose">Purpose</label><select id="purpose" name="purpose"><option>Training session</option><option>Assessment (approved scope only)</option><option>Workshop or event</option><option>Meeting</option></select></div>
               <div className="field"><label htmlFor="company">Organisation</label><input id="company" name="company" required /></div>

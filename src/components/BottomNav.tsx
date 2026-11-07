@@ -12,6 +12,30 @@ export default function BottomNav({ role = "learner" }: { role?: string }) {
   const tab = useSearchParams().get("tab") ?? "overview";
   const is = (p: string) => (p === "/" ? path === "/" : path.startsWith(p));
 
+  if (role === "sales" || role === "content") {
+    const on = (t: string) => (path === "/admin" && tab === t) || (t === "courses" && path.startsWith("/admin/courses")) ? "page" : undefined;
+    const items: [string, string, React.ReactNode][] = role === "sales"
+      ? [["overview", "Overview", <><rect x="3.5" y="3.5" width="7" height="7" rx="1.5" /><rect x="13.5" y="3.5" width="7" height="7" rx="1.5" /><rect x="3.5" y="13.5" width="7" height="7" rx="1.5" /><rect x="13.5" y="13.5" width="7" height="7" rx="1.5" /></>],
+         ["leads", "Leads", <><path d="M4 6h16v12H4z" /><path d="M4 7l8 6 8-6" /></>],
+         ["orders", "Orders", <><path d="M6 3h12v18l-3-2-3 2-3-2-3 2z" /><path d="M9 8h6M9 12h6" /></>],
+         ["venue", "Venue", <><rect x="3.5" y="5" width="17" height="15" rx="2" /><path d="M3.5 10h17M8 3v4M16 3v4" /></>]]
+      : [["overview", "Overview", <><rect x="3.5" y="3.5" width="7" height="7" rx="1.5" /><rect x="13.5" y="3.5" width="7" height="7" rx="1.5" /><rect x="3.5" y="13.5" width="7" height="7" rx="1.5" /><rect x="13.5" y="13.5" width="7" height="7" rx="1.5" /></>],
+         ["courses", "Courses", <><path d="M4 5h6a2 2 0 0 1 2 2v13a2 2 0 0 0-2-2H4z" /><path d="M20 5h-6a2 2 0 0 0-2 2v13a2 2 0 0 1 2-2h6z" /></>],
+         ["content", "Site content", <><path d="M4 20h4l10-10-4-4L4 16z" /><path d="M13.5 6.5l4 4" /></>]];
+    return (
+      <nav className="bottom-nav" aria-label="Staff navigation">
+        {items.map(([key, label, icon]) => (
+          <Link key={key} href={key === "overview" ? "/admin" : `/admin?tab=${key}`} aria-current={on(key)}>
+            <svg {...ICON}>{icon}</svg>{label}
+          </Link>
+        ))}
+        <Link href="/">
+          <svg {...ICON}><path d="M3 11l9-7 9 7" /><path d="M5 10v10h14V10" /></svg>Website
+        </Link>
+      </nav>
+    );
+  }
+
   if (role === "admin") {
     const on = (t: string) => (path === "/admin" && tab === t) || (t === "courses" && path.startsWith("/admin/courses")) ? "page" : undefined;
     return (
