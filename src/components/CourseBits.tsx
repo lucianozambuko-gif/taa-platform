@@ -29,9 +29,64 @@ export function PriceBlock({ course }: { course: Course }) {
   );
 }
 
+/** Subject artwork for course cards: a colour family and a simple line icon. */
+const SUBJECT_STYLE: Record<string, { tone: string; icon: React.ReactNode }> = {
+  "Cleaning & hygiene": {
+    tone: "teal",
+    icon: (
+      <>
+        <path d="M14 8h8l2 6H12z" />
+        <path d="M12 14h12v14a2 2 0 0 1-2 2h-8a2 2 0 0 1-2-2z" />
+        <path d="M22 8V5h-4" />
+        <path d="M29 10l2-2M30 15h3M29 20l2 2" />
+      </>
+    ),
+  },
+  "Health & safety": {
+    tone: "ochre",
+    icon: (
+      <>
+        <path d="M18 4l11 4v8c0 7-5 12-11 14C12 28 7 23 7 16V8z" />
+        <path d="M18 11v10M13 16h10" />
+      </>
+    ),
+  },
+  "Soft skills": {
+    tone: "plum",
+    icon: (
+      <>
+        <path d="M5 8h17a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2h-9l-5 4v-4H5a2 2 0 0 1-2-2v-8a2 2 0 0 1 2-2z" />
+        <path d="M27 13h4a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2h-1v4l-5-4h-6" />
+      </>
+    ),
+  },
+};
+const DEFAULT_STYLE = {
+  tone: "slate",
+  icon: (
+    <>
+      <path d="M6 7h10a3 3 0 0 1 3 3v20a2 2 0 0 0-2-2H6z" />
+      <path d="M30 7H20a3 3 0 0 0-3 3v20a2 2 0 0 1 2-2h11z" />
+    </>
+  ),
+};
+
+export function SubjectCover({ course }: { course: Course }) {
+  const style = SUBJECT_STYLE[course.subject] ?? DEFAULT_STYLE;
+  return (
+    <div className={`cover tone-${style.tone}`} aria-hidden="true">
+      <svg viewBox="0 0 36 34" width="44" height="42" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+        {style.icon}
+      </svg>
+      <span className="cover-label">{course.subject}</span>
+    </div>
+  );
+}
+
 export function CourseCard({ course }: { course: Course }) {
   return (
     <Link className="ccard" href={`/courses/${course.slug}`}>
+      <SubjectCover course={course} />
       <div className="meta">
         <KindBadge course={course} />
         <span className="badge b-short">{course.format}</span>

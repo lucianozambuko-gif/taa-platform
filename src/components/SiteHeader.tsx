@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { getUserAndProfile } from "@/lib/supabase/server";
 import { signOut } from "@/app/(auth)/actions";
+import DisplaySettings from "./DisplaySettings";
 
 export default async function SiteHeader() {
   const { user, profile } = await getUserAndProfile();
@@ -13,8 +14,11 @@ export default async function SiteHeader() {
             Training Africa<small>Academy</small>
           </span>
         </Link>
-        <input type="checkbox" id="navtoggle" className="navtoggle" aria-label="Show menu" />
-        <label htmlFor="navtoggle" className="menu-btn">Menu</label>
+        <div className="header-tools">
+          <DisplaySettings />
+          <input type="checkbox" id="navtoggle" className="navtoggle" aria-label="Show menu" />
+          <label htmlFor="navtoggle" className="menu-btn">Menu</label>
+        </div>
         <nav className="navlinks" aria-label="Main">
           <Link href="/courses">Find a course</Link>
           <Link href="/online-learning">Online learning</Link>

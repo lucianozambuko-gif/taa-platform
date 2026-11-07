@@ -3,6 +3,9 @@ import SiteHeader from "@/components/SiteHeader";
 import SiteFooter from "@/components/SiteFooter";
 import TrackedLink from "@/components/TrackedLink";
 import Analytics from "@/components/Analytics";
+import BottomNav from "@/components/BottomNav";
+import { displayBootScript } from "@/components/DisplaySettings";
+import { createClient } from "@/lib/supabase/server";
 import { whatsappLink } from "@/lib/format";
 import "./globals.css";
 
@@ -13,11 +16,17 @@ export const metadata: Metadata = {
 
 export const viewport: Viewport = { width: "device-width", initialScale: 1, viewportFit: "cover" };
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export default async function RootLayout({ children }: { children: React.ReactNode }) {
   const ga = process.env.NEXT_PUBLIC_GA_ID;
+  let signedIn = false;
+  try {
+    const supabase = await createClient();
+    signedIn = !!(await supabase.auth.getUser()).data.user;
+  } catch {}
   return (
-    <html lang="en-ZA">
+    <html lang="en-ZA" suppressHydrationWarning>
       <head>
+        <script dangerouslySetInnerHTML={{ __html: displayBootScript }} />
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link
           rel="stylesheet"
@@ -29,6 +38,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <SiteHeader />
         <main>{children}</main>
         <SiteFooter />
+        {signedIn && <BottomNav />}
         <TrackedLink
           className="wa-float"
           href={whatsappLink("Hi Training Africa Academy, I'd like help choosing a course.")}

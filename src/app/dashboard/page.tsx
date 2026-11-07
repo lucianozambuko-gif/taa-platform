@@ -25,10 +25,10 @@ export default async function DashboardPage() {
 
   const { data: enrolments } = await supabase
     .from("enrolments")
-    .select("id, created_at, courses(*, modules(lessons(id)))")
+    .select("id, created_at, courses(*, modules(position, lessons(id, title, position, minutes)))")
     .eq("user_id", user.id)
     .order("created_at", { ascending: false });
-  const { data: progress } = await supabase.from("lesson_progress").select("lesson_id").eq("user_id", user.id);
+  const { data: progress } = await supabase.from("lesson_progress").select("lesson_id, completed_at").eq("user_id", user.id);
   const done = new Set((progress ?? []).map((p) => p.lesson_id));
   const { data: orderRows } = await supabase
     .from("orders")
@@ -38,12 +38,22 @@ export default async function DashboardPage() {
     .limit(10);
   const orders = orderRows ?? [];
 
-  type Row = { id: string; created_at: string; courses: Course & { modules: { lessons: { id: string }[] }[] } };
+  type L = { id: string; title: string; position: number; minutes: number };
+  type Row = { id: string; created_at: string; courses: Course & { modules: { position: number; lessons: L[] }[] } };
+  const lastTouched = new Map((progress ?? []).map((p) => [p.lesson_id, p.completed_at as string]));
   const rows = ((enrolments ?? []) as unknown as Row[]).map((e) => {
-    const ids = e.courses.modules.flatMap((m) => m.lessons.map((l) => l.id));
+    const ordered = [...e.courses.modules]
+      .sort((a, b) => a.position - b.position)
+      .flatMap((m) => [...m.lessons].sort((a, b) => a.position - b.position));
+    const ids = ordered.map((l) => l.id);
     const pct = ids.length ? Math.round((ids.filter((id) => done.has(id)).length / ids.length) * 100) : 0;
-    return { ...e, pct };
+    const next = ordered.find((l) => !done.has(l.id));
+    const minutesLeft = ordered.filter((l) => !done.has(l.id)).reduce((a, l) => a + l.minutes, 0);
+    const last = ids.map((id) => lastTouched.get(id) ?? "").sort().at(-1) || e.created_at;
+    return { ...e, pct, next, minutesLeft, last };
   });
+  // The course to continue: online, not finished, most recently worked on.
+  const current = rows.filter((r) => r.courses.has_lms && r.pct < 100).sort((a, b) => b.last.localeCompare(a.last))[0];
 
   const enrolledIds = rows.map((r) => r.courses.id);
   const subjects = [...new Set(rows.map((r) => r.courses.subject))];
@@ -64,6 +74,17 @@ export default async function DashboardPage() {
         </div>
         <div className="dash">
           <div className="stack" style={{ gap: 14, minWidth: 0 }}>
+            {current && current.next && (
+              <div className="continue">
+                <Ring pct={current.pct} />
+                <div className="stack" style={{ gap: 4, minWidth: 0 }}>
+                  <span className="eyebrow">Continue where you left off</span>
+                  <h2>{current.courses.title}</h2>
+                  <p className="small">Next: {current.next.title} · about {current.minutesLeft} min left in the course</p>
+                </div>
+                <Link className="btn" href={`/learn/${current.courses.slug}/${current.next.id}`}>{current.pct > 0 ? "Resume" : "Start"}</Link>
+              </div>
+            )}
             {rows.length === 0 && (
               <div className="panel stack">
                 <h3>You haven't enrolled in a course yet</h3>

@@ -59,6 +59,49 @@ export default async function HomePage() {
       </section>
 
       <section className="block" style={{ paddingTop: 0 }}>
+        <div className="wrap stack" style={{ gap: 22 }}>
+          <div className="sec-head" style={{ marginBottom: 0 }}>
+            <div>
+              <div className="eyebrow">Why learners and employers choose us</div>
+              <h2 style={{ marginTop: 6 }}>Trusted by people who need training that works on the job</h2>
+            </div>
+            <span className="sample">Sample figures until supplied by the Academy</span>
+          </div>
+          <div className="stats">
+            <div><b className="tnum">[2,400+]</b><span className="muted small">learners trained</span></div>
+            <div><b className="tnum">[120+]</b><span className="muted small">employer clients</span></div>
+            <div><b className="tnum">[12]</b><span className="muted small">years training in Gauteng</span></div>
+            <div><b className="tnum">[94%]</b><span className="muted small">would recommend us</span></div>
+          </div>
+          <div className="grid g3">
+            {[
+              ["The practical day made all the difference. I went back to work and trained two new colleagues the same week.", "[Learner name]", "Cleaning supervisor, Johannesburg", "teal"],
+              ["We sent 24 staff in two groups around our night shifts. The quote came the next day and the training ran on-site.", "[Client name]", "HR manager, facilities company", "ochre"],
+              ["I did the online course on my phone during lunch breaks and could pick up exactly where I stopped.", "[Learner name]", "Receptionist, Pretoria", "plum"],
+            ].map(([text, name, role, tone]) => (
+              <figure className="quote" key={text} style={{ margin: 0 }}>
+                <blockquote>{text}</blockquote>
+                <figcaption>
+                  <span className={`avatar tone-${tone}`} aria-hidden="true">{name.replace(/[^A-Za-z ]/g, "").split(" ").map((w) => w[0]).join("").slice(0, 2).toUpperCase()}</span>
+                  <span><b>{name}</b><br /><span className="muted">{role}</span></span>
+                </figcaption>
+              </figure>
+            ))}
+          </div>
+          <div className="stack" style={{ gap: 10 }}>
+            <span className="flabel">Accreditation and partners</span>
+            <div className="logos">
+              <div>QCTO / SETA logo<br />[after sign-off]</div>
+              <div>Accreditation body<br />[after sign-off]</div>
+              <div>Employer client logo<br />[with permission]</div>
+              <div>Employer client logo<br />[with permission]</div>
+              <div>Industry partner<br />[with permission]</div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section className="block" style={{ paddingTop: 0 }}>
         <div className="wrap grid g2">
           <div className="panel stack">
             <div className="eyebrow">Accreditation</div>

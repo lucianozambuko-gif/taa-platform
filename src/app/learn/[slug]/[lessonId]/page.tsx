@@ -4,6 +4,7 @@ import { getLearningState } from "@/lib/learning";
 import type { QuizQuestion } from "@/lib/types";
 import { completeLesson } from "../../actions";
 import Quiz from "./Quiz";
+import LessonVideo from "./LessonVideo";
 
 export const dynamic = "force-dynamic";
 
@@ -51,12 +52,31 @@ export default async function LessonPage({ params }: { params: Promise<{ slug: s
             ))}
           </aside>
           <div className="stack" style={{ gap: 16, minWidth: 0 }}>
+            {pct === 100 && (
+              <div className="celebrate">
+                <div className="dots" aria-hidden="true">
+                  {["var(--accent)", "var(--ochre)", "var(--plum)", "var(--good)", "var(--accent)", "var(--ochre)", "var(--plum)", "var(--good)"].map((c, i) => (
+                    <span key={i} style={{ left: `${8 + i * 12}%`, top: 0, background: c, animationDelay: `${i * 0.08}s` }} />
+                  ))}
+                </div>
+                <div className="burst"><svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M5 12l5 5 9-10" /></svg></div>
+                <h2 style={{ fontSize: "1.4rem" }}>You've finished {course.title}</h2>
+                <p className="muted">Every lesson and quiz is complete.{course.certificate_auto ? " Your certificate is ready." : " The Academy issues your result after assessment."}</p>
+                <div className="row" style={{ justifyContent: "center" }}>
+                  {course.certificate_auto && <Link className="btn btn-primary" href={`/certificate/${slug}`}>Download certificate</Link>}
+                  <Link className="btn btn-ghost" href="/dashboard">Back to my learning</Link>
+                </div>
+              </div>
+            )}
             {lesson.kind === "video" && (
               <>
                 {content?.video_url ? (
-                  <video className="player" controls preload="metadata" src={content.video_url} style={{ width: "100%" }}>
-                    {content.captions_url && <track kind="captions" src={content.captions_url} srcLang="en" label="English" default />}
-                  </video>
+                  <LessonVideo
+                    src={content.video_url}
+                    captions={content.captions_url}
+                    title={lesson.title}
+                    poster={<><div className="art" /><div className="ttl"><small>Lesson {index + 1} of {lessons.length}</small>{lesson.title}</div></>}
+                  />
                 ) : (
                   <div className="player">
                     <div className="art" />
