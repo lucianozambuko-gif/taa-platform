@@ -36,7 +36,7 @@ export async function signUp(_: AuthState, formData: FormData): Promise<AuthStat
         popia_consent: "true",
         marketing_opt_in: formData.get("marketing") === "on",
       },
-      emailRedirectTo: `${process.env.NEXT_PUBLIC_SITE_URL ?? ""}${next}`,
+      emailRedirectTo: `${process.env.NEXT_PUBLIC_SITE_URL ?? ""}/auth/callback?next=${encodeURIComponent(next)}`,
     },
   });
   if (error) return { error: error.message };
