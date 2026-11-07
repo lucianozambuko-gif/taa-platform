@@ -21,6 +21,7 @@ export default function ContactPage() {
               <h3>Johannesburg training centre</h3>
               <p className="muted">[Street address to be supplied]<br />Johannesburg, Gauteng</p>
               <p className="small muted">Monday to Friday, 08:00–16:30. Parking on site.</p>
+              <div><a className="btn btn-ghost btn-sm" href="https://www.google.com/maps/search/?api=1&query=Johannesburg" target="_blank" rel="noopener">Open in Google Maps</a></div>
             </div>
             <div className="panel stack">
               <h3>Phone and email</h3>

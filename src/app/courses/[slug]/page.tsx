@@ -39,8 +39,23 @@ export default async function CoursePage({ params }: { params: Promise<{ slug: s
   else if (enrolled) cta = <Link className="btn btn-primary" href="/dashboard">You're enrolled: view dashboard</Link>;
   else cta = <Link className="btn btn-primary" href={`/checkout/${course.slug}`}>Enrol and pay</Link>;
 
+  const site = process.env.NEXT_PUBLIC_SITE_URL ?? "";
+  const jsonLd = {
+    "@context": "https://schema.org",
+    "@type": "Course",
+    name: course.title,
+    description: course.summary,
+    courseCode: course.code,
+    url: `${site}/courses/${course.slug}`,
+    provider: { "@type": "EducationalOrganization", name: "Training Africa Academy", url: site },
+    ...(course.price_basis === "fixed" && course.price_cents != null
+      ? { offers: { "@type": "Offer", price: (course.price_cents / 100).toFixed(2), priceCurrency: "ZAR", category: "Paid" } }
+      : {}),
+  };
+
   return (
     <section className="block" style={{ paddingTop: 28 }}>
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd).replace(/</g, "\\u003c") }} />
       <div className="wrap">
         <div className="crumbs"><Link href="/">Home</Link><span>/</span><Link href="/courses">Courses</Link><span>/</span><span>{course.title}</span></div>
         <div className="detail">
@@ -65,6 +80,7 @@ export default async function CoursePage({ params }: { params: Promise<{ slug: s
                   <div><dt>SAQA ID</dt><dd className={course.accreditation_approved ? "" : "tbc"}>{pending(course.saqa_id)}</dd></div>
                   <div><dt>NQF level</dt><dd className={course.accreditation_approved ? "" : "tbc"}>{pending(course.nqf_level)}</dd></div>
                   <div><dt>Credits</dt><dd className={course.accreditation_approved ? "" : "tbc"}>{pending(course.credits)}</dd></div>
+                  <div style={{ gridColumn: "1 / -1" }}><dt>Approved scope</dt><dd className={course.accreditation_approved ? "" : "tbc"}>{pending(course.approved_scope)}</dd></div>
                 </>
               )}
               <div><dt>Certificate</dt><dd>{course.certificate}</dd></div>

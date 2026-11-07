@@ -1,8 +1,8 @@
 import type { Metadata, Viewport } from "next";
-import Script from "next/script";
 import SiteHeader from "@/components/SiteHeader";
 import SiteFooter from "@/components/SiteFooter";
 import TrackedLink from "@/components/TrackedLink";
+import Analytics from "@/components/Analytics";
 import { whatsappLink } from "@/lib/format";
 import "./globals.css";
 
@@ -25,14 +25,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         />
       </head>
       <body>
-        {ga && (
-          <>
-            <Script src={`https://www.googletagmanager.com/gtag/js?id=${ga}`} strategy="afterInteractive" />
-            <Script id="ga4" strategy="afterInteractive">
-              {`window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}window.gtag=gtag;gtag('js',new Date());gtag('config','${ga}');`}
-            </Script>
-          </>
-        )}
+        <Analytics gaId={ga} />
         <SiteHeader />
         <main>{children}</main>
         <SiteFooter />

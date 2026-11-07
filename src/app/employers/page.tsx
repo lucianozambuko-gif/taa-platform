@@ -1,4 +1,5 @@
 import LeadForm from "@/components/LeadForm";
+import TrackedLink from "@/components/TrackedLink";
 import { listCourses } from "@/lib/courses";
 
 export const metadata = { title: "Training for employers" };
@@ -16,6 +17,12 @@ export default async function EmployersPage({ searchParams }: { searchParams: Pr
           <p className="muted" style={{ maxWidth: "60ch", fontSize: "1.08rem" }}>
             Tell us what your team needs. A training advisor sends a quotation within one working day, with group pricing and dates that fit your shifts.
           </p>
+          <div className="row" style={{ marginTop: 18 }}>
+            <TrackedLink className="btn btn-ghost" href={process.env.NEXT_PUBLIC_CORPORATE_BROCHURE_URL || "/corporate-brochure.pdf"} target="_blank" rel="noopener" event="brochure_download" params={{ item: "corporate" }}>
+              Download corporate brochure (PDF)
+            </TrackedLink>
+            <span className="small muted">Accredited and skills programmes, on-site delivery, progress reports</span>
+          </div>
         </div>
       </section>
       <section className="block" style={{ paddingTop: 0 }}>

@@ -11,7 +11,7 @@ const PAGES: Row[] = [
   ["Online learning", "/online-learning", "Built", "Online and blended courses"],
   ["Training for employers", "/employers", "Built", "Group quotes and multi-learner registration"],
   ["Qualifications and learnerships", "/learnerships", "Built", "Learnership application form"],
-  ["Career / learning pathways", "/courses", "Template", "Pathway pages finalised in discovery"],
+  ["Career / learning pathways", "/pathways", "Built", "Three pathways linking courses in order"],
   ["Assessment centre and venue hire", "/venue", "Built", "Facilities and booking request"],
   ["Facilitators / training approach", "/facilitators", "Template", "Awaits facilitator profiles"],
   ["Resources / FAQs", "/faqs", "Built", "Common questions"],
@@ -21,9 +21,10 @@ const PAGES: Row[] = [
   ["Login / learner dashboard", "/dashboard", "Built", "Enrolled courses, progress, recommendations"],
 ];
 const SUPPORTING: Row[] = [
-  ["Checkout and payment", "/courses/customer-service-excellence", "Built", "Start from a course page"],
-  ["Lesson player and quizzes", "/dashboard", "Built", "Available after enrolment"],
-  ["Admin back office", "/admin", "Built", "Leads, orders, prices, audit log (admin only)"],
+  ["Campaign landing page (reusable)", "/campaigns/first-aid-level-1?utm_source=facebook", "Built", "Any course; tracks the campaign source on every lead"],
+  ["Checkout, payment and receipts", "/courses/customer-service-excellence", "Built", "Start from a course page; printable receipt after payment"],
+  ["Lesson player, quizzes and certificates", "/dashboard", "Built", "Certificates only for programmes approved for automatic issue"],
+  ["Admin back office", "/admin", "Built", "Leads, orders, learner progress, course editor, admin enrolment, audit log"],
 ];
 
 function Table({ rows }: { rows: Row[] }) {

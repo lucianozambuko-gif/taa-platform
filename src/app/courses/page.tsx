@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { CourseCard } from "@/components/CourseBits";
 import FilterPanel from "@/components/FilterPanel";
-import { listCourses, type CourseFilters } from "@/lib/courses";
+import { DURATION_BANDS, intakeKeys, listCourses, type CourseFilters } from "@/lib/courses";
 
 export const metadata = { title: "Find a course" };
 export const dynamic = "force-dynamic";
@@ -25,7 +25,10 @@ function Select({ name, label, value, options }: { name: string; label: string; 
 
 export default async function CoursesPage({ searchParams }: { searchParams: Promise<CourseFilters> }) {
   const filters = await searchParams;
-  const courses = await listCourses(filters);
+  const [courses, all] = await Promise.all([listCourses(filters), listCourses()]);
+  const nqfLevels = [...new Set(all.filter((c) => c.accreditation_approved && c.nqf_level).map((c) => c.nqf_level as string))].sort();
+  const monthOrder = (k: string) => (k === "anytime" ? 0 : Date.parse("1 " + k) || 9e15);
+  const intakes = [...new Set(all.flatMap((c) => intakeKeys(c.intakes)))].sort((a, b) => monthOrder(a) - monthOrder(b));
   return (
     <section className="block" style={{ paddingTop: 36 }}>
       <div className="wrap">
@@ -43,6 +46,13 @@ export default async function CoursesPage({ searchParams }: { searchParams: Prom
             <Select name="kind" label="Accreditation" value={filters.kind} options={KINDS} />
             <Select name="format" label="Format" value={filters.format} options={FORMATS.map((s) => [s, s])} />
             <Select name="location" label="Location" value={filters.location} options={LOCATIONS.map((s) => [s, s])} />
+            <Select name="duration" label="Duration" value={filters.duration} options={DURATION_BANDS} />
+            <Select name="intake" label="Start date" value={filters.intake} options={intakes.map((k) => [k, k === "anytime" ? "Start any time" : k])} />
+            {nqfLevels.length > 0 ? (
+              <Select name="nqf" label="NQF level" value={filters.nqf} options={nqfLevels.map((n) => [n, `NQF ${n}`])} />
+            ) : (
+              <div className="field"><span className="flabel">NQF level</span><span className="small muted">Available once accreditation details are approved.</span></div>
+            )}
             <div className="field">
               <label htmlFor="f-max">Maximum price (R)</label>
               <input id="f-max" name="max" type="number" min={0} step={50} defaultValue={filters.max ?? ""} placeholder="Any" />

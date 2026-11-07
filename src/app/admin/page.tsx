@@ -5,11 +5,12 @@ import { LEAD_LABEL, rand } from "@/lib/format";
 import { getUserAndProfile } from "@/lib/supabase/server";
 import type { Course } from "@/lib/types";
 import { togglePublished, updateLeadStatus, updatePrice } from "./actions";
+import EnrolForm from "./EnrolForm";
 
 export const metadata = { title: "Admin" };
 export const dynamic = "force-dynamic";
 
-const TABS: [string, string][] = [["overview", "Overview"], ["leads", "Leads"], ["orders", "Orders & enrolments"], ["courses", "Courses & prices"], ["audit", "Audit log"]];
+const TABS: [string, string][] = [["overview", "Overview"], ["leads", "Leads"], ["orders", "Orders"], ["learners", "Learners & progress"], ["courses", "Courses"], ["audit", "Audit log"]];
 const STATUS_BADGE: Record<string, string> = { paid: "b-good", pending: "b-warn", failed: "b-bad", cancelled: "b-short", new: "b-warn" };
 const date = (iso: string) => new Date(iso).toLocaleString("en-ZA", { dateStyle: "medium", timeStyle: "short" });
 
@@ -38,6 +39,28 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
     const abandonment = started ? Math.round(((started - paid.length) / started) * 100) : 0;
     const byType = Object.keys(LEAD_LABEL).map((t) => [LEAD_LABEL[t], (leads ?? []).filter((l) => l.type === t).length] as [string, number]);
     const max = Math.max(1, ...byType.map(([, n]) => n));
+    const [{ data: enrolRows }, { data: allPaid }, { data: progRows }, { data: recentLeads }, { data: recentOrders }] = await Promise.all([
+      supabase.from("enrolments").select("user_id, course_id, courses(title, modules(lessons(id)))"),
+      supabase.from("orders").select("course_id, amount_cents").eq("status", "paid"),
+      supabase.from("lesson_progress").select("user_id, lesson_id"),
+      supabase.from("leads").select("ref, type, name, company, created_at").order("created_at", { ascending: false }).limit(5),
+      supabase.from("orders").select("invoice_no, status, amount_cents, created_at, courses(title)").order("created_at", { ascending: false }).limit(5),
+    ]);
+    type ER = { user_id: string; course_id: string; courses: { title: string; modules: { lessons: { id: string }[] }[] } };
+    const perfMap = new Map<string, { title: string; enrolled: number; completed: number; sales: number }>();
+    for (const e of (enrolRows ?? []) as unknown as ER[]) {
+      const row = perfMap.get(e.course_id) ?? { title: e.courses.title, enrolled: 0, completed: 0, sales: 0 };
+      row.enrolled++;
+      const ids = e.courses.modules.flatMap((m) => m.lessons.map((l) => l.id));
+      if (ids.length && ids.every((id) => (progRows ?? []).some((p) => p.user_id === e.user_id && p.lesson_id === id))) row.completed++;
+      perfMap.set(e.course_id, row);
+    }
+    for (const o of allPaid ?? []) { const r = perfMap.get(o.course_id); if (r) r.sales += o.amount_cents; }
+    const perf = [...perfMap.values()].sort((a, b) => b.sales - a.sales);
+    const activity = [
+      ...(recentLeads ?? []).map((l) => ({ at: l.created_at, kind: "Lead", badge: "b-warn", text: `${l.ref} · ${LEAD_LABEL[l.type] ?? l.type} from ${l.company ?? l.name}` })),
+      ...(recentOrders ?? []).map((o) => ({ at: o.created_at, kind: o.status === "paid" ? "Paid" : "Order", badge: o.status === "paid" ? "b-good" : "b-short", text: `${o.invoice_no} · ${(o.courses as unknown as { title: string }).title} · ${rand(o.amount_cents)}` })),
+    ].sort((a, b) => b.at.localeCompare(a.at)).slice(0, 6);
     body = (
       <>
         <div className="kpis">
@@ -52,8 +75,70 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
             <div className="hbar" key={label}><span>{label}</span><div className="track"><i style={{ width: `${(n / max) * 100}%` }} /></div><span className="tnum">{n}</span></div>
           ))}
         </div>
+        <div className="grid g2" style={{ marginTop: 16, alignItems: "start" }}>
+          <div className="panel tscroll">
+            <h3>Course performance</h3>
+            <table className="tbl" style={{ marginTop: 8 }}>
+              <thead><tr><th>Course</th><th>Enrolled</th><th>Completed</th><th>Sales</th></tr></thead>
+              <tbody>
+                {perf.map((p) => (
+                  <tr key={p.title}><td>{p.title}</td><td className="tnum">{p.enrolled}</td><td className="tnum">{p.completed}</td><td className="tnum">{rand(p.sales)}</td></tr>
+                ))}
+                {!perf.length && <tr><td colSpan={4} className="muted">No enrolments yet.</td></tr>}
+              </tbody>
+            </table>
+          </div>
+          <div className="panel stack">
+            <h3>Latest notifications</h3>
+            {activity.map((a, i) => (
+              <div key={i} className="row" style={{ justifyContent: "space-between", flexWrap: "nowrap", gap: 10, borderBottom: "1px solid var(--line)", paddingBottom: 8 }}>
+                <span className="small"><span className={`badge ${a.badge}`}>{a.kind}</span> {a.text}</span>
+                <span className="small muted" style={{ whiteSpace: "nowrap" }}>{date(a.at)}</span>
+              </div>
+            ))}
+            {!activity.length && <p className="muted small">New orders and enquiries appear here.</p>}
+          </div>
+        </div>
         <p className="small muted" style={{ marginTop: 12 }}>Brochure downloads and WhatsApp clicks are tracked in Google Analytics 4.</p>
       </>
+    );
+  } else if (tab === "learners") {
+    const [{ data: enrols }, { data: courseList }, { data: prog }, { data: profs }] = await Promise.all([
+      supabase.from("enrolments").select("id, user_id, source, created_at, courses(id, title, has_lms, modules(lessons(id)))").order("created_at", { ascending: false }).limit(200),
+      supabase.from("courses").select("id, title").order("title"),
+      supabase.from("lesson_progress").select("user_id, lesson_id, completed_at"),
+      supabase.from("profiles").select("id, full_name, phone"),
+    ]);
+    const nameOf = new Map((profs ?? []).map((p) => [p.id, p]));
+    type E = { id: string; user_id: string; source: string; created_at: string; courses: { id: string; title: string; has_lms: boolean; modules: { lessons: { id: string }[] }[] } };
+    const rows = ((enrols ?? []) as unknown as E[]).map((e) => {
+      const ids = e.courses.modules.flatMap((m) => m.lessons.map((l) => l.id));
+      const mine = (prog ?? []).filter((p) => p.user_id === e.user_id && ids.includes(p.lesson_id));
+      const last = mine.map((p) => p.completed_at).sort().at(-1);
+      return { ...e, pct: ids.length ? Math.round((mine.length / ids.length) * 100) : null, last };
+    });
+    body = (
+      <div className="stack" style={{ gap: 16 }}>
+        <EnrolForm courses={courseList ?? []} />
+        <div className="panel tscroll" style={{ padding: "6px 10px" }}>
+          <table className="tbl">
+            <thead><tr><th>Learner</th><th>Course</th><th>Enrolled</th><th>How</th><th>Progress</th><th>Last activity</th></tr></thead>
+            <tbody>
+              {rows.map((r) => (
+                <tr key={r.id}>
+                  <td><b>{nameOf.get(r.user_id)?.full_name ?? "—"}</b><br /><span className="small muted">{nameOf.get(r.user_id)?.phone ?? ""}</span></td>
+                  <td>{r.courses.title}</td>
+                  <td className="small">{date(r.created_at)}</td>
+                  <td>{r.source === "admin" ? "Admin" : r.source === "employer" ? "Employer" : "Online payment"}</td>
+                  <td>{r.pct == null ? <span className="muted small">Classroom</span> : <span className={`badge ${r.pct === 100 ? "b-good" : "b-short"}`}>{r.pct === 100 ? "Completed" : `${r.pct}%`}</span>}</td>
+                  <td className="small">{r.last ? date(r.last) : "—"}</td>
+                </tr>
+              ))}
+              {!rows.length && <tr><td colSpan={6} className="muted">No enrolments yet.</td></tr>}
+            </tbody>
+          </table>
+        </div>
+      </div>
     );
   } else if (tab === "leads") {
     const { data: leads } = await supabase.from("leads").select("*, courses(title)").order("created_at", { ascending: false }).limit(200);
@@ -113,13 +198,17 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
     const { data: courses } = await supabase.from("courses").select("*").order("title");
     body = (
       <>
+        <div className="row" style={{ justifyContent: "space-between", marginBottom: 12 }}>
+          <p className="muted small">Click a course to edit everything on its page: content, intakes, accreditation and certificates.</p>
+          <Link className="btn btn-primary btn-sm" href="/admin/courses/new">Add a course</Link>
+        </div>
         <div className="panel tscroll" style={{ padding: "6px 10px" }}>
           <table className="tbl">
-            <thead><tr><th>Course</th><th>Type</th><th>Price (R, incl. VAT)</th><th>Visibility</th></tr></thead>
+            <thead><tr><th>Course</th><th>Type</th><th>Quick price change (R, incl. VAT)</th><th>Visibility</th></tr></thead>
             <tbody>
               {((courses ?? []) as Course[]).map((c) => (
                 <tr key={c.id}>
-                  <td><Link href={`/courses/${c.slug}`}><b>{c.title}</b></Link><br /><span className="mono muted">{c.code}</span></td>
+                  <td><Link href={`/admin/courses/${c.id}`}><b>{c.title}</b></Link><br /><span className="mono muted">{c.code}</span> · <Link className="small" href={`/admin/courses/${c.id}`}>Edit</Link></td>
                   <td><KindBadge course={c} /></td>
                   <td>
                     {c.price_basis === "fixed" ? (

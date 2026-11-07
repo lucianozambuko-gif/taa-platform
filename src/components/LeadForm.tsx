@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useEffect } from "react";
 import { submitLead, type LeadState } from "@/app/leads/actions";
 
 type Props = {
@@ -16,6 +16,9 @@ type Props = {
 /** Wraps any enquiry form: consent checkbox, validation message and a confirmation with the reference number. */
 export default function LeadForm({ type, source, submitLabel, successTitle, successText, children }: Props) {
   const [state, action, pending] = useActionState<LeadState, FormData>(submitLead, {});
+  useEffect(() => {
+    if (state.ok) window.gtag?.("event", "generate_lead", { lead_type: type, source });
+  }, [state.ok, type, source]);
   if (state.ok)
     return (
       <div className="panel stack" style={{ gap: 12 }}>

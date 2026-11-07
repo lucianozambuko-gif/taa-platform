@@ -30,6 +30,13 @@ export default async function DashboardPage() {
     .order("created_at", { ascending: false });
   const { data: progress } = await supabase.from("lesson_progress").select("lesson_id").eq("user_id", user.id);
   const done = new Set((progress ?? []).map((p) => p.lesson_id));
+  const { data: orderRows } = await supabase
+    .from("orders")
+    .select("id, invoice_no, status, amount_cents, courses(title)")
+    .eq("user_id", user.id)
+    .order("created_at", { ascending: false })
+    .limit(10);
+  const orders = orderRows ?? [];
 
   type Row = { id: string; created_at: string; courses: Course & { modules: { lessons: { id: string }[] }[] } };
   const rows = ((enrolments ?? []) as unknown as Row[]).map((e) => {
@@ -71,7 +78,7 @@ export default async function DashboardPage() {
                   <div className="row" style={{ gap: 6 }}><KindBadge course={r.courses} /></div>
                   <h3>{r.courses.title}</h3>
                   <p className="small muted">
-                    {r.courses.has_lms ? (r.pct === 100 ? "Complete." : "Online lessons available") : `Classroom programme · ${r.courses.intakes[0] ?? ""}`}
+                    {r.courses.has_lms ? (r.pct === 100 ? (r.courses.certificate_auto ? "Complete. Your certificate is ready." : "Complete.") : `${r.pct}% complete`) : `Classroom programme · ${r.courses.intakes[0] ?? ""}`}
                   </p>
                 </div>
                 {r.courses.has_lms ? (
@@ -83,13 +90,30 @@ export default async function DashboardPage() {
             ))}
             <div className="panel stack">
               <h3>Certificates</h3>
-              <p className="muted small">
-                Certificates are issued automatically when you complete a course approved for automatic issue. Accredited results are issued after assessment.
-              </p>
-              {rows.filter((r) => r.courses.has_lms && r.pct === 100).map((r) => (
-                <div className="row" style={{ justifyContent: "space-between" }} key={r.id}><span>{r.courses.title}</span><span className="badge b-good">Eligible</span></div>
+              {rows.filter((r) => r.courses.has_lms && r.pct === 100 && r.courses.certificate_auto).map((r) => (
+                <div className="row" style={{ justifyContent: "space-between" }} key={r.id}>
+                  <span>{r.courses.title}</span>
+                  <Link className="btn btn-primary btn-sm" href={`/certificate/${r.courses.slug}`}>Download certificate</Link>
+                </div>
               ))}
+              <p className="muted small">
+                Online skills courses issue a certificate automatically when every lesson is complete. Accredited results are issued by the Academy after assessment.
+              </p>
             </div>
+            {orders.length > 0 && (
+              <div className="panel stack">
+                <h3>Payments and receipts</h3>
+                {orders.map((o) => (
+                  <div className="row" style={{ justifyContent: "space-between" }} key={o.id}>
+                    <span><span className="mono small">{o.invoice_no}</span> · {(o.courses as unknown as { title: string }).title}</span>
+                    <span className="row" style={{ gap: 10 }}>
+                      <span className={`badge ${o.status === "paid" ? "b-good" : "b-warn"}`}>{o.status}</span>
+                      <Link className="small" href={`/orders/${o.id}`}>Receipt</Link>
+                    </span>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
           <aside className="stack" style={{ gap: 14 }}>
             <div className="panel stack">

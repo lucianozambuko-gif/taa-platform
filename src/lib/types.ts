@@ -25,6 +25,8 @@ export type Course = {
   nqf_level: string | null;
   credits: string | null;
   accreditation_approved: boolean;
+  approved_scope: string | null;
+  certificate_auto: boolean;
   brochure_url: string | null;
   has_lms: boolean;
   featured: boolean;

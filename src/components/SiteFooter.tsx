@@ -9,6 +9,7 @@ export default function SiteFooter() {
           <Link href="/courses">Course catalogue</Link><br />
           <Link href="/online-learning">Online learning</Link><br />
           <Link href="/learnerships">Qualifications &amp; learnerships</Link><br />
+          <Link href="/pathways">Career pathways</Link><br />
           <Link href="/faqs">Resources &amp; FAQs</Link>
         </div>
         <div>
@@ -27,6 +28,12 @@ export default function SiteFooter() {
         <div>
           <h4>This build</h4>
           <Link href="/site-map">Site map</Link>
+          <div className="social" aria-label="Social media">
+            <a href="https://www.facebook.com/" target="_blank" rel="noopener">Facebook</a>
+            <a href="https://www.linkedin.com/" target="_blank" rel="noopener">LinkedIn</a>
+            <a href="https://www.instagram.com/" target="_blank" rel="noopener">Instagram</a>
+          </div>
+          <p className="muted small">Social links point to the Academy's approved pages once supplied.</p>
           <p className="muted small" style={{ marginTop: 8 }}>Platform by S.I.C Growth (Pty) Ltd t/a Cloud Uko. Sample content for evaluation.</p>
         </div>
       </div>

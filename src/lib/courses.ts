@@ -9,7 +9,29 @@ export type CourseFilters = {
   location?: string;
   learner?: string;
   max?: string;
+  nqf?: string;
+  duration?: string;
+  intake?: string;
 };
+
+/** Duration bands for the catalogue filter, worked out from the course's duration text. */
+export function durationBand(duration: string | null): "short" | "days" | "weeks" | "long" {
+  const d = (duration ?? "").toLowerCase();
+  if (/hour/.test(d) || /^1 day/.test(d)) return "short";
+  if (/day/.test(d)) return "days";
+  if (/week/.test(d)) return "weeks";
+  return "long";
+}
+export const DURATION_BANDS: [string, string][] = [["short", "One day or less"], ["days", "A few days"], ["weeks", "Several weeks"], ["long", "Months (qualifications)"]];
+
+/** Month labels like "Jan 2027" found in a course's intake dates; "anytime" for start-any-time courses. */
+export function intakeKeys(intakes: string[]): string[] {
+  return intakes.map((i) => {
+    if (/any time/i.test(i)) return "anytime";
+    const m = i.match(/(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z]*\.? (\d{4})/i);
+    return m ? `${m[1].slice(0, 3)} ${m[2]}` : i;
+  });
+}
 
 export async function listCourses(filters: CourseFilters = {}) {
   const supabase = await createClient();
@@ -28,7 +50,11 @@ export async function listCourses(filters: CourseFilters = {}) {
   }
   const { data, error } = await query;
   if (error) throw error;
-  return (data ?? []) as Course[];
+  let rows = (data ?? []) as Course[];
+  if (filters.nqf) rows = rows.filter((c) => c.accreditation_approved && c.nqf_level === filters.nqf);
+  if (filters.duration) rows = rows.filter((c) => durationBand(c.duration) === filters.duration);
+  if (filters.intake) rows = rows.filter((c) => intakeKeys(c.intakes).includes(filters.intake!));
+  return rows;
 }
 
 export async function getCourse(slug: string) {

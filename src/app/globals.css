@@ -334,3 +334,34 @@ a.route:hover, a.ccard:hover { text-decoration: none; }
 }
 
 @media (max-width: 900px) { details.filters { gap: 0; } details.filters:not([open]) summary { padding-block: 14px; } }
+
+/* Certificate and receipt */
+.certificate { background: var(--surface); border: 1px solid var(--line); border-radius: 6px; padding: 14px; aspect-ratio: 1.414; max-width: 100%; }
+.cert-inner { height: 100%; border: 3px double var(--accent); border-radius: 4px; padding: clamp(18px, 4vw, 48px); display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; gap: clamp(4px, 1vw, 10px); }
+.cert-brand { display: flex; align-items: center; gap: 10px; font-family: var(--display); font-weight: 700; }
+.cert-brand .mark { width: 34px; height: 34px; border-radius: 8px; background: var(--accent); color: var(--accent-ink); display: grid; place-items: center; font-weight: 800; font-size: .9rem; }
+.cert-eyebrow { font-size: clamp(.7rem, 1.4vw, .85rem); letter-spacing: .18em; text-transform: uppercase; color: var(--accent); font-weight: 700; margin-top: clamp(6px, 2vw, 18px); }
+.cert-small { color: var(--muted); font-size: clamp(.75rem, 1.5vw, .95rem); }
+.cert-name { font-size: clamp(1.4rem, 4.5vw, 3rem); }
+.cert-course { font-size: clamp(1rem, 2.6vw, 1.7rem); color: var(--accent); }
+.cert-note { font-size: clamp(.7rem, 1.3vw, .85rem); color: var(--muted); }
+.cert-foot { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; width: 100%; margin-top: clamp(8px, 3vw, 28px); font-size: clamp(.62rem, 1.2vw, .82rem); text-align: left; }
+.cert-foot span { display: block; color: var(--muted); }
+.cert-sign { text-align: center; }
+.cert-sign .line { border-bottom: 1px solid var(--ink); height: 24px; margin-bottom: 4px; }
+@media (max-width: 600px) { .cert-foot { grid-template-columns: 1fr 1fr; } }
+@media print {
+  @page { margin: 12mm; }
+  @page cert { size: A4 landscape; margin: 10mm; }
+  .certificate { page: cert; }
+  header.site, footer.site, .wa-float, .no-print, .mobile-buy, .cookie-bar { display: none !important; }
+  body { background: #fff; }
+  section.block { padding: 0; }
+  .certificate { border: 0; padding: 0; }
+  .cert-page .wrap { max-width: none; padding: 0; }
+}
+
+.cookie-bar { position: fixed; left: max(16px, env(safe-area-inset-left, 0px)); bottom: calc(16px + env(safe-area-inset-bottom, 0px)); z-index: 40; max-width: 440px; margin-right: 16px;
+  background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 14px 16px; box-shadow: var(--shadow); display: flex; flex-direction: column; gap: 10px; font-size: .88rem; }
+body:has(.mobile-buy) .cookie-bar { bottom: calc(84px + env(safe-area-inset-bottom, 0px)); }
+.social { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 8px; }

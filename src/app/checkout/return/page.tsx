@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { rand } from "@/lib/format";
+import TrackEvent from "@/components/TrackEvent";
 import { createClient } from "@/lib/supabase/server";
 import { demoPaymentsAllowed, simulatePayment } from "../actions";
 
@@ -34,6 +35,7 @@ export default async function ReturnPage({ searchParams }: { searchParams: Promi
         <div className="wrap" style={{ maxWidth: 660 }}>
           <div className="steps"><span className="done">1. Confirm</span><span className="done">2. Secure payment</span><span className="on">3. Start learning</span></div>
           <div className="panel stack" style={{ gap: 16 }}>
+            <TrackEvent name="purchase" params={{ transaction_id: order.invoice_no, value: order.amount_cents / 100, currency: "ZAR" }} />
             <span className="badge b-good" style={{ alignSelf: "flex-start" }}>Payment received</span>
             <h1 style={{ fontSize: "1.8rem" }}>You're enrolled</h1>
             <p className="muted">{course.title} is now in your dashboard.</p>
@@ -44,7 +46,7 @@ export default async function ReturnPage({ searchParams }: { searchParams: Promi
             </div>
             <div className="row">
               {course.has_lms && <Link className="btn btn-primary" href={`/learn/${course.slug}`}>Start the first lesson</Link>}
-              <Link className="btn btn-ghost" href="/dashboard">My dashboard</Link>
+              <Link className="btn btn-ghost" href={`/orders/${order.id}`}>View receipt</Link>
             </div>
           </div>
         </div>
