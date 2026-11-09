@@ -60,7 +60,7 @@ export default function ProposalForm({ courseId, modules, lesson, content, quizT
       {kind === "video" && (
         <>
           <FileField name="video_url" label="Video" courseId={courseId} accept="video/mp4,video/webm" initial={content?.video_url ?? null} help="Upload an MP4 (up to 50 MB) or paste a YouTube or Vimeo link." />
-          <FileField name="captions_url" label="Captions (optional, WebVTT)" courseId={courseId} accept=".vtt,text/vtt" initial={content?.captions_url ?? null} help="Captions help learners with hearing loss and those watching without sound." />
+          <FileField name="captions_url" label="Captions (WebVTT file)" courseId={courseId} accept=".vtt,text/vtt" initial={content?.captions_url ?? null} help="Every lesson needs captions for learners with hearing loss. Upload a .vtt file, or use a YouTube video with captions switched on." />
         </>
       )}
       {kind === "download" && (

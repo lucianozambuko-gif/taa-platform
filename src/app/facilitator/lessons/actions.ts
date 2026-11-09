@@ -41,13 +41,14 @@ export async function proposeLesson(_: ProposalState, fd: FormData): Promise<Pro
     // An edit with no content changes is still allowed for title/minutes only.
   }
 
-  const { error } = await supabase.from("lesson_proposals").insert({
+  const { data: row, error } = await supabase.from("lesson_proposals").insert({
     course_id: courseId, action: lessonId ? "edit_lesson" : "new_lesson", lesson_id: lessonId,
     module_id: !lessonId && moduleSel && moduleSel !== "new" ? moduleSel : null,
     new_module_title: !lessonId && moduleSel === "new" ? newModule : null,
     title, kind, minutes, content, message: clean(fd.get("message"), 1000) || null, proposed_by: user.id,
-  });
-  if (error) return { error: "Couldn't send it. You can only suggest lessons for courses you teach." };
+  }).select("id").single();
+  if (error || !row) return { error: "Couldn't send it. You can only suggest lessons for courses you teach." };
+  await supabase.from("audit_log").insert({ actor: user.id, action: "lesson_suggested", entity: "lesson_proposal", entity_id: row.id, detail: { title, kind } });
   await notify({
     audience: "staff", kind: "lesson_proposal", whatsapp: false,
     subject: `Lesson ${lessonId ? "changes" : "suggestion"} to approve: ${title}`,

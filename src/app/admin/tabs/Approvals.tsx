@@ -78,6 +78,9 @@ export default async function ApprovalsTab({ supabase }: { supabase: DB }) {
           <p className="small">Title / length: <s className="muted">{oldLesson.title} · {oldLesson.minutes} min</s> → <b>{p.title} · {p.minutes} min</b></p>
         )}
         {files}
+        {p.kind === "video" && !p.content.captions_url && !(p.action === "edit_lesson" && was?.captions_url) && (
+          <p className="notice" role="note"><b>No captions.</b> The RFQ requires captions on lessons. Add a captions file under Courses → Online lessons after approving, or ask the facilitator for one. YouTube videos can use YouTube’s own captions.</p>
+        )}
         {typeof p.content.body === "string" && <p className="small"><span className="flabel">Text for learners</span><br />{p.content.body}</p>}
         {p.kind === "quiz" && (
           <div className={p.action === "edit_lesson" ? "grid g2" : ""} style={{ gap: 16 }}>
