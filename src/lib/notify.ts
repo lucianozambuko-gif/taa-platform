@@ -42,7 +42,14 @@ export async function notify(m: Message) {
     let to = m.toEmail ?? null;
     if (!to && m.userId) to = (await admin.auth.admin.getUserById(m.userId)).data.user?.email ?? null;
     if (!to && m.audience === "staff") to = process.env.STAFF_NOTIFY_EMAIL ?? null;
-    const sent = to ? await sendEmail(to, m.subject, m.body, m.link) : null;
+    // Demo / test mode: Resend only delivers to the account owner until a domain is verified,
+    // so every email goes to NOTIFY_TEST_TO with the real recipient shown in the subject.
+    const testTo = process.env.NOTIFY_TEST_TO;
+    const sent = to
+      ? testTo
+        ? await sendEmail(testTo, `[Demo → ${to}] ${m.subject}`, m.body, m.link)
+        : await sendEmail(to, m.subject, m.body, m.link)
+      : null;
     const status = sent === true ? "sent" : sent === false ? "failed" : m.userId ? "in_app" : "queued";
     await admin.from("notifications").insert({
       user_id: m.userId ?? null,
