@@ -4,6 +4,7 @@ import { getUserAndProfile } from "@/lib/supabase/server";
 import { quizToText } from "@/lib/quizText";
 import type { QuizQuestion } from "@/lib/types";
 import QuizEditForm from "./QuizEditForm";
+import ProposalForm from "../lessons/ProposalForm";
 
 export const metadata = { title: "Quizzes" };
 export const dynamic = "force-dynamic";
@@ -21,9 +22,9 @@ export default async function QuizzesPage({ searchParams }: { searchParams: Prom
 
   let courseIds: string[] | null = null;
   if (role === "facilitator") courseIds = ((await supabase.from("course_facilitators").select("course_id").eq("user_id", user.id)).data ?? []).map((r) => r.course_id);
-  let q = supabase.from("courses").select("id, title, slug, modules(position, lessons(id, title, kind, position))").eq("has_lms", true).order("title");
+  let q = supabase.from("courses").select("id, title, slug, modules(position, lessons(id, title, kind, minutes, position))").eq("has_lms", true).order("title");
   if (courseIds) q = q.in("id", courseIds.length ? courseIds : ["00000000-0000-0000-0000-000000000000"]);
-  type C = { id: string; title: string; slug: string; modules: { position: number; lessons: { id: string; title: string; kind: string; position: number }[] }[] };
+  type C = { id: string; title: string; slug: string; modules: { position: number; lessons: { id: string; title: string; kind: string; minutes: number; position: number }[] }[] };
   const courses = ((await q).data ?? []) as unknown as C[];
   const active = courses.find((c) => c.slug === sp.course) ?? courses.find((c) => c.modules.some((m) => m.lessons.some((l) => l.kind === "quiz"))) ?? courses[0];
   const quizzes = active ? active.modules.sort((a, b) => a.position - b.position).flatMap((m) => m.lessons.sort((a, b) => a.position - b.position).filter((l) => l.kind === "quiz")) : [];
@@ -54,7 +55,7 @@ export default async function QuizzesPage({ searchParams }: { searchParams: Prom
         <div>
           <div className="eyebrow">Quizzes</div>
           <h1 style={{ fontSize: "clamp(1.8rem,3.6vw,2.5rem)", marginTop: 6 }}>Quiz results and questions</h1>
-          <p className="muted" style={{ marginTop: 6 }}>See who has passed each quiz, who keeps failing, and which questions most learners get wrong. You can change the questions for courses you teach.</p>
+          <p className="muted" style={{ marginTop: 6 }}>See who has passed each quiz, who keeps failing, and which questions most learners get wrong. You can suggest new questions for courses you teach; an admin or content editor approves them.</p>
         </div>
         {courses.length > 1 && (
           <nav className="tabs" aria-label="Your courses">
@@ -65,7 +66,7 @@ export default async function QuizzesPage({ searchParams }: { searchParams: Prom
         )}
         {!courses.length && <div className="panel"><p className="muted">You don’t teach any online courses yet. Quizzes belong to the online part of a course.</p></div>}
         {active && !quizzes.length && (
-          <div className="panel stack"><h2 className="h3">No quizzes on {active.title} yet</h2><p className="muted">A content editor adds quiz lessons under Courses → Online lessons. Once a quiz exists you can change its questions here.</p></div>
+          <div className="panel stack"><h2 className="h3">No quizzes on {active.title} yet</h2><p className="muted">Suggest a quiz under Lessons in your menu. Once it’s approved, its results show here.</p></div>
         )}
         {quizzes.map((lz) => {
           const questions = ((contents ?? []).find((c) => c.lesson_id === lz.id)?.quiz ?? []) as QuizQuestion[];
@@ -130,7 +131,12 @@ export default async function QuizzesPage({ searchParams }: { searchParams: Prom
                 </div>
                 <div className="stack" style={{ gap: 10 }}>
                   <h3 style={{ fontSize: "1.05rem" }}>Change the questions</h3>
-                  {canEdit ? <QuizEditForm lesson={lz.id} text={quizToText(questions)} /> : <p className="small muted">Ask a content editor to change these questions.</p>}
+                  {role === "facilitator" ? (
+                    <>
+                      <p className="small muted">Your changes go to an admin or content editor for approval before learners see them.</p>
+                      <ProposalForm courseId={active!.id} lesson={lz} quizText={quizToText(questions)} submitLabel="Send changes for approval" />
+                    </>
+                  ) : canEdit ? <QuizEditForm lesson={lz.id} text={quizToText(questions)} /> : <p className="small muted">Ask a content editor to change these questions.</p>}
                 </div>
               </div>
             </details>

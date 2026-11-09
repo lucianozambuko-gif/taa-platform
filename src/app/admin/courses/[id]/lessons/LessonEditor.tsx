@@ -11,7 +11,7 @@ type Props = {
   quizText: string;
 };
 
-function FileField({ name, label, courseId, accept, initial, help }: { name: string; label: string; courseId: string; accept: string; initial: string | null; help: string }) {
+export function FileField({ name, label, courseId, accept, initial, help }: { name: string; label: string; courseId: string; accept: string; initial: string | null; help: string }) {
   const [value, setValue] = useState(initial ?? "");
   const [status, setStatus] = useState("");
   const input = useRef<HTMLInputElement>(null);
@@ -22,7 +22,7 @@ function FileField({ name, label, courseId, accept, initial, help }: { name: str
     const { error } = await createBrowserSupabase().storage.from("lesson-files").upload(path, file, { contentType: file.type });
     if (error) return setStatus(`Upload failed: ${error.message}`);
     setValue(`storage:${path}`);
-    setStatus(`Uploaded ${file.name}. Press Save lesson.`);
+    setStatus(`Uploaded ${file.name}.`);
   }
   return (
     <div className="field">

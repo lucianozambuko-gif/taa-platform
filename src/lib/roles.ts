@@ -13,10 +13,10 @@ export const ROLE_LABEL: Record<Role, string> = {
 export const ROLE_HELP: Record<Role, string> = {
   learner: "Buys and studies courses",
   employer: "Sees live progress, attendance and results for their own company's staff; registers staff; B-BBEE summary",
-  facilitator: "Sees learners on assigned courses, records assessment results and builds each learner's portfolio of evidence",
+  facilitator: "Sees learners on assigned courses, records results, keeps attendance, builds portfolios, and suggests lessons and quizzes for approval",
   moderator: "Reviews portfolios of evidence and endorses or refers back assessment decisions; exports the verification pack",
   sales: "Leads, orders, refunds, learner access, venue bookings and coupon requests",
-  content: "Courses, prices, homepage content, announcements and redirects",
+  content: "Courses, prices, lessons and quizzes, approving facilitators' lesson suggestions, homepage content, announcements and redirects",
   admin: "Everything, including users, coupon approval and the audit log",
 };
 
@@ -29,6 +29,7 @@ export const BACK_OFFICE: { key: string; label: string; roles: Role[] }[] = [
   { key: "venue", label: "Venue bookings", roles: ["admin", "sales"] },
   { key: "coupons", label: "Coupons", roles: ["admin", "sales"] },
   { key: "courses", label: "Courses", roles: ["admin", "content"] },
+  { key: "approvals", label: "Approvals", roles: ["admin", "content"] },
   { key: "content", label: "Site content", roles: ["admin", "content"] },
   { key: "users", label: "Users", roles: ["admin"] },
   { key: "audit", label: "Audit log", roles: ["admin"] },

@@ -11,11 +11,12 @@ import LeadsTab from "./tabs/Leads";
 import OrdersTab from "./tabs/Orders";
 import VenueTab from "./tabs/Venue";
 import CouponsTab from "./tabs/Coupons";
+import ApprovalsTab from "./tabs/Approvals";
 import SiteContentTab from "./tabs/SiteContent";
 import EnrolForm from "./EnrolForm";
 import BulkEnrolForm from "./BulkEnrolForm";
 
-const AUDIT: Record<string, string> = { price_change: "Price changed", publish: "Course published", unpublish: "Course hidden", lead_status: "Lead status updated", course_update: "Course edited", course_create: "Course added", admin_enrol: "Learner given access", assessment: "Assessment result recorded", role_change: "Role changed", export: "Data exported", lead_update: "Lead updated", refund: "Refund recorded", order_follow_up: "Unpaid order followed up", order_cancel: "Order cancelled", access_removed: "Course access removed", coupon_request: "Coupon requested", coupon_create: "Coupon created", coupon_approve: "Coupon approved", coupon_disable: "Coupon switched off", venue_confirmed: "Room booked", venue_held: "Room held", venue_blocked: "Room blocked", venue_confirm: "Booking confirmed", venue_release: "Booking released", venue_decline: "Venue request declined", site_content_update: "Homepage content updated", redirect_add: "Redirect added", redirect_remove: "Redirect removed", facilitator_assign: "Facilitator assigned", facilitator_unassign: "Facilitator removed", bulk_enrol: "Staff enrolled in bulk", attendance: "Attendance marked", evidence_upload: "Assessment evidence uploaded", lesson_save: "Lesson edited", duty_roster: "WhatsApp duty roster updated", report_sent: "Management report sent", poe_submitted: "Portfolio submitted by learner", moderation: "Result moderated", verification_export: "Verification pack downloaded", quiz_save: "Quiz questions changed", advisor_handover: "Advisor chat handed to staff", post_save: "Article saved", faqs_update: "FAQs updated", seo_update: "SEO settings updated" };
+const AUDIT: Record<string, string> = { price_change: "Price changed", publish: "Course published", unpublish: "Course hidden", lead_status: "Lead status updated", course_update: "Course edited", course_create: "Course added", admin_enrol: "Learner given access", assessment: "Assessment result recorded", role_change: "Role changed", export: "Data exported", lead_update: "Lead updated", refund: "Refund recorded", order_follow_up: "Unpaid order followed up", order_cancel: "Order cancelled", access_removed: "Course access removed", coupon_request: "Coupon requested", coupon_create: "Coupon created", coupon_approve: "Coupon approved", coupon_disable: "Coupon switched off", venue_confirmed: "Room booked", venue_held: "Room held", venue_blocked: "Room blocked", venue_confirm: "Booking confirmed", venue_release: "Booking released", venue_decline: "Venue request declined", site_content_update: "Homepage content updated", redirect_add: "Redirect added", redirect_remove: "Redirect removed", facilitator_assign: "Facilitator assigned", facilitator_unassign: "Facilitator removed", bulk_enrol: "Staff enrolled in bulk", attendance: "Attendance marked", evidence_upload: "Assessment evidence uploaded", lesson_save: "Lesson edited", duty_roster: "WhatsApp duty roster updated", report_sent: "Management report sent", poe_submitted: "Portfolio submitted by learner", moderation: "Result moderated", verification_export: "Verification pack downloaded", quiz_save: "Quiz questions changed", lesson_approved: "Lesson suggestion approved", lesson_rejected: "Lesson suggestion not approved", advisor_handover: "Advisor chat handed to staff", post_save: "Article saved", faqs_update: "FAQs updated", seo_update: "SEO settings updated" };
 
 export const metadata = { title: "Back office" };
 export const dynamic = "force-dynamic";
@@ -69,11 +70,12 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
       supabase.from("notifications").select("audience, kind, subject, to_email, status, created_at").order("created_at", { ascending: false }).limit(12),
     ]);
     const threeDays = new Date(Date.now() - 3 * 864e5).toISOString();
-    const [{ data: staleLeads }, { data: unpaid }, { data: venueReqs }, { data: pendingCoupons }] = await Promise.all([
+    const [{ data: staleLeads }, { data: unpaid }, { data: venueReqs }, { data: pendingCoupons }, { data: proposals }] = await Promise.all([
       canSales ? supabase.from("leads").select("id, assigned_to").in("status", ["new", "contacted", "quoted"]).or(`updated_at.lt.${threeDays},and(updated_at.is.null,created_at.lt.${threeDays})`) : Promise.resolve({ data: [] }),
       canSales ? supabase.from("orders").select("id").eq("status", "pending").is("followed_up_at", null).lt("created_at", new Date(Date.now() - 864e5).toISOString()) : Promise.resolve({ data: [] }),
       canSales ? supabase.from("leads").select("id").eq("type", "venue").eq("status", "new") : Promise.resolve({ data: [] }),
       isAdmin ? supabase.from("coupons").select("id").eq("status", "pending") : Promise.resolve({ data: [] }),
+      isAdmin || role === "content" ? supabase.from("lesson_proposals").select("id").eq("status", "pending") : Promise.resolve({ data: [] }),
     ]);
     const tasks: [number, string, string][] = ([
       [(staleLeads ?? []).filter((l) => l.assigned_to === user.id).length, "of your enquiries have had no update for 3+ days", "/admin?tab=leads&view=mine"],
@@ -81,6 +83,7 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
       [(unpaid ?? []).length, "unpaid checkouts are older than a day (the system already sent one reminder)", "/admin?tab=orders"],
       [(venueReqs ?? []).length, "venue requests need a reply", "/admin?tab=venue"],
       [(pendingCoupons ?? []).length, "coupons are waiting for your approval", "/admin?tab=coupons"],
+      [(proposals ?? []).length, "lesson or quiz suggestions from facilitators are waiting for approval", "/admin?tab=approvals"],
       [(pendingResults ?? []).length, "learners are waiting for an assessment result (facilitators)", "/admin?tab=learners"],
     ] as [number, string, string][]).filter(([n]) => n > 0);
     const searchCount = new Map<string, { n: number; none: boolean }>();
@@ -365,6 +368,8 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
     body = <CouponsTab supabase={supabase} isAdmin={isAdmin} />;
   } else if (tab === "content") {
     body = <SiteContentTab supabase={supabase} />;
+  } else if (tab === "approvals") {
+    body = <ApprovalsTab supabase={supabase} />;
   } else if (tab === "courses") {
     const { data: courses } = await supabase.from("courses").select("*").order("title");
     body = (

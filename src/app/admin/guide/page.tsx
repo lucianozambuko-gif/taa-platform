@@ -72,13 +72,19 @@ const GUIDE: { id: string; title: string; roles: Role[]; steps: string[] }[] = [
     "For classroom and accredited programmes, choose Competent or Not yet competent, add a note and Save. The result goes to the moderator; the learner gets a statement of results once it's endorsed.",
     "Open portfolio shows the learner's full portfolio of evidence: lessons and quiz scores, attendance, evidence files and sign-offs. Add photos or signed checklists there or from the Teaching page.",
     "If the moderator refers a result back, the reason shows on the Teaching page. Fix the evidence or decision and save the result again.",
-    "Quizzes (in your menu): who passed each quiz, who has failed it twice or more, and which questions most learners get wrong. Change the questions there for the courses you teach; learners get the new questions on their next attempt.",
+    "Lessons → Lessons & quizzes: suggest a new video, download or quiz lesson (in an existing module or a new one), or open any lesson to suggest changes. An admin or content editor approves it before learners see it, and you're notified either way. Track everything under My suggestions.",
+    "Lessons → Quiz results: who passed each quiz, who has failed it twice or more, and which questions most learners get wrong. Suggest better questions from there.",
   ]},
   { id: "moderation", title: "Moderators: endorsing results and the verification pack", roles: ["admin", "moderator"], steps: [
     "Moderation lists every assessed result waiting for you, with a suggested sample: all ‘not yet competent’ decisions and at least one in four competent decisions per assessor.",
     "Open portfolio, check the evidence is valid, authentic, current and sufficient, and that the assessor's decision is fair. Write your report.",
     "Endorse the result to release the learner's statement of results, or Refer back to the assessor with the reason. The facilitator is notified either way.",
     "Download verification pack gives a spreadsheet for QCTO or SETA visits: each learner's evidence, attendance, assessor and moderator sign-off, with a link to the portfolio. Print any portfolio to PDF from its page.",
+  ]},
+  { id: "approvals", title: "Approving facilitators' lessons and quizzes", roles: ["admin", "content"], steps: [
+    "Approvals (in the menu, with an orange number when something is waiting) lists every lesson, quiz and change facilitators have suggested.",
+    "Each one shows the course, where it will go, the video or file, the text, and for quizzes every question with the correct answer marked. For changes you see the questions now and the suggested ones side by side.",
+    "Approve and publish adds it for learners straight away, at the end of its module; reorder it under Courses → Online lessons if needed. Don't approve needs a short reason, which the facilitator sees.",
   ]},
   { id: "advisor", title: "The course advisor chat", roles: ["admin", "sales"], steps: [
     "The ‘Ask an advisor’ chat on the website (and on WhatsApp, once connected) answers questions about courses, prices, dates, learnerships and company training from the live course list and FAQs.",

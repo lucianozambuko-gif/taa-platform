@@ -93,8 +93,8 @@ export default function BottomNav({ role = "learner", labels = EN }: { role?: st
         <Link href="/facilitator/attendance" aria-current={path.startsWith("/facilitator/attendance") ? "page" : undefined}>
           <svg {...ICON}><rect x="3.5" y="5" width="17" height="15" rx="2" /><path d="M3.5 10h17M8 3v4M16 3v4" /><path d="M9 15l2 2 4-4" /></svg>Attendance
         </Link>
-        <Link href="/facilitator/quizzes" aria-current={path.startsWith("/facilitator/quizzes") ? "page" : undefined}>
-          <svg {...ICON}><circle cx="12" cy="12" r="8.5" /><path d="M9.5 9.5a2.5 2.5 0 1 1 3.5 2.3c-.6.3-1 .9-1 1.6V14" /><path d="M12 17h.01" /></svg>Quizzes
+        <Link href="/facilitator/lessons" aria-current={path.startsWith("/facilitator/lessons") || path.startsWith("/facilitator/quizzes") ? "page" : undefined}>
+          <svg {...ICON}><circle cx="12" cy="12" r="8.5" /><path d="M9.5 9.5a2.5 2.5 0 1 1 3.5 2.3c-.6.3-1 .9-1 1.6V14" /><path d="M12 17h.01" /></svg>Lessons
         </Link>
         <a href={whatsappLink("Hi, I'm a facilitator and need help with the teaching system.", "support")} target="_blank" rel="noopener">
           <svg {...ICON}><path d="M4 20l1.3-4A8 8 0 1 1 8 19z" /><path d="M9 10h.01M12 10h.01M15 10h.01" /></svg>{labels.help}

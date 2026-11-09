@@ -22,7 +22,11 @@ export async function menuFor(supabase: DB, userId: string, role: string | null 
         { href: "/facilitator", label: "My learners" },
         { href: "/facilitator/results", label: "To assess", count: c.toAssess },
         { href: "/facilitator/attendance", label: "Attendance" },
-        { href: "/facilitator/quizzes", label: "Quizzes" },
+        { label: "Lessons", children: [
+          { href: "/facilitator/lessons", label: "Lessons & quizzes" },
+          { href: "/facilitator/lessons#new", label: "Suggest a new lesson" },
+          { href: "/facilitator/quizzes", label: "Quiz results" },
+        ] },
         { href: "/facilitator/results?view=portfolios", label: "Portfolios" },
         { label: "Help", children: [guide, site] },
       ];
@@ -44,10 +48,12 @@ export async function menuFor(supabase: DB, userId: string, role: string | null 
         { href: "/courses", label: "Find a course" },
         { href: "/employers#estimate", label: "Group estimate" },
       ];
-    case "content":
+    case "content": {
+      const waiting = await count(supabase.from("lesson_proposals").select("id", { count: "exact", head: true }).eq("status", "pending"));
       return [
         { href: "/admin", label: "Dashboard" },
         { href: "/admin?tab=courses", label: "Courses & lessons" },
+        { href: "/admin?tab=approvals", label: "Approvals", count: waiting },
         { href: "/facilitator/quizzes", label: "Quiz results" },
         { label: "Website", children: [
           { href: "/admin?tab=content", label: "Homepage & banner" },
@@ -59,6 +65,7 @@ export async function menuFor(supabase: DB, userId: string, role: string | null 
         ] },
         guide,
       ];
+    }
     case "sales": {
       const fresh = await count(supabase.from("leads").select("id", { count: "exact", head: true }).eq("status", "new"));
       return [
@@ -82,10 +89,11 @@ export async function menuFor(supabase: DB, userId: string, role: string | null 
       ];
     }
     case "admin": {
-      const [fresh, coupons, moderation] = await Promise.all([
+      const [fresh, coupons, moderation, waiting] = await Promise.all([
         count(supabase.from("leads").select("id", { count: "exact", head: true }).eq("status", "new")),
         count(supabase.from("coupons").select("id", { count: "exact", head: true }).eq("status", "pending")),
         count(supabase.from("enrolments").select("id", { count: "exact", head: true }).eq("moderation", "pending")),
+        count(supabase.from("lesson_proposals").select("id", { count: "exact", head: true }).eq("status", "pending")),
       ]);
       return [
         { href: "/admin", label: "Dashboard" },
@@ -97,9 +105,10 @@ export async function menuFor(supabase: DB, userId: string, role: string | null 
           { href: "/admin?tab=venue", label: "Venue bookings" },
           { href: "/admin/report", label: "Employer reports" },
         ] },
-        { label: "Learning", count: moderation, children: [
+        { label: "Learning", count: moderation + waiting, children: [
           { href: "/admin?tab=learners", label: "Learners & progress" },
           { href: "/admin?tab=courses", label: "Courses & lessons" },
+          { href: "/admin?tab=approvals", label: "Lesson approvals", count: waiting },
           { href: "/facilitator/quizzes", label: "Quiz results" },
           { href: "/facilitator", label: "Teaching view" },
           { href: "/moderator", label: "Moderation", count: moderation },

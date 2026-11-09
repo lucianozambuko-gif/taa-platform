@@ -559,3 +559,18 @@ export async function sendReportNow() {
   await admin.from("audit_log").insert({ actor: user.id, action: "report_sent", entity: "report", detail: { title: "Monthly management report" } });
   revalidatePath("/admin");
 }
+
+// ---------------------------------------------------------------------------
+// Facilitators' lesson suggestions: approve (publishes it) or send back with a reason
+// ---------------------------------------------------------------------------
+export async function reviewProposal(_: ContentState, fd: FormData): Promise<ContentState> {
+  const { supabase, user, profile } = await getUserAndProfile();
+  if (!user || !["admin", "content"].includes(profile?.role ?? "")) return { error: "Admins and content editors only." };
+  const decision = String(fd.get("decision") ?? "");
+  const note = String(fd.get("note") ?? "").trim().slice(0, 1000);
+  if (decision === "rejected" && !note) return { error: "Tell the facilitator why, so they can fix it." };
+  const { error } = await supabase.rpc("review_proposal", { proposal: String(fd.get("id") ?? ""), decision, note });
+  if (error) return { error: error.message.includes("not pending") ? "Someone has already reviewed this." : "Couldn't save the decision." };
+  revalidatePath("/admin");
+  return { message: decision === "approved" ? "Approved. It’s live for learners, and the facilitator has been told." : "Sent back to the facilitator with your note." };
+}
