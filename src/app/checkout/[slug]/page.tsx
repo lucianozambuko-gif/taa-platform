@@ -39,6 +39,16 @@ export default async function CheckoutPage({ params, searchParams }: { params: P
               <input id="coupon" name="coupon" autoComplete="off" placeholder="e.g. WELCOME10" style={{ textTransform: "uppercase" }} defaultValue={coupon ?? ""} />
               {error === "coupon" && <p className="form-error small">That code isn't valid for this course, or it has expired.</p>}
             </div>
+            {(course.instalments ?? 1) > 1 && (
+              <fieldset className="field" style={{ border: 0, padding: 0, margin: 0 }}>
+                <legend className="flabel" style={{ marginBottom: 6 }}>How would you like to pay?</legend>
+                <label className="plan-opt"><input type="radio" name="plan" value="1" defaultChecked /> <span><b>Pay in full</b> · {rand(course.price_cents)} today</span></label>
+                {Array.from({ length: (course.instalments ?? 1) - 1 }, (_, i) => i + 2).map((n) => (
+                  <label key={n} className="plan-opt"><input type="radio" name="plan" value={n} /> <span><b>{n} monthly instalments</b> · about {rand(Math.ceil(course.price_cents! / n))} today, then {rand(Math.ceil(course.price_cents! / n))} a month. No interest.</span></label>
+                ))}
+                <p className="small muted">You get access after the first payment. We remind you before each instalment is due.</p>
+              </fieldset>
+            )}
             <p className="small muted">
               You'll pay on PayFast's secure page by card or Instant EFT. As soon as payment is confirmed, the course appears in your dashboard.
             </p>

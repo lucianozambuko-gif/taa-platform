@@ -47,5 +47,5 @@ export async function signUp(_: AuthState, formData: FormData): Promise<AuthStat
 export async function signOut() {
   const supabase = await createClient();
   await supabase.auth.signOut();
-  redirect("/");
+  redirect("/?signedout=1");
 }

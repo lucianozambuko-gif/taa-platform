@@ -1,11 +1,13 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { KindBadge } from "@/components/CourseBits";
-import { rand } from "@/lib/format";
 import { getUserAndProfile } from "@/lib/supabase/server";
 import { isBackOffice } from "@/lib/roles";
 import { markMessagesRead } from "./actions";
+import { payNextInstalment } from "@/app/checkout/actions";
+import InstallApp from "@/components/AppInstall";
 import type { Course } from "@/lib/types";
+import { rand } from "@/lib/format";
 
 export const metadata = { title: "My learning" };
 export const dynamic = "force-dynamic";
@@ -36,11 +38,25 @@ export default async function DashboardPage() {
   const done = new Set((progress ?? []).map((p) => p.lesson_id));
   const { data: orderRows } = await supabase
     .from("orders")
-    .select("id, invoice_no, status, amount_cents, courses(title)")
+    .select("id, invoice_no, status, amount_cents, instalments, instalment_no, plan_id, plan_total_cents, paid_at, created_at, courses(title)")
     .eq("user_id", user.id)
     .order("created_at", { ascending: false })
-    .limit(10);
-  const orders = orderRows ?? [];
+    .limit(30);
+  const orders = (orderRows ?? []).slice(0, 10);
+  // Payment plans with instalments still to pay
+  const plans = new Map<string, { title: string; total: number; paid: number; count: number; of: number; lastPaid: string | null; open: boolean }>();
+  for (const o of orderRows ?? []) {
+    if (!o.plan_id || o.instalments < 2) continue;
+    const p = plans.get(o.plan_id) ?? { title: (o.courses as unknown as { title: string }).title, total: o.plan_total_cents ?? 0, paid: 0, count: 0, of: o.instalments, lastPaid: null, open: false };
+    if (o.status === "paid") {
+      p.paid += o.amount_cents;
+      p.count += 1;
+      if (!p.lastPaid || (o.paid_at ?? "") > p.lastPaid) p.lastPaid = o.paid_at;
+    }
+    if (o.status === "pending") p.open = true;
+    plans.set(o.plan_id, p);
+  }
+  const duePlans = [...plans.entries()].filter(([, p]) => p.count > 0 && p.count < p.of);
   const { data: messages } = await supabase.from("notifications").select("id, subject, body, link, created_at, read_at").eq("user_id", user.id).order("created_at", { ascending: false }).limit(6);
   const unread = (messages ?? []).filter((m) => !m.read_at).length;
 
@@ -77,6 +93,7 @@ export default async function DashboardPage() {
             <div className="eyebrow">My learning</div>
             <h1 style={{ fontSize: "clamp(1.8rem,3.6vw,2.5rem)", marginTop: 6 }}>Welcome back, {firstName}</h1>
           </div>
+          <Link className="btn btn-ghost btn-sm" href="/account">Account and reminders</Link>
         </div>
         <div className="dash">
           <div className="stack" style={{ gap: 14, minWidth: 0 }}>
@@ -121,6 +138,23 @@ export default async function DashboardPage() {
                 )}
               </div>
             ))}
+            <InstallApp />
+            {duePlans.map(([planId, p]) => {
+              const due = p.lastPaid ? new Date(new Date(p.lastPaid).getTime() + 30 * 864e5) : null;
+              return (
+                <div key={planId} className="panel row" style={{ justifyContent: "space-between", gap: 10, borderColor: "var(--warn)" }}>
+                  <span>
+                    <b>{p.title}: instalment {p.count + 1} of {p.of}</b>
+                    <br />
+                    <span className="small muted">{rand(p.total - p.paid)} left to pay{due ? ` · next due ${due.toLocaleDateString("en-ZA", { day: "numeric", month: "long" })}` : ""}</span>
+                  </span>
+                  <form action={payNextInstalment}>
+                    <input type="hidden" name="plan" value={planId} />
+                    <button className="btn btn-primary btn-sm">Pay {rand(Math.ceil((p.total - p.paid) / (p.of - p.count)))}</button>
+                  </form>
+                </div>
+              );
+            })}
             {(messages ?? []).length > 0 && (
               <div className="panel stack" style={{ gap: 10 }}>
                 <div className="row" style={{ justifyContent: "space-between" }}>
@@ -156,7 +190,7 @@ export default async function DashboardPage() {
                 <h3>Payments and receipts</h3>
                 {orders.map((o) => (
                   <div className="row" style={{ justifyContent: "space-between" }} key={o.id}>
-                    <span><span className="mono small">{o.invoice_no}</span> · {(o.courses as unknown as { title: string }).title}</span>
+                    <span><span className="mono small">{o.invoice_no}</span> · {(o.courses as unknown as { title: string }).title}{o.instalments > 1 ? <span className="small muted"> · instalment {o.instalment_no}/{o.instalments}</span> : null}</span>
                     <span className="row" style={{ gap: 10 }}>
                       <span className={`badge ${o.status === "paid" ? "b-good" : "b-warn"}`}>{o.status}</span>
                       <Link className="small" href={`/orders/${o.id}`}>Receipt</Link>

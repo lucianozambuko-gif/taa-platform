@@ -29,7 +29,8 @@ export async function startCheckout(formData: FormData) {
 
   // The database function sets the price from the course and applies only approved coupons.
   const coupon = String(formData.get("coupon") ?? "").trim().toUpperCase();
-  const { data: orderId, error } = await supabase.rpc("create_order", { course: course.id, coupon: coupon || null });
+  const plan = Math.max(1, Math.min(6, Number(formData.get("plan")) || 1));
+  const { data: orderId, error } = await supabase.rpc("create_order", { course: course.id, coupon: coupon || null, plan });
   if (error && coupon && /invalid coupon/.test(error.message)) redirect(`/checkout/${slug}?error=coupon&coupon=${encodeURIComponent(coupon)}`);
   if (error || !orderId) throw new Error("Could not create the order. Please try again.");
   const order = { id: orderId as string };
@@ -69,4 +70,14 @@ export async function simulatePayment(formData: FormData) {
 export async function simulateFailedPayment(formData: FormData) {
   const orderId = String(formData.get("order") ?? "");
   redirect(`/checkout/return?order=${orderId}&cancelled=1`);
+}
+
+/** Creates (or reopens) the next unpaid instalment of a payment plan and sends the learner to pay it. */
+export async function payNextInstalment(formData: FormData) {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) redirect("/login?next=/dashboard");
+  const { data: orderId, error } = await supabase.rpc("next_instalment", { plan: String(formData.get("plan") ?? "") });
+  if (error || !orderId) redirect("/dashboard?instalment=error");
+  redirect(`/checkout/pay/${orderId}`);
 }

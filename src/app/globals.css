@@ -486,3 +486,24 @@ header.site:has(.navtoggle:checked) .navlinks { display: flex; }
 .prose h2{font-size:1.25rem;margin:18px 0 6px}
 .prose p{margin:0 0 12px}
 .prose ul{margin:0 0 12px;padding-left:20px}
+
+/* Course comparison */
+.ccard-wrap{position:relative;display:flex}
+.ccard-wrap > .ccard{flex:1}
+.cmp{position:absolute;top:10px;right:10px;z-index:2;display:inline-flex;align-items:center;gap:6px;padding:5px 10px;border-radius:999px;background:rgba(255,255,255,.92);color:#14211E;font-size:.78rem;font-weight:700;cursor:pointer;box-shadow:0 1px 4px rgba(0,0,0,.15)}
+.cmp.on{background:var(--accent);color:var(--accent-ink)}
+.cmp input{accent-color:var(--accent);margin:0}
+.cmp-bar{position:sticky;bottom:12px;z-index:30;margin:16px auto 0;max-width:640px;display:flex;justify-content:space-between;align-items:center;gap:10px;padding:10px 14px;border-radius:12px;background:var(--surface);border:1.5px solid var(--accent);box-shadow:0 8px 24px rgba(0,0,0,.18)}
+body:has(.bottom-nav) .cmp-bar{bottom:calc(76px + env(safe-area-inset-bottom,0px))}
+.cmp-table th[scope=row]{text-align:left;width:22%;color:var(--muted);font-weight:600}
+.cmp-table td{vertical-align:top}
+.install{border-color:var(--accent)}
+.elig-q{border:0;padding:0;margin:0;display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
+.elig-q legend{float:left;font-weight:600;max-width:70%}
+.notice.ok{background:var(--good-soft);border-color:var(--good)}
+.plan-opt{display:flex;gap:10px;align-items:flex-start;padding:10px 12px;border:1.5px solid var(--line);border-radius:8px;margin-bottom:6px;cursor:pointer;font-size:.92rem}
+.plan-opt:has(input:checked){border-color:var(--accent);background:var(--accent-soft)}
+.plan-opt input{margin-top:3px;accent-color:var(--accent)}
+.nav-search{display:inline-flex;align-items:center;gap:6px}
+@media (min-width: 901px){ .nav-search-label{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)} }
+.lang-draft{background:var(--warn-soft);color:var(--ink);font-size:.82rem;text-align:center;padding:6px 16px}

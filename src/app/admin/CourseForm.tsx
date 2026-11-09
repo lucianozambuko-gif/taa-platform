@@ -62,6 +62,7 @@ export default function CourseForm({ course }: { course?: Course }) {
         <div className="grid g2" style={{ gap: 12 }}>
           <S label="Price basis" name="price_basis" value={c?.price_basis ?? "fixed"} options={[["fixed", "Fixed public price"], ["quote", "Quote only"], ["learnership", "Learnership / funded"]]} />
           <F label="Price per learner (R, incl. VAT)" name="price" type="number" value={c?.price_cents != null ? c.price_cents / 100 : ""} />
+          <S label="Pay in instalments" name="instalments" value={String(c?.instalments ?? 1)} options={[["1", "No, pay in full only"], ["2", "Up to 2 monthly instalments"], ["3", "Up to 3 monthly instalments"], ["4", "Up to 4 monthly instalments"], ["6", "Up to 6 monthly instalments"]]} />
         </div>
       </div>
 
@@ -77,6 +78,9 @@ export default function CourseForm({ course }: { course?: Course }) {
           <F label="Certificate type" name="certificate" value={c?.certificate} wide />
           <T label="Intake dates (one per line)" name="intakes" value={c?.intakes.join("\n")} />
           <F label="Brochure PDF link" name="brochure_url" value={c?.brochure_url} wide />
+          <T label="Eligibility check (one question per line)" name="eligibility" value={(c?.eligibility ?? []).map((e) => `${e.q} | ${e.ok} | ${e.fail}`).join("\n")} hint="Format: Question? | yes or no (the answer that meets the requirement) | Message if they don't meet it. Leave empty to hide the check." />
+          <T label="Summary in isiZulu" name="summary_zu" value={c?.summary_zu} hint="Shown when a visitor chooses isiZulu. Have it checked by a first-language speaker." />
+          <T label="Summary in Sesotho" name="summary_st" value={c?.summary_st} />
         </div>
       </div>
 

@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import LeadForm from "@/components/LeadForm";
 import { getCourse } from "@/lib/courses";
+import Eligibility from "@/components/Eligibility";
 
 export const metadata = { title: "Learnership application" };
 export const dynamic = "force-dynamic";
@@ -16,6 +17,9 @@ export default async function ApplyPage({ searchParams }: { searchParams: Promis
         <div className="crumbs"><Link href="/learnerships">Learnerships</Link><span>/</span><span>Apply</span></div>
         <h1 style={{ fontSize: "clamp(1.7rem,3.4vw,2.3rem)", marginBottom: 8 }}>{course.title}</h1>
         <p className="muted" style={{ marginBottom: 20 }}>Entry criteria: {course.entry_requirements}</p>
+        <div style={{ marginBottom: 20 }}>
+          <Eligibility questions={course.eligibility ?? []} title={course.title} next={{ href: "#name", label: "Fill in the application below" }} />
+        </div>
         <LeadForm
           type="learnership"
           source="course_page"

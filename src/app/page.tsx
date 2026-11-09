@@ -3,13 +3,14 @@ import { CourseCard } from "@/components/CourseBits";
 import { listCourses } from "@/lib/courses";
 import { getSiteContent } from "@/lib/siteContent";
 import { seoFor } from "@/lib/seo";
+import { getT } from "@/lib/i18n";
 
 export const generateMetadata = () => seoFor("/");
 
 export const dynamic = "force-dynamic";
 
 export default async function HomePage() {
-  const [courses, site] = await Promise.all([listCourses(), getSiteContent()]);
+  const [courses, site, { t }] = await Promise.all([listCourses(), getSiteContent(), getT()]);
   const TONES = ["teal", "ochre", "plum"];
   const featured = courses.filter((c) => c.featured).slice(0, 3);
   return (
@@ -17,25 +18,22 @@ export default async function HomePage() {
       <section className="hero">
         <div className="wrap hero-grid">
           <div>
-            <div className="eyebrow">Skills training in Johannesburg and online</div>
-            <h1 style={{ marginTop: 10 }}>Practical training that gets people working, and keeps teams working well.</h1>
-            <p className="lead">
-              Short skills courses, accredited programmes and learnerships, with clear prices, real dates and online learning you can
-              start today.
-            </p>
-            <form className="search" action="/courses" role="search">
-              <input name="q" aria-label="Search courses" placeholder="Search courses, e.g. first aid, cleaning, supervisor" />
-              <button className="btn btn-primary">Search</button>
+            <div className="eyebrow">{t("home.eyebrow")}</div>
+            <h1 style={{ marginTop: 10 }}>{t("home.h1")}</h1>
+            <p className="lead">{t("home.lead")}</p>
+            <form className="search" action="/search" role="search">
+              <input name="q" aria-label={t("nav.search")} placeholder={t("home.searchPh")} />
+              <button className="btn btn-primary">{t("nav.search")}</button>
             </form>
           </div>
           <div className="routes">
             <Link className="route primary" href="/courses?learner=individual">
-              <div className="t">I want to study <span>→</span></div>
-              <p>Find a course by career goal, see the full price and enrol online.</p>
+              <div className="t">{t("home.study")} <span>→</span></div>
+              <p>{t("home.studyP")}</p>
             </Link>
             <Link className="route" href="/employers">
-              <div className="t">Train my team <span>→</span></div>
-              <p>Group quotes, on-site training and progress reporting for HR and L&amp;D.</p>
+              <div className="t">{t("home.team")} <span>→</span></div>
+              <p>{t("home.teamP")}</p>
             </Link>
           </div>
         </div>

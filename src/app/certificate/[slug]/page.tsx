@@ -15,7 +15,7 @@ export default async function CertificatePage({ params }: { params: Promise<{ sl
   if (!state) redirect(`/login?next=/certificate/${slug}`);
   const { course, enrolled, pct, supabase, user, lessons } = state;
   if (!enrolled) notFound();
-  const { data: enrolment } = await supabase.from("enrolments").select("result, assessed_at").eq("course_id", course.id).eq("user_id", user.id).maybeSingle();
+  const { data: enrolment } = await supabase.from("enrolments").select("result, assessed_at, cert_code").eq("course_id", course.id).eq("user_id", user.id).maybeSingle();
   const assessed = enrolment?.result === "competent";
 
   if (!assessed && (!course.certificate_auto || pct < 100)) {
@@ -46,7 +46,19 @@ export default async function CertificatePage({ params }: { params: Promise<{ sl
     .limit(1)
     .maybeSingle();
   const completed = assessed && enrolment?.assessed_at ? new Date(enrolment.assessed_at) : last ? new Date(last.completed_at) : new Date();
-  const certNo = `TAA-${course.code.replace(/^TAA-/, "")}-${user.id.slice(0, 6).toUpperCase()}`;
+  const certNo = enrolment?.cert_code ?? `TAA-${course.code.replace(/^TAA-/, "")}-${user.id.slice(0, 6).toUpperCase()}`;
+  const site = process.env.NEXT_PUBLIC_SITE_URL ?? "";
+  const verifyUrl = `${site}/verify/${certNo}`;
+  const linkedIn =
+    "https://www.linkedin.com/profile/add?startTask=CERTIFICATION_NAME&" +
+    new URLSearchParams({
+      name: course.title,
+      organizationName: "Training Africa Academy",
+      issueYear: String(completed.getFullYear()),
+      issueMonth: String(completed.getMonth() + 1),
+      certUrl: verifyUrl,
+      certId: certNo,
+    }).toString();
 
   return (
     <section className="block cert-page">
@@ -70,6 +82,16 @@ export default async function CertificatePage({ params }: { params: Promise<{ sl
               <div><span>Certificate no.</span><b className="mono">{certNo}</b></div>
               <div className="cert-sign"><span className="line" /><span>[Authorised signatory]</span></div>
             </div>
+            <p className="cert-small" style={{ marginTop: 14 }}>Verify at {verifyUrl.replace(/^https?:\/\//, "")}</p>
+          </div>
+        </div>
+        <div className="panel stack no-print" style={{ gap: 10 }}>
+          <h3>Share your achievement</h3>
+          <p className="small muted">Employers can check this certificate is genuine at the verification link. It shows only your name, the course and the date.</p>
+          <div className="row" style={{ gap: 8 }}>
+            <a className="btn btn-primary btn-sm" href={linkedIn} target="_blank" rel="noopener">Add to LinkedIn</a>
+            <a className="btn btn-ghost btn-sm" href={`https://wa.me/?text=${encodeURIComponent(`I completed ${course.title} at Training Africa Academy. Verify: ${verifyUrl}`)}`} target="_blank" rel="noopener">Share on WhatsApp</a>
+            <Link className="btn btn-ghost btn-sm" href={`/verify/${certNo}`}>Open verification page</Link>
           </div>
         </div>
         <p className="small muted no-print">Tip: in the print window choose "Save as PDF" to download the certificate.</p>

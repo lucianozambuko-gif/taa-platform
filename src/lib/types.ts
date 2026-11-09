@@ -31,6 +31,10 @@ export type Course = {
   has_lms: boolean;
   featured: boolean;
   published: boolean;
+  eligibility?: { q: string; ok: "yes" | "no"; fail: string }[];
+  instalments?: number;
+  summary_zu?: string | null;
+  summary_st?: string | null;
 };
 
 export type Lesson = { id: string; position: number; title: string; kind: "video" | "quiz" | "download"; minutes: number };

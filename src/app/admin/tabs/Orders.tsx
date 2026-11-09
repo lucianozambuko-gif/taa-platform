@@ -45,7 +45,7 @@ export default async function OrdersTab({ supabase, sp }: { supabase: DB; sp: Re
                   <td><Link className="mono" href={`/orders/${o.id}`}>{o.invoice_no}</Link><br /><span className="small muted">{when(o.created_at)}</span></td>
                   <td><b>{p?.full_name ?? "Learner"}</b><br /><span className="small muted">{p?.phone ?? ""}</span></td>
                   <td>{course?.title}</td>
-                  <td className="tnum">{rand(o.amount_cents)}{o.coupon_code ? <><br /><span className="small muted">{o.coupon_code} −{rand(o.discount_cents)}</span></> : null}</td>
+                  <td className="tnum">{rand(o.amount_cents)}{o.instalments > 1 ? <><br /><span className="small muted">instalment {o.instalment_no}/{o.instalments} of {rand(o.plan_total_cents)}</span></> : null}{o.coupon_code ? <><br /><span className="small muted">{o.coupon_code} −{rand(o.discount_cents)}</span></> : null}</td>
                   <td>
                     <span className={`badge ${BADGE[o.status] ?? "b-short"}`}>{o.status}</span>
                     {o.gateway_payment_id && <div className="mono small muted">{o.gateway_payment_id}</div>}

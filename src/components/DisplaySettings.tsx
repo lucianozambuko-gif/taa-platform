@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { setLanguage } from "@/app/account/actions";
 
 type Prefs = { text: "md" | "lg" | "xl"; contrast: "normal" | "high"; saver: "on" | "off" };
 const KEY = "taa-display";
@@ -17,7 +18,7 @@ function apply(p: Prefs) {
 export const displayBootScript = `try{var p=JSON.parse(localStorage.getItem('${KEY}')||'null');var c=navigator.connection;if(!p){p={text:'md',contrast:'normal',saver:(c&&c.saveData)?'on':'off'}}var e=document.documentElement;e.dataset.text=p.text;e.dataset.contrast=p.contrast;e.dataset.saver=p.saver}catch(x){}`;
 
 /** Text size, high contrast and data saver (RFQ section 6: scalable text, lower-bandwidth learners). */
-export default function DisplaySettings() {
+export default function DisplaySettings({ lang = "en" }: { lang?: string }) {
   const [open, setOpen] = useState(false);
   const [prefs, setPrefs] = useState<Prefs>(DEFAULTS);
   const ref = useRef<HTMLDivElement>(null);
@@ -71,6 +72,14 @@ export default function DisplaySettings() {
               ))}
             </div>
           </div>
+          <form className="stack" style={{ gap: 6 }} action={setLanguage}>
+            <span className="flabel">Language</span>
+            <div className="seg" role="group" aria-label="Language">
+              {([["en", "English"], ["zu", "isiZulu"], ["st", "Sesotho"]] as const).map(([c, l]) => (
+                <button key={c} type="submit" name="language" value={c} aria-pressed={lang === c}>{l}</button>
+              ))}
+            </div>
+          </form>
           <div className="switch">
             <span><b>High contrast</b><br /><span className="small muted">Stronger colours and underlined links</span></span>
             <button type="button" aria-pressed={prefs.contrast === "high"} aria-label="High contrast" onClick={() => update({ contrast: prefs.contrast === "high" ? "normal" : "high" })} />

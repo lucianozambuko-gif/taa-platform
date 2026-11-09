@@ -106,6 +106,13 @@ export async function saveCourse(_: CourseFormState, fd: FormData): Promise<Cour
     certificate_auto: fd.get("certificate_auto") === "on",
     featured: fd.get("featured") === "on",
     published: fd.get("published") === "on",
+    instalments: Math.max(1, Math.min(6, Number(fd.get("instalments")) || 1)),
+    summary_zu: text(fd.get("summary_zu")),
+    summary_st: text(fd.get("summary_st")),
+    eligibility: lines(fd.get("eligibility"))
+      .map((l) => l.split("|").map((x) => x.trim()))
+      .filter(([q]) => q)
+      .map(([q, ok, fail]) => ({ q, ok: /^n/i.test(ok ?? "") ? "no" : "yes", fail: fail || "Talk to an advisor before you apply." })),
     updated_at: new Date().toISOString(),
   };
 

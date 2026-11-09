@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { KIND_LABEL, rand } from "@/lib/format";
 import type { Course } from "@/lib/types";
+import { CompareToggle } from "./Compare";
 
 export function KindBadge({ course }: { course: Course }) {
   if (course.kind === "accredited")
@@ -85,6 +86,8 @@ export function SubjectCover({ course }: { course: Course }) {
 
 export function CourseCard({ course }: { course: Course }) {
   return (
+    <div className="ccard-wrap">
+    <CompareToggle slug={course.slug} title={course.title} />
     <Link className="ccard" href={`/courses/${course.slug}`}>
       <SubjectCover course={course} />
       <div className="meta">
@@ -103,5 +106,6 @@ export function CourseCard({ course }: { course: Course }) {
         <span className="linkbtn" aria-hidden="true">View course</span>
       </div>
     </Link>
+    </div>
   );
 }

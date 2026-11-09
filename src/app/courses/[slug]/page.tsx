@@ -5,6 +5,8 @@ import { getCourse, getOutline, relatedCourses } from "@/lib/courses";
 import { rand, vatIncluded, whatsappLink } from "@/lib/format";
 import { createClient } from "@/lib/supabase/server";
 import { redirectOrNotFound } from "@/lib/redirects";
+import Eligibility from "@/components/Eligibility";
+import { getT } from "@/lib/i18n";
 import { ROLE_LABEL, type Role } from "@/lib/roles";
 
 export const dynamic = "force-dynamic";
@@ -21,7 +23,7 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
 
 export default async function CoursePage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
-  const course = await getCourse(slug);
+  const [course, { lang, t }] = await Promise.all([getCourse(slug), getT()]);
   if (!course) return redirectOrNotFound(`/courses/${slug}`);
   const [outline, related] = await Promise.all([getOutline(course.id), relatedCourses(course)]);
 
@@ -49,7 +51,7 @@ export default async function CoursePage({ params }: { params: Promise<{ slug: s
   else if (course.price_basis !== "fixed") cta = <Link className="btn btn-primary" href={`/employers?course=${course.slug}`}>Request a quotation</Link>;
   else if (enrolled && course.has_lms) cta = <Link className="btn btn-primary" href={`/learn/${course.slug}`}>Continue learning</Link>;
   else if (enrolled) cta = <Link className="btn btn-primary" href="/dashboard">You're enrolled: view dashboard</Link>;
-  else cta = <Link className="btn btn-primary" href={`/checkout/${course.slug}`}>Enrol and pay</Link>;
+  else cta = <Link className="btn btn-primary" href={`/checkout/${course.slug}`}>{t("course.enrol")}</Link>;
 
   const site = process.env.NEXT_PUBLIC_SITE_URL ?? "";
   const jsonLd = {
@@ -79,13 +81,13 @@ export default async function CoursePage({ params }: { params: Promise<{ slug: s
                 <span className="mono muted">{course.code}</span>
               </div>
               <h1 style={{ fontSize: "clamp(1.8rem,3.8vw,2.7rem)" }}>{course.title}</h1>
-              <p className="muted" style={{ fontSize: "1.08rem" }}>{course.summary}</p>
+              <p className="muted" style={{ fontSize: "1.08rem" }}>{(lang === "zu" && course.summary_zu) || (lang === "st" && course.summary_st) || course.summary}</p>
             </div>
             <dl className="specs" style={{ margin: 0 }}>
-              <div><dt>Duration</dt><dd>{course.duration}</dd></div>
-              <div><dt>Delivery</dt><dd>{course.format_note ?? course.format}</dd></div>
-              <div><dt>Location</dt><dd>{course.location}</dd></div>
-              <div><dt>Next intake</dt><dd>{course.intakes[0] ?? "On request"}</dd></div>
+              <div><dt>{t("course.duration")}</dt><dd>{course.duration}</dd></div>
+              <div><dt>{t("course.delivery")}</dt><dd>{course.format_note ?? course.format}</dd></div>
+              <div><dt>{t("course.location")}</dt><dd>{course.location}</dd></div>
+              <div><dt>{t("course.intake")}</dt><dd>{course.intakes[0] ?? "On request"}</dd></div>
               {showAccreditation && (
                 <>
                   <div><dt>Accrediting body</dt><dd className={course.accreditation_approved ? "" : "tbc"}>{pending(course.accreditation_body)}</dd></div>
@@ -95,21 +97,34 @@ export default async function CoursePage({ params }: { params: Promise<{ slug: s
                   <div style={{ gridColumn: "1 / -1" }}><dt>Approved scope</dt><dd className={course.accreditation_approved ? "" : "tbc"}>{pending(course.approved_scope)}</dd></div>
                 </>
               )}
-              <div><dt>Certificate</dt><dd>{course.certificate}</dd></div>
+              <div><dt>{t("course.certificate")}</dt><dd>{course.certificate}</dd></div>
             </dl>
             {showAccreditation && !course.accreditation_approved && (
               <div className="notice"><b>Compliance</b><span>Accreditation details appear once the Academy signs them off against the current approval letter.</span></div>
             )}
             {course.practical && <div className="notice info"><b>Practical</b><span>{course.practical}</span></div>}
+            {role === "learner" && !enrolled && (course.eligibility?.length ?? 0) > 0 && (
+              <Eligibility
+                questions={course.eligibility ?? []}
+                title={course.title}
+                next={
+                  course.kind === "qualification"
+                    ? { href: `/learnerships/apply?course=${course.slug}`, label: "Apply now" }
+                    : course.price_basis === "fixed"
+                      ? { href: `/checkout/${course.slug}`, label: "Enrol and pay" }
+                      : { href: `/employers?course=${course.slug}`, label: "Request a quotation" }
+                }
+              />
+            )}
             <div className="stack">
-              <h2 style={{ fontSize: "1.35rem" }}>What you will be able to do</h2>
+              <h2 style={{ fontSize: "1.35rem" }}>{t("course.outcomes")}</h2>
               <ul className="ticks">{course.outcomes.map((o) => <li key={o}>{o}</li>)}</ul>
             </div>
             <div className="grid g2">
-              <div className="stack"><h3>Who it is for</h3><p className="muted">{course.audience}</p></div>
-              <div className="stack"><h3>Entry requirements</h3><p className="muted">{course.entry_requirements}</p></div>
-              <div className="stack"><h3>Assessment</h3><p className="muted">{course.assessment}</p></div>
-              <div className="stack"><h3>Intakes</h3><p className="muted">{course.intakes.join(" · ")}</p></div>
+              <div className="stack"><h3>{t("course.who")}</h3><p className="muted">{course.audience}</p></div>
+              <div className="stack"><h3>{t("course.entry")}</h3><p className="muted">{course.entry_requirements}</p></div>
+              <div className="stack"><h3>{t("course.assessment")}</h3><p className="muted">{course.assessment}</p></div>
+              <div className="stack"><h3>{t("course.intakes")}</h3><p className="muted">{course.intakes.join(" · ")}</p></div>
             </div>
             {outline.length > 0 && (
               <div className="stack">
@@ -135,6 +150,9 @@ export default async function CoursePage({ params }: { params: Promise<{ slug: s
             <PriceBlock course={course} />
             {course.price_basis === "fixed" && course.price_cents != null && (
               <p className="small muted tnum">Includes VAT of {rand(vatIncluded(course.price_cents))}</p>
+            )}
+            {course.price_basis === "fixed" && course.price_cents != null && (course.instalments ?? 1) > 1 && (
+              <p className="small tnum"><b>Or pay in {course.instalments} monthly instalments</b> of about {rand(Math.ceil(course.price_cents / (course.instalments ?? 1)))}, no interest.</p>
             )}
             {cta}
             {course.brochure_url ? (

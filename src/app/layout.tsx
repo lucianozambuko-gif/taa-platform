@@ -5,20 +5,24 @@ import SiteFooter from "@/components/SiteFooter";
 import TrackedLink from "@/components/TrackedLink";
 import Analytics from "@/components/Analytics";
 import BottomNav from "@/components/BottomNav";
+import { ServiceWorker } from "@/components/AppInstall";
 import { displayBootScript } from "@/components/DisplaySettings";
 import { createClient } from "@/lib/supabase/server";
 import { whatsappLink } from "@/lib/format";
 import { getSiteContent } from "@/lib/siteContent";
+import { LANGS, getT } from "@/lib/i18n";
 import "./globals.css";
 
 export const metadata: Metadata = {
   title: { default: "Training Africa Academy", template: "%s | Training Africa Academy" },
   description: "Skills courses, accredited programmes and learnerships in Johannesburg and online.",
+  appleWebApp: { capable: true, title: "TA Academy", statusBarStyle: "default" },
+  icons: { icon: "/icons/icon-192.png", apple: "/icons/apple-touch-icon.png" },
   metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || "https://taa-platform-six.vercel.app"),
   ...(process.env.GOOGLE_SITE_VERIFICATION ? { verification: { google: process.env.GOOGLE_SITE_VERIFICATION } } : {}),
 };
 
-export const viewport: Viewport = { width: "device-width", initialScale: 1, viewportFit: "cover" };
+export const viewport: Viewport = { width: "device-width", initialScale: 1, viewportFit: "cover", themeColor: "#0E6B5A" };
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
   const ga = process.env.NEXT_PUBLIC_GA_ID;
@@ -30,9 +34,9 @@ export default async function RootLayout({ children }: { children: React.ReactNo
     signedIn = !!user;
     if (user) role = (await supabase.from("profiles").select("role").eq("id", user.id).maybeSingle()).data?.role ?? "learner";
   } catch {}
-  const { announcement } = await getSiteContent();
+  const [{ announcement }, { lang, t }] = await Promise.all([getSiteContent(), getT()]);
   return (
-    <html lang="en-ZA" suppressHydrationWarning>
+    <html lang={LANGS.find((l) => l.code === lang)?.html ?? "en-ZA"} suppressHydrationWarning>
       <head>
         <script dangerouslySetInnerHTML={{ __html: displayBootScript }} />
         <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -44,15 +48,17 @@ export default async function RootLayout({ children }: { children: React.ReactNo
       <body>
         <a className="skip-link" href="#main">Skip to content</a>
         <Analytics gaId={ga} />
+        <ServiceWorker />
         {announcement.on && announcement.text && (
           <div className="announce">
             {announcement.link ? <a href={announcement.link}>{announcement.text} →</a> : <span>{announcement.text}</span>}
           </div>
         )}
+        {lang !== "en" && <div className="lang-draft">{t("draft")}</div>}
         <SiteHeader />
         <main id="main">{children}</main>
         <SiteFooter />
-        {signedIn && <Suspense fallback={null}><BottomNav role={role} /></Suspense>}
+        {signedIn && <Suspense fallback={null}><BottomNav role={role} labels={{ home: t("nav.home"), courses: t("nav.courses"), learning: t("nav.mylearning"), help: t("nav.help") }} /></Suspense>}
         <TrackedLink
           className="wa-float"
           href={whatsappLink("Hi Training Africa Academy, I'd like help choosing a course.")}
