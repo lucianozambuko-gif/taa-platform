@@ -69,6 +69,7 @@ export default async function CoursesPage({ searchParams }: { searchParams: Prom
             </div>
             {courses.length ? (
               <>
+                <h2 className="sr-only">Matching courses</h2>
                 <div className="grid g2">{courses.map((c) => <CourseCard key={c.id} course={c} />)}</div>
                 <CompareBar />
               </>

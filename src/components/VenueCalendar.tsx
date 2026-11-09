@@ -9,17 +9,18 @@ export default function VenueCalendar({ busy, start, days = 21, detailed = false
   const dates = Array.from({ length: days }, (_, i) => new Date(start.getTime() + i * 864e5));
   return (
     <div className="stack" style={{ gap: 10 }}>
-      <div className="tscroll">
-        <div className="cal" style={{ ["--days" as string]: days }} role="table" aria-label="Room availability">
-          <div className="rh" role="columnheader">Room</div>
+      <p className="sr-only">Room availability for the next {days} days: {ROOMS.map(([room]) => `${room}: ${dates.filter((d) => !busy.some((b) => b.room === room && b.date === iso(d))).length} days fully free`).join("; ")}. Use the booking form to check a specific date.</p>
+      <div className="tscroll" tabIndex={0}>
+        <div className="cal" style={{ ["--days" as string]: days }} aria-hidden="true">
+          <div className="rh">Room</div>
           {dates.map((d) => (
-            <div key={iso(d)} className={`dh ${[0, 6].includes(d.getDay()) ? "we" : ""}`} role="columnheader">
+            <div key={iso(d)} className={`dh ${[0, 6].includes(d.getDay()) ? "we" : ""}`}>
               {d.toLocaleDateString("en-ZA", { weekday: "short" }).slice(0, 2)}<br />{d.getDate()}
             </div>
           ))}
           {ROOMS.map(([room]) => (
-            <div key={room} style={{ display: "contents" }} role="row">
-              <div className="rh" role="rowheader">{room}</div>
+            <div key={room} style={{ display: "contents" }}>
+              <div className="rh">{room}</div>
               {dates.map((d) => {
                 const here = busy.filter((b) => b.room === room && b.date === iso(d));
                 const full = here.some((b) => b.slot === "full") || (here.some((b) => b.slot === "morning") && here.some((b) => b.slot === "afternoon"));
@@ -27,7 +28,7 @@ export default function VenueCalendar({ busy, start, days = 21, detailed = false
                 const label = full ? "Booked" : here.length ? (here[0].slot === "morning" ? "Afternoon free" : "Morning free") : "Free";
                 const title = detailed && here.length ? here.map((b) => `${b.slot}: ${b.status}${b.client ? ` · ${b.client}` : ""}`).join("\n") : label;
                 return (
-                  <div key={iso(d)} className={`${cls} ${[0, 6].includes(d.getDay()) ? "we" : ""}`} title={`${room}, ${d.toDateString()}: ${title}`} aria-label={`${room}, ${d.toDateString()}: ${label}`}>
+                  <div key={iso(d)} className={`${cls} ${[0, 6].includes(d.getDay()) ? "we" : ""}`} title={`${room}, ${d.toDateString()}: ${title}`}>
                     {full ? "✕" : here.length ? (here[0].slot === "morning" ? "PM" : "AM") : ""}
                   </div>
                 );

@@ -41,7 +41,7 @@ export default async function CoursePage({ params }: { params: Promise<{ slug: s
 
   const showAccreditation = course.kind !== "short";
   const pending = (v: string | null) => (course.accreditation_approved && v ? v : "[To be confirmed]");
-  const wa = whatsappLink(`Hi Training Africa Academy, I'm interested in ${course.title} (${course.code}). Please send me the next dates and how to enrol.`);
+  const wa = whatsappLink(`Hi Training Africa Academy, I'm interested in ${course.title} (${course.code}). Please send me the next dates and how to enrol.`, "advisor");
 
   let cta: React.ReactNode;
   if (role === "admin" || role === "content") cta = <Link className="btn btn-primary" href={`/admin/courses/${course.id}`}>Edit this course</Link>;
@@ -146,7 +146,7 @@ export default async function CoursePage({ params }: { params: Promise<{ slug: s
               </div>
             )}
           </div>
-          <aside className="buybox panel stack" style={{ gap: 14 }}>
+          <div className="buybox panel stack" aria-label="Price and enrolment" style={{ gap: 14 }}>
             <PriceBlock course={course} />
             {course.price_basis === "fixed" && course.price_cents != null && (
               <p className="small muted tnum">Includes VAT of {rand(vatIncluded(course.price_cents))}</p>
@@ -166,7 +166,7 @@ export default async function CoursePage({ params }: { params: Promise<{ slug: s
               Ask about this course on WhatsApp
             </TrackedLink>
             <p className="small muted">Training a group? <Link href={`/employers?course=${course.slug}`}>Request a group quote</Link> for bulk pricing and on-site delivery.</p>
-          </aside>
+          </div>
         </div>
       </div>
       {role !== "learner" && (

@@ -34,7 +34,7 @@ export default async function VenuePage() {
         <div className="wrap grid g2" style={{ alignItems: "start" }}>
           <div className="panel stack">
             <h2 style={{ fontSize: "1.35rem" }}>Facilities</h2>
-            <div className="tscroll">
+            <div className="tscroll" tabIndex={0}>
               <table className="tbl">
                 <thead><tr><th>Room</th><th>Capacity</th><th>Suited to</th></tr></thead>
                 <tbody>{ROOMS.map(([r, c, s]) => <tr key={r}><td><b>{r}</b></td><td className="tnum">{c}</td><td>{s}</td></tr>)}</tbody>

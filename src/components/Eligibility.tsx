@@ -44,7 +44,7 @@ export default function Eligibility({ questions, title, next }: { questions: Q[]
               <b>Check with us first</b>
               <span>
                 {misses.map((m) => m.fail).join(" ")}{" "}
-                <a href={whatsappLink(`Hi, I checked my eligibility for ${title} and need advice.`)} target="_blank" rel="noopener">Ask an advisor on WhatsApp</a>.
+                <a href={whatsappLink(`Hi, I checked my eligibility for ${title} and need advice.`, "admissions")} target="_blank" rel="noopener">Ask an advisor on WhatsApp</a>.
               </span>
             </div>
           )}

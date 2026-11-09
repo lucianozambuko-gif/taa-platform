@@ -40,7 +40,7 @@ export default async function ComparePage({ searchParams }: { searchParams: Prom
             <div><Link className="btn btn-primary" href="/courses">Go to the catalogue</Link></div>
           </div>
         ) : (
-          <div className="panel tscroll" style={{ padding: "6px 10px" }}>
+          <div className="panel tscroll" tabIndex={0} style={{ padding: "6px 10px" }}>
             <table className="tbl cmp-table">
               <thead>
                 <tr>

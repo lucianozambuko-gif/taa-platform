@@ -32,7 +32,7 @@ export default async function OrdersTab({ supabase, sp }: { supabase: DB; sp: Re
         </div>
         <a className="btn btn-ghost btn-sm" href="/admin/export/orders">Download CSV</a>
       </div>
-      <div className="panel tscroll" style={{ padding: "6px 10px" }}>
+      <div className="panel tscroll" tabIndex={0} style={{ padding: "6px 10px" }}>
         <table className="tbl">
           <thead><tr><th>Invoice</th><th>Learner</th><th>Course</th><th>Amount</th><th>Status</th><th>Action</th></tr></thead>
           <tbody>

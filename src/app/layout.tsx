@@ -50,7 +50,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         <Analytics gaId={ga} />
         <ServiceWorker />
         {announcement.on && announcement.text && (
-          <div className="announce">
+          <div className="announce" role="region" aria-label="Announcement">
             {announcement.link ? <a href={announcement.link}>{announcement.text} →</a> : <span>{announcement.text}</span>}
           </div>
         )}
@@ -59,7 +59,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         <main id="main">{children}</main>
         <SiteFooter />
         {signedIn && <Suspense fallback={null}><BottomNav role={role} labels={{ home: t("nav.home"), courses: t("nav.courses"), learning: t("nav.mylearning"), help: t("nav.help") }} /></Suspense>}
-        <TrackedLink
+        <aside aria-label="Chat on WhatsApp"><TrackedLink
           className="wa-float"
           href={whatsappLink("Hi Training Africa Academy, I'd like help choosing a course.")}
           target="_blank"
@@ -68,7 +68,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
           params={{ page: "float" }}
         >
           WhatsApp us
-        </TrackedLink>
+        </TrackedLink></aside>
       </body>
     </html>
   );

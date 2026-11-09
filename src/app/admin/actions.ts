@@ -160,8 +160,10 @@ export async function setUserRole(fd: FormData) {
   const { supabase, user } = await requireAdmin();
   const id = String(fd.get("user_id") ?? "");
   const role = String(fd.get("role") ?? "");
-  if (!id || !["learner", "facilitator", "sales", "content", "admin"].includes(role) || (id === user.id && role !== "admin")) return;
-  await supabase.from("profiles").update({ role }).eq("id", id);
+  if (!id || !["learner", "employer", "facilitator", "sales", "content", "admin"].includes(role) || (id === user.id && role !== "admin")) return;
+  const company = String(fd.get("company") ?? "").trim() || null;
+  if (role === "employer" && !company) return;
+  await supabase.from("profiles").update({ role, company: role === "employer" ? company : null }).eq("id", id);
   if (role !== "facilitator") await supabase.from("course_facilitators").delete().eq("user_id", id);
   await supabase.from("audit_log").insert({ actor: user.id, action: "role_change", entity: "profile", entity_id: id, detail: { role } });
   revalidatePath("/admin");
@@ -471,4 +473,89 @@ export async function purgeOldLeads(_: ContentState, fd: FormData): Promise<Cont
   if (error) return { error: error.message.includes("minimum") ? "Choose at least 6 months." : error.message };
   revalidatePath("/admin");
   return { message: `Removed personal details from ${data ?? 0} closed enquiries older than ${months} months.` };
+}
+
+// ---------------------------------------------------------------------------
+// Bulk enrolment of employer staff (from a spreadsheet or an employer's list)
+// ---------------------------------------------------------------------------
+export type BulkState = { error?: string; message?: string; details?: string[] };
+
+export async function bulkEnrol(_: BulkState, fd: FormData): Promise<BulkState> {
+  const { supabase, user } = await requireSales();
+  const { parseLearners } = await import("@/lib/bulk");
+  const { createAdminClient } = await import("@/lib/supabase/server");
+  const courseId = String(fd.get("course_id") ?? "");
+  const company = String(fd.get("company") ?? "").trim() || null;
+  const leadId = String(fd.get("lead_id") ?? "") || null;
+  const { rows, errors } = parseLearners(String(fd.get("learners") ?? ""));
+  if (!courseId) return { error: "Choose a course." };
+  if (!rows.length) return { error: errors[0] ?? "Add at least one learner as: name, email" };
+  if (rows.length > 200) return { error: "Upload up to 200 learners at a time." };
+  const { data: course } = await supabase.from("courses").select("title, slug, has_lms").eq("id", courseId).single();
+  if (!course) return { error: "Course not found." };
+
+  const admin = createAdminClient();
+  const site = process.env.NEXT_PUBLIC_SITE_URL ?? "";
+  let created = 0, enrolled = 0, already = 0;
+  const problems: string[] = [...errors];
+  for (const r of rows) {
+    let { data: id } = await supabase.rpc("admin_user_by_email", { e: r.email });
+    let setPassword: string | null = null;
+    if (!id) {
+      const { data: made, error } = await admin.auth.admin.createUser({ email: r.email, email_confirm: true, user_metadata: { full_name: r.name, phone: r.phone } });
+      if (error || !made.user) { problems.push(`${r.email}: ${error?.message ?? "could not create account"}`); continue; }
+      id = made.user.id;
+      created++;
+      await admin.from("profiles").update({ full_name: r.name, phone: r.phone, popia_consent_at: new Date().toISOString() }).eq("id", id);
+      const { data: link } = await admin.auth.admin.generateLink({ type: "recovery", email: r.email, options: { redirectTo: `${site}/auth/callback?next=/dashboard` } });
+      setPassword = link?.properties?.action_link ?? null;
+    }
+    const { error: enrolError } = await admin.from("enrolments").insert({ user_id: id, course_id: courseId, source: company ? "employer" : "admin", company });
+    if (enrolError) { if (enrolError.code === "23505") already++; else problems.push(`${r.email}: ${enrolError.message}`); continue; }
+    enrolled++;
+    await notify({
+      userId: id as string, audience: "learner", kind: "access",
+      subject: `You're enrolled in ${course.title}`,
+      body: `${company ? `${company} has enrolled you` : "Training Africa Academy has enrolled you"} in ${course.title}.${setPassword ? " Set your password with the link below, then sign in to start." : " Sign in to see it in your dashboard."}`,
+      link: setPassword ?? (course.has_lms ? `/learn/${course.slug}` : "/dashboard"),
+    });
+  }
+  if (leadId && enrolled) await supabase.from("leads").update({ status: "won", updated_at: new Date().toISOString(), notes: `Enrolled ${enrolled} learners` }).eq("id", leadId);
+  await supabase.from("audit_log").insert({ actor: user.id, action: "bulk_enrol", entity: "course", entity_id: courseId, detail: { title: course.title, company, enrolled, created, already } });
+  revalidatePath("/admin");
+  return {
+    message: `Enrolled ${enrolled} learner${enrolled === 1 ? "" : "s"} in ${course.title}${created ? ` (${created} new account${created === 1 ? "" : "s"} created and sent a set-password link)` : ""}${already ? `; ${already} already enrolled` : ""}.`,
+    details: problems,
+  };
+}
+
+// ---------------------------------------------------------------------------
+// WhatsApp duty roster (who answers each WhatsApp button) and the management report
+// ---------------------------------------------------------------------------
+export async function saveDutyRoster(_: ContentState, fd: FormData): Promise<ContentState> {
+  const { user } = await requireSales();
+  const { TEAM_LABEL } = await import("@/lib/dutyTeams");
+  const { createAdminClient } = await import("@/lib/supabase/server");
+  const value: Record<string, { name: string; phone: string; on: boolean }> = {};
+  for (const team of Object.keys(TEAM_LABEL)) {
+    const phone = String(fd.get(`${team}_phone`) ?? "").replace(/[^\d+]/g, "");
+    if (phone && phone.replace(/\D/g, "").length < 9) return { error: `${TEAM_LABEL[team as keyof typeof TEAM_LABEL]}: that number looks too short.` };
+    value[team] = { name: String(fd.get(`${team}_name`) ?? "").trim().slice(0, 60), phone, on: fd.get(`${team}_on`) === "on" && !!phone };
+  }
+  const admin = createAdminClient();
+  const { error } = await admin.from("site_content").upsert({ key: "whatsapp_duty", value, updated_at: new Date().toISOString() });
+  if (error) return { error: "Couldn't save the roster." };
+  await admin.from("audit_log").insert({ actor: user.id, action: "duty_roster", entity: "site_content", detail: { title: "WhatsApp duty roster" } });
+  revalidatePath("/admin");
+  return { message: "Saved. WhatsApp buttons now go to the people on duty." };
+}
+
+export async function sendReportNow() {
+  const { user } = await requireAdmin();
+  const { createAdminClient } = await import("@/lib/supabase/server");
+  const { managementReport } = await import("@/lib/jobs");
+  const admin = createAdminClient();
+  await managementReport(admin);
+  await admin.from("audit_log").insert({ actor: user.id, action: "report_sent", entity: "report", detail: { title: "Monthly management report" } });
+  revalidatePath("/admin");
 }

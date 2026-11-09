@@ -1,7 +1,8 @@
-export type Role = "learner" | "facilitator" | "sales" | "content" | "admin";
+export type Role = "learner" | "employer" | "facilitator" | "sales" | "content" | "admin";
 
 export const ROLE_LABEL: Record<Role, string> = {
   learner: "Learner",
+  employer: "Employer (HR)",
   facilitator: "Facilitator",
   sales: "Sales & admissions",
   content: "Content editor",
@@ -10,6 +11,7 @@ export const ROLE_LABEL: Record<Role, string> = {
 
 export const ROLE_HELP: Record<Role, string> = {
   learner: "Buys and studies courses",
+  employer: "Sees live progress, attendance and results for their own company's staff; registers staff; B-BBEE summary",
   facilitator: "Sees learners on assigned courses and records assessment results",
   sales: "Leads, orders, refunds, learner access, venue bookings and coupon requests",
   content: "Courses, prices, homepage content, announcements and redirects",
@@ -36,7 +38,7 @@ export const canOpen = (role: string | null | undefined, tab: string) =>
   !!role && !!BACK_OFFICE.find((t) => t.key === tab)?.roles.includes(role as Role);
 
 /** Where each role lands after signing in. */
-export const homeFor = (role?: string | null) => (isBackOffice(role) ? "/admin" : role === "facilitator" ? "/facilitator" : "/dashboard");
+export const homeFor = (role?: string | null) => (isBackOffice(role) ? "/admin" : role === "facilitator" ? "/facilitator" : role === "employer" ? "/employer" : "/dashboard");
 
 export const ROOMS: [string, string, string][] = [
   ["Training room A", "30 seated", "Classroom training, workshops"],

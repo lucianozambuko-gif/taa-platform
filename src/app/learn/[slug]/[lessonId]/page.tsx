@@ -40,7 +40,7 @@ export default async function LessonPage({ params }: { params: Promise<{ slug: s
       <div className="wrap">
         <div className="crumbs"><Link href="/dashboard">My learning</Link><span>/</span><span>{course.title}</span></div>
         <div className="lesson">
-          <aside className="card outline">
+          <nav className="card outline" aria-label="Course outline">
             <div style={{ padding: "10px 10px 4px" }}>
               <div className="row" style={{ justifyContent: "space-between" }}><b>{course.title}</b><span className="tnum small muted">{pct}%</span></div>
               <div className="bar" style={{ marginTop: 8 }}><i style={{ width: `${pct}%` }} /></div>
@@ -57,7 +57,7 @@ export default async function LessonPage({ params }: { params: Promise<{ slug: s
                 ))}
               </div>
             ))}
-          </aside>
+          </nav>
           <div className="stack" style={{ gap: 16, minWidth: 0 }}>
             {pct === 100 && (
               <div className="celebrate">
@@ -67,7 +67,7 @@ export default async function LessonPage({ params }: { params: Promise<{ slug: s
                   ))}
                 </div>
                 <div className="burst"><svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M5 12l5 5 9-10" /></svg></div>
-                <h2 style={{ fontSize: "1.4rem" }}>You've finished {course.title}</h2>
+                <h1 style={{ fontSize: "1.4rem" }}>You've finished {course.title}</h1>
                 <p className="muted">Every lesson and quiz is complete.{course.certificate_auto ? " Your certificate is ready." : " The Academy issues your result after assessment."}</p>
                 <div className="row" style={{ justifyContent: "center" }}>
                   {course.certificate_auto && <Link className="btn btn-primary" href={`/certificate/${slug}`}>Download certificate</Link>}
@@ -96,7 +96,7 @@ export default async function LessonPage({ params }: { params: Promise<{ slug: s
             )}
             {lesson.kind === "download" && (
               <div className="panel stack">
-                <h2 style={{ fontSize: "1.35rem" }}>{lesson.title}</h2>
+                <h1 style={{ fontSize: "1.35rem" }}>{lesson.title}</h1>
                 {content?.body && <p className="muted">{content.body}</p>}
                 {downloadUrl ? (
                   <div><a className="btn btn-ghost" href={downloadUrl} target="_blank" rel="noopener">Download</a></div>

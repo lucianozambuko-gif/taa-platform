@@ -4,6 +4,7 @@ import { KindBadge } from "@/components/CourseBits";
 import { getUserAndProfile } from "@/lib/supabase/server";
 import type { Course } from "@/lib/types";
 import AssessForm from "./AssessForm";
+import Evidence from "./Evidence";
 
 export const metadata = { title: "Teaching" };
 export const dynamic = "force-dynamic";
@@ -63,6 +64,12 @@ export default async function FacilitatorPage({ searchParams }: { searchParams: 
     };
   };
 
+  const { data: evRows } = enrols.length ? await supabase.from("assessment_evidence").select("enrolment_id, path, name").in("enrolment_id", enrols.map((e) => e.id)) : { data: [] };
+  const evidence = new Map<string, { name: string; url: string | null }[]>();
+  for (const ev of evRows ?? []) {
+    const { data: signed } = await supabase.storage.from("evidence").createSignedUrl(ev.path, 60 * 30);
+    evidence.set(ev.enrolment_id, [...(evidence.get(ev.enrolment_id) ?? []), { name: ev.name, url: signed?.signedUrl ?? null }]);
+  }
   const all = enrols.map((e) => {
     const c = courses.find((x) => x.id === e.course_id)!;
     return { ...e, course: c, ...stats(c, e.user_id) };
@@ -141,10 +148,11 @@ export default async function FacilitatorPage({ searchParams }: { searchParams: 
                 <div className="row" style={{ justifyContent: "space-between" }}>
                   <div className="row" style={{ gap: 8 }}><KindBadge course={active} /><span className="small muted">{active.has_lms ? `${active.modules.flatMap((m) => m.lessons).length} online lessons` : "Classroom / practical programme"}</span></div>
                   <div className="row" style={{ gap: 8 }}>
+                    <Link className="btn btn-primary btn-sm" href={`/facilitator/attendance?course=${active.slug}`}>Attendance register</Link>
                     {active.has_lms && <Link className="btn btn-ghost btn-sm" href={`/courses/${active.slug}`}>Course page</Link>}
                   </div>
                 </div>
-                <div className="panel tscroll" style={{ padding: "6px 10px" }}>
+                <div className="panel tscroll" tabIndex={0} style={{ padding: "6px 10px" }}>
                   <table className="tbl">
                     <thead><tr><th>Learner</th><th>Enrolled</th>{active.has_lms && <><th>Progress</th><th>Quiz avg</th><th>Last active</th></>}<th>Assessment result</th></tr></thead>
                     <tbody>
@@ -169,6 +177,7 @@ export default async function FacilitatorPage({ searchParams }: { searchParams: 
                               <>
                                 {r.result && <div className="small muted" style={{ marginBottom: 6 }}>Recorded {r.assessed_at ? day(r.assessed_at) : ""}</div>}
                                 <AssessForm enrolment={r.id} result={r.result} note={r.result_note} />
+                                <Evidence courseId={r.course_id} enrolmentId={r.id} files={evidence.get(r.id) ?? []} />
                               </>
                             )}
                           </td>

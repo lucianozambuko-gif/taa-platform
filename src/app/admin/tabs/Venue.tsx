@@ -66,7 +66,7 @@ export default async function VenueTab({ supabase, sp }: { supabase: DB; sp: Rec
 
       <BookingForm title="Add a booking or block a room" />
 
-      <div className="panel tscroll" style={{ padding: "6px 10px" }}>
+      <div className="panel tscroll" tabIndex={0} style={{ padding: "6px 10px" }}>
         <table className="tbl">
           <thead><tr><th>Date</th><th>Room</th><th>Time</th><th>Client</th><th>Status</th><th></th></tr></thead>
           <tbody>

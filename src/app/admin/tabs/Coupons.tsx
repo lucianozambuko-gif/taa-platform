@@ -30,7 +30,7 @@ export default async function CouponsTab({ supabase, isAdmin }: { supabase: DB; 
         </div>
       )}
       <CouponForm courses={courses ?? []} isAdmin={isAdmin} />
-      <div className="panel tscroll" style={{ padding: "6px 10px" }}>
+      <div className="panel tscroll" tabIndex={0} style={{ padding: "6px 10px" }}>
         <table className="tbl">
           <thead><tr><th>Code</th><th>Discount</th><th>Course</th><th>Used</th><th>Expires</th><th>Status</th><th>Approved by</th>{isAdmin && <th></th>}</tr></thead>
           <tbody>

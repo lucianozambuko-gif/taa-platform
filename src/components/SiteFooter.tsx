@@ -5,7 +5,7 @@ export default function SiteFooter() {
     <footer className="site">
       <div className="wrap">
         <div>
-          <h4>Study</h4>
+          <h2>Study</h2>
           <Link href="/courses">Course catalogue</Link><br />
           <Link href="/online-learning">Online learning</Link><br />
           <Link href="/learnerships">Qualifications &amp; learnerships</Link><br />
@@ -13,13 +13,13 @@ export default function SiteFooter() {
           <Link href="/faqs">Resources &amp; FAQs</Link>
         </div>
         <div>
-          <h4>Organisations</h4>
+          <h2>Organisations</h2>
           <Link href="/employers">Training for employers</Link><br />
           <Link href="/venue">Assessment centre &amp; venue hire</Link><br />
           <Link href="/facilitators">Facilitators &amp; approach</Link>
         </div>
         <div>
-          <h4>About</h4>
+          <h2>About</h2>
           <Link href="/about">About &amp; accreditations</Link><br />
           <Link href="/news">News &amp; insights</Link><br />
           <Link href="/contact">Contact &amp; locations</Link><br />
@@ -27,7 +27,7 @@ export default function SiteFooter() {
           <Link href="/terms">Terms and learner policies</Link>
         </div>
         <div>
-          <h4>This build</h4>
+          <h2>This build</h2>
           <Link href="/site-map">Site map</Link>
           <div className="social" aria-label="Social media">
             <a href="https://www.facebook.com/" target="_blank" rel="noopener">Facebook</a>

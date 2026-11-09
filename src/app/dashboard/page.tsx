@@ -28,6 +28,7 @@ export default async function DashboardPage() {
   if (!user) redirect("/login?next=/dashboard");
   if (profile?.role === "facilitator") redirect("/facilitator");
   if (isBackOffice(profile?.role)) redirect("/admin");
+  if (profile?.role === "employer") redirect("/employer");
 
   const { data: enrolments } = await supabase
     .from("enrolments")
@@ -110,11 +111,12 @@ export default async function DashboardPage() {
             )}
             {rows.length === 0 && (
               <div className="panel stack">
-                <h3>You haven't enrolled in a course yet</h3>
+                <h2 className="h3">You haven't enrolled in a course yet</h2>
                 <p className="muted">Browse the catalogue, pay online and your course appears here straight away.</p>
                 <div><Link className="btn btn-primary" href="/courses">Find a course</Link></div>
               </div>
             )}
+            {rows.length > 0 && <h2 className="sr-only">My courses</h2>}
             {rows.map((r) => (
               <div className="card enrol" key={r.id}>
                 <Ring pct={r.courses.has_lms ? r.pct : 0} />
@@ -158,7 +160,7 @@ export default async function DashboardPage() {
             {(messages ?? []).length > 0 && (
               <div className="panel stack" style={{ gap: 10 }}>
                 <div className="row" style={{ justifyContent: "space-between" }}>
-                  <h3>Messages {unread > 0 && <span className="badge b-warn">{unread} new</span>}</h3>
+                  <h2 className="h3">Messages {unread > 0 && <span className="badge b-warn">{unread} new</span>}</h2>
                   {unread > 0 && <form action={markMessagesRead}><button className="btn btn-ghost btn-sm">Mark as read</button></form>}
                 </div>
                 {(messages ?? []).map((m) => (
@@ -174,7 +176,7 @@ export default async function DashboardPage() {
               </div>
             )}
             <div className="panel stack">
-              <h3>Certificates</h3>
+              <h2 className="h3">Certificates</h2>
               {rows.filter((r) => (r.courses.has_lms && r.pct === 100 && r.courses.certificate_auto) || r.result === "competent").map((r) => (
                 <div className="row" style={{ justifyContent: "space-between" }} key={r.id}>
                   <span>{r.courses.title}</span>
@@ -187,7 +189,7 @@ export default async function DashboardPage() {
             </div>
             {orders.length > 0 && (
               <div className="panel stack">
-                <h3>Payments and receipts</h3>
+                <h2 className="h3">Payments and receipts</h2>
                 {orders.map((o) => (
                   <div className="row" style={{ justifyContent: "space-between" }} key={o.id}>
                     <span><span className="mono small">{o.invoice_no}</span> · {(o.courses as unknown as { title: string }).title}{o.instalments > 1 ? <span className="small muted"> · instalment {o.instalment_no}/{o.instalments}</span> : null}</span>

@@ -31,7 +31,7 @@ export default function AboutPage() {
         <div className="stack">
           <h2 style={{ fontSize: "1.4rem" }}>Accreditations</h2>
           <p className="muted" style={{ maxWidth: "62ch" }}>Every accreditation claim on this website is checked against the Academy's current approval letters before it is published.</p>
-          <div className="panel tscroll" style={{ padding: "6px 10px" }}>
+          <div className="panel tscroll" tabIndex={0} style={{ padding: "6px 10px" }}>
             <table className="tbl">
               <thead><tr><th>Item</th><th>Detail</th><th>Source</th></tr></thead>
               <tbody>{ROWS.map(([a, b, c]) => <tr key={a}><td><b>{a}</b></td><td className="tbc">{b}</td><td className="muted">{c}</td></tr>)}</tbody>

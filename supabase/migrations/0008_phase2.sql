@@ -255,3 +255,24 @@ create policy "teaching staff delete evidence" on storage.objects for delete to 
 alter table public.site_events drop constraint if exists site_events_kind_check;
 alter table public.site_events add constraint site_events_kind_check
   check (kind in ('brochure_download', 'whatsapp_click', 'whatsapp_routed', 'search'));
+
+create policy "employer sees staff sessions" on public.class_sessions for select using (
+  exists (select 1 from public.enrolments e where e.course_id = class_sessions.course_id and e.company = public.employer_company())
+);
+
+drop function if exists public.admin_users();
+create or replace function public.admin_users()
+returns table (id uuid, email text, full_name text, phone text, role text, created_at timestamptz, last_sign_in_at timestamptz, enrolments bigint, marketing_opt_in boolean, company text)
+language sql
+stable
+security definer
+set search_path = public, auth
+as $$
+  select p.id, u.email::text, p.full_name, p.phone, p.role, u.created_at, u.last_sign_in_at,
+         (select count(*) from public.enrolments e where e.user_id = p.id), p.marketing_opt_in, p.company
+  from public.profiles p join auth.users u on u.id = p.id
+  where public.is_admin()
+  order by u.created_at desc;
+$$;
+revoke execute on function public.admin_users() from public, anon;
+grant execute on function public.admin_users() to authenticated;

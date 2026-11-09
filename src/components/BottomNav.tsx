@@ -81,7 +81,7 @@ export default function BottomNav({ role = "learner", labels = EN }: { role?: st
           <svg {...ICON}><path d="M4 5h6a2 2 0 0 1 2 2v13a2 2 0 0 0-2-2H4z" /><path d="M20 5h-6a2 2 0 0 0-2 2v13a2 2 0 0 1 2-2h6z" /></svg>{labels.learning}
         </Link>
       )}
-      <a href={whatsappLink("Hi Training Africa Academy, I need help with my course.")} target="_blank" rel="noopener">
+      <a href={whatsappLink("Hi Training Africa Academy, I need help with my course.", "support")} target="_blank" rel="noopener">
         <svg {...ICON}><path d="M4 20l1.3-4A8 8 0 1 1 8 19z" /><path d="M9 10h.01M12 10h.01M15 10h.01" /></svg>{labels.help}
       </a>
     </nav>

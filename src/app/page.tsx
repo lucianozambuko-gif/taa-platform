@@ -73,25 +73,6 @@ export default async function HomePage() {
           <div className="stats">
             {site.stats.map((st) => <div key={st.label}><b className="tnum">{st.value}</b><span className="muted small">{st.label}</span></div>)}
           </div>
-          <div className="grid g3">{featured.map((c) => <CourseCard key={c.id} course={c} />)}</div>
-        </div>
-      </section>
-
-      <section className="block" style={{ paddingTop: 0 }}>
-        <div className="wrap stack" style={{ gap: 22 }}>
-          <div className="sec-head" style={{ marginBottom: 0 }}>
-            <div>
-              <div className="eyebrow">Why learners and employers choose us</div>
-              <h2 style={{ marginTop: 6 }}>Trusted by people who need training that works on the job</h2>
-            </div>
-            {site.sample && <span className="sample">Sample figures until supplied by the Academy</span>}
-          </div>
-          <div className="stats">
-            <div><b className="tnum">[2,400+]</b><span className="muted small">learners trained</span></div>
-            <div><b className="tnum">[120+]</b><span className="muted small">employer clients</span></div>
-            <div><b className="tnum">[12]</b><span className="muted small">years training in Gauteng</span></div>
-            <div><b className="tnum">[94%]</b><span className="muted small">would recommend us</span></div>
-          </div>
           <div className="grid g3">
             {site.testimonials.map((t, i) => [t.quote, t.name, t.role, TONES[i % 3]] as const)
             .map(([text, name, role, tone]) => (

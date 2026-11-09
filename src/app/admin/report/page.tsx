@@ -63,7 +63,7 @@ export default async function EmployerReport({ searchParams }: { searchParams: P
               <div className="card kpi"><div className="eyebrow">Completed</div><div className="v tnum">{completed}/{lines.length}</div></div>
             </div>
           </div>
-          <div className="tscroll">
+          <div className="tscroll" tabIndex={0}>
             <table className="tbl">
               <thead><tr><th>Learner</th><th>Course</th><th>Enrolled</th><th>Online progress</th><th>Last activity</th><th>Status</th></tr></thead>
               <tbody>

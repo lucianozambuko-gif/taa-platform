@@ -1,14 +1,19 @@
 import { LEAD_LABEL } from "@/lib/format";
 import { anonymiseLead, updateLead } from "../actions";
+import BulkEnrolForm from "../BulkEnrolForm";
+import { DutyRosterForm } from "../ContentForms";
+import { getDuty } from "@/lib/duty";
 import { type DB, SELECT, waLink, when } from "./shared";
 
 const STATUS_BADGE: Record<string, string> = { new: "b-warn", contacted: "b-short", quoted: "b-short", won: "b-good", lost: "b-bad" };
 
 /** Every enquiry with owner, status and notes. Sales staff can filter to their own leads. */
 export default async function LeadsTab({ supabase, userId, sp, isAdmin }: { supabase: DB; userId: string; sp: Record<string, string | undefined>; isAdmin: boolean }) {
-  const [{ data: leads }, { data: staff }] = await Promise.all([
+  const [{ data: leads }, { data: staff }, { data: courseList }, duty] = await Promise.all([
     supabase.from("leads").select("*, courses(title)").order("created_at", { ascending: false }).limit(300),
     supabase.rpc("staff_directory"),
+    supabase.from("courses").select("id, title").order("title"),
+    getDuty(),
   ]);
   const people = (staff ?? []) as { id: string; full_name: string | null; role: string }[];
   const nameOf = new Map(people.map((p) => [p.id, p.full_name ?? "Staff"]));
@@ -26,6 +31,7 @@ export default async function LeadsTab({ supabase, userId, sp, isAdmin }: { supa
   ];
   return (
     <div className="stack" style={{ gap: 14 }}>
+      <DutyRosterForm duty={duty} />
       <div className="row" style={{ justifyContent: "space-between" }}>
         <div className="row" style={{ gap: 6 }}>
           {VIEWS.map(([k, label, n]) => (
@@ -39,8 +45,8 @@ export default async function LeadsTab({ supabase, userId, sp, isAdmin }: { supa
           const d = (l.details ?? {}) as Record<string, string>;
           const wa = waLink(l.phone, `Hi ${l.name.split(" ")[0]}, this is Training Africa Academy following up on your ${(LEAD_LABEL[l.type] ?? "enquiry").toLowerCase()} (${l.ref}).`);
           return (
-            <form key={l.id} action={updateLead} className="panel lead-card">
-              <input type="hidden" name="id" value={l.id} />
+            <div key={l.id} className="panel lead-card">
+
               <div className="lead-head">
                 <div>
                   <div className="row" style={{ gap: 8 }}>
@@ -64,7 +70,8 @@ export default async function LeadsTab({ supabase, userId, sp, isAdmin }: { supa
                   {l.email && <a className="btn btn-ghost btn-sm" href={`mailto:${l.email}?subject=${encodeURIComponent(`Your enquiry ${l.ref}`)}`}>Email</a>}
                 </div>
               </div>
-              <div className="lead-edit">
+              <form action={updateLead} className="lead-edit">
+                <input type="hidden" name="id" value={l.id} />
                 <label className="small">Owner
                   <select name="assigned_to" defaultValue={l.assigned_to ?? ""} style={SELECT}>
                     <option value="">Unassigned ({l.routed_to})</option>
@@ -80,10 +87,18 @@ export default async function LeadsTab({ supabase, userId, sp, isAdmin }: { supa
                   <input name="notes" defaultValue={l.notes ?? ""} placeholder="e.g. Called, sending quote Friday" style={{ ...SELECT, width: "100%" }} />
                 </label>
                 <button className="btn btn-primary btn-sm">Save</button>
-              </div>
-              {isAdmin && !l.name.startsWith("Removed") && <button formAction={anonymiseLead} className="btn btn-ghost btn-sm" style={{ alignSelf: "flex-start" }} title="POPIA request: remove this person's details">Remove personal data</button>}
+                {isAdmin && !l.name.startsWith("Removed") && <button formAction={anonymiseLead} className="btn btn-ghost btn-sm" title="POPIA request: remove this person's details">Remove personal data</button>}
+              </form>
+              {l.type === "multi_learner" && d.learners && l.status !== "won" && (
+                <details>
+                  <summary className="btn btn-ghost btn-sm" style={{ display: "inline-flex" }}>Enrol the {String(d.learners).split("\n").filter((x) => x.trim()).length} learners on this list</summary>
+                  <div style={{ marginTop: 10 }}>
+                    <BulkEnrolForm courses={courseList ?? []} preset={{ courseId: l.course_id ?? undefined, company: l.company ?? undefined, learners: String(d.learners), leadId: l.id }} />
+                  </div>
+                </details>
+              )}
               {l.assigned_to && <p className="small muted">Owner: {nameOf.get(l.assigned_to) ?? "Staff"}{l.updated_at ? ` · updated ${when(l.updated_at)}` : ""}</p>}
-            </form>
+            </div>
           );
         })}
         {!list.length && <div className="panel muted">No leads in this view.</div>}

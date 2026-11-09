@@ -6,15 +6,16 @@ import { getUserAndProfile } from "@/lib/supabase/server";
 import type { Course } from "@/lib/types";
 import { BACK_OFFICE, ROLE_HELP, ROLE_LABEL, canOpen, isBackOffice, type Role } from "@/lib/roles";
 import { RetentionForm } from "./ContentForms";
-import { anonymiseUser, assignCourse, revokeEnrolment, setUserRole, togglePublished, unassignFacilitator, updatePrice } from "./actions";
+import { anonymiseUser, assignCourse, sendReportNow, revokeEnrolment, setUserRole, togglePublished, unassignFacilitator, updatePrice } from "./actions";
 import LeadsTab from "./tabs/Leads";
 import OrdersTab from "./tabs/Orders";
 import VenueTab from "./tabs/Venue";
 import CouponsTab from "./tabs/Coupons";
 import SiteContentTab from "./tabs/SiteContent";
 import EnrolForm from "./EnrolForm";
+import BulkEnrolForm from "./BulkEnrolForm";
 
-const AUDIT: Record<string, string> = { price_change: "Price changed", publish: "Course published", unpublish: "Course hidden", lead_status: "Lead status updated", course_update: "Course edited", course_create: "Course added", admin_enrol: "Learner given access", assessment: "Assessment result recorded", role_change: "Role changed", export: "Data exported", lead_update: "Lead updated", refund: "Refund recorded", order_follow_up: "Unpaid order followed up", order_cancel: "Order cancelled", access_removed: "Course access removed", coupon_request: "Coupon requested", coupon_create: "Coupon created", coupon_approve: "Coupon approved", coupon_disable: "Coupon switched off", venue_confirmed: "Room booked", venue_held: "Room held", venue_blocked: "Room blocked", venue_confirm: "Booking confirmed", venue_release: "Booking released", venue_decline: "Venue request declined", site_content_update: "Homepage content updated", redirect_add: "Redirect added", redirect_remove: "Redirect removed", facilitator_assign: "Facilitator assigned", facilitator_unassign: "Facilitator removed" };
+const AUDIT: Record<string, string> = { price_change: "Price changed", publish: "Course published", unpublish: "Course hidden", lead_status: "Lead status updated", course_update: "Course edited", course_create: "Course added", admin_enrol: "Learner given access", assessment: "Assessment result recorded", role_change: "Role changed", export: "Data exported", lead_update: "Lead updated", refund: "Refund recorded", order_follow_up: "Unpaid order followed up", order_cancel: "Order cancelled", access_removed: "Course access removed", coupon_request: "Coupon requested", coupon_create: "Coupon created", coupon_approve: "Coupon approved", coupon_disable: "Coupon switched off", venue_confirmed: "Room booked", venue_held: "Room held", venue_blocked: "Room blocked", venue_confirm: "Booking confirmed", venue_release: "Booking released", venue_decline: "Venue request declined", site_content_update: "Homepage content updated", redirect_add: "Redirect added", redirect_remove: "Redirect removed", facilitator_assign: "Facilitator assigned", facilitator_unassign: "Facilitator removed", bulk_enrol: "Staff enrolled in bulk", attendance: "Attendance marked", evidence_upload: "Assessment evidence uploaded", lesson_save: "Lesson edited", duty_roster: "WhatsApp duty roster updated", report_sent: "Management report sent", post_save: "Article saved", faqs_update: "FAQs updated", seo_update: "SEO settings updated" };
 
 export const metadata = { title: "Back office" };
 export const dynamic = "force-dynamic";
@@ -37,6 +38,7 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
   const allowed = BACK_OFFICE.filter((t) => t.roles.includes(role));
   const tab = sp.tab && canOpen(role, sp.tab) ? sp.tab : allowed[0].key;
   const isAdmin = role === "admin";
+  const canSales = role === "admin" || role === "sales";
   const since = new Date(Date.now() - 30 * 864e5).toISOString();
 
   let body: React.ReactNode = null;
@@ -62,10 +64,31 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
       isAdmin ? supabase.rpc("admin_users") : Promise.resolve({ data: [] }),
       supabase.from("audit_log").select("action, detail, created_at").order("created_at", { ascending: false }).limit(8),
       supabase.from("enrolments").select("id, courses!inner(certificate_auto)").is("result", null).eq("courses.certificate_auto", false),
-      supabase.from("site_events").select("kind").gte("created_at", since),
+      supabase.from("site_events").select("kind, label, path").gte("created_at", since),
       supabase.from("leads").select("id").eq("status", "won").gte("created_at", since),
       supabase.from("notifications").select("audience, kind, subject, to_email, status, created_at").order("created_at", { ascending: false }).limit(12),
     ]);
+    const threeDays = new Date(Date.now() - 3 * 864e5).toISOString();
+    const [{ data: staleLeads }, { data: unpaid }, { data: venueReqs }, { data: pendingCoupons }] = await Promise.all([
+      canSales ? supabase.from("leads").select("id, assigned_to").in("status", ["new", "contacted", "quoted"]).or(`updated_at.lt.${threeDays},and(updated_at.is.null,created_at.lt.${threeDays})`) : Promise.resolve({ data: [] }),
+      canSales ? supabase.from("orders").select("id").eq("status", "pending").is("followed_up_at", null).lt("created_at", new Date(Date.now() - 864e5).toISOString()) : Promise.resolve({ data: [] }),
+      canSales ? supabase.from("leads").select("id").eq("type", "venue").eq("status", "new") : Promise.resolve({ data: [] }),
+      isAdmin ? supabase.from("coupons").select("id").eq("status", "pending") : Promise.resolve({ data: [] }),
+    ]);
+    const tasks: [number, string, string][] = ([
+      [(staleLeads ?? []).filter((l) => l.assigned_to === user.id).length, "of your enquiries have had no update for 3+ days", "/admin?tab=leads&view=mine"],
+      [(staleLeads ?? []).filter((l) => !l.assigned_to).length, "unassigned enquiries are waiting for an owner", "/admin?tab=leads&view=unassigned"],
+      [(unpaid ?? []).length, "unpaid checkouts are older than a day (the system already sent one reminder)", "/admin?tab=orders"],
+      [(venueReqs ?? []).length, "venue requests need a reply", "/admin?tab=venue"],
+      [(pendingCoupons ?? []).length, "coupons are waiting for your approval", "/admin?tab=coupons"],
+      [(pendingResults ?? []).length, "learners are waiting for an assessment result (facilitators)", "/admin?tab=learners"],
+    ] as [number, string, string][]).filter(([n]) => n > 0);
+    const searchCount = new Map<string, { n: number; none: boolean }>();
+    for (const e of (events ?? []).filter((e) => e.kind === "search" && e.label)) {
+      const k = String(e.label).toLowerCase();
+      searchCount.set(k, { n: (searchCount.get(k)?.n ?? 0) + 1, none: String(e.path ?? "").includes("(0 results)") });
+    }
+    const topSearches = [...searchCount.entries()].sort((a, b) => b[1].n - a[1].n).slice(0, 8);
     const downloads = (events ?? []).filter((e) => e.kind === "brochure_download").length;
     const waClicks = (events ?? []).filter((e) => e.kind === "whatsapp_click").length;
     const leadConv = leads?.length ? Math.round(((wonLeads ?? []).length / leads.length) * 100) : 0;
@@ -101,6 +124,18 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
           {isAdmin && <div className="card kpi"><div className="eyebrow">Accounts</div><div className="v tnum">{(people ?? []).length}</div><div className="d"><Link href="/admin?tab=users">Manage users →</Link></div></div>}
           <div className="card kpi"><div className="eyebrow">Awaiting assessment</div><div className="v tnum">{(pendingResults ?? []).length}</div><div className="d">classroom and accredited results</div></div>
         </div>
+        <div className="panel stack" style={{ marginTop: 16, gap: 8 }}>
+          <div className="row" style={{ justifyContent: "space-between" }}>
+            <h3>Today’s tasks</h3>
+            {isAdmin && <form action={sendReportNow}><button className="btn btn-ghost btn-sm">Email the monthly report now</button></form>}
+          </div>
+          {tasks.map(([n, text, href]) => (
+            <Link key={text} href={href} className="row" style={{ gap: 10, textDecoration: "none", color: "inherit", borderBottom: "1px solid var(--line)", paddingBottom: 8 }}>
+              <span className="badge b-warn tnum">{n}</span><span>{text}</span><span className="muted" style={{ marginLeft: "auto" }}>→</span>
+            </Link>
+          ))}
+          {!tasks.length && <p className="small muted">Nothing waiting. Reminders for enquiries left 3+ days are also emailed to their owner each morning.</p>}
+        </div>
         <div className="panel" style={{ marginTop: 16 }}>
           <h3>Enquiries by type, last 30 days</h3>
           {byType.map(([label, n]) => (
@@ -108,7 +143,7 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
           ))}
         </div>
         <div className="grid g2" style={{ marginTop: 16, alignItems: "start" }}>
-          <div className="panel tscroll">
+          <div className="panel tscroll" tabIndex={0}>
             <h3>Course performance</h3>
             <table className="tbl" style={{ marginTop: 8 }}>
               <thead><tr><th>Course</th><th>Enrolled</th><th>Completed</th><th>Sales</th></tr></thead>
@@ -132,7 +167,7 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
           </div>
         </div>
         {(outbox ?? []).length > 0 && (
-          <div className="panel tscroll" style={{ marginTop: 16 }}>
+          <div className="panel tscroll" tabIndex={0} style={{ marginTop: 16 }}>
             <h3>Notifications sent by the system</h3>
             <p className="small muted">Payment, enrolment, access, result, refund and booking messages to learners and enquirers, and new-lead and new-order alerts to staff. {process.env.RESEND_API_KEY ? "Emails are being delivered." : "Learners see these in their dashboard. Emails start sending once an email provider key is added."}</p>
             <table className="tbl" style={{ marginTop: 8 }}>
@@ -148,6 +183,15 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
                 ))}
               </tbody>
             </table>
+          </div>
+        )}
+        {topSearches.length > 0 && (
+          <div className="panel stack" style={{ marginTop: 16, gap: 8 }}>
+            <h3>What people search for</h3>
+            <p className="small muted">Last 30 days. Searches marked “no results” show courses or FAQs people want that the site doesn’t have yet.</p>
+            <div className="row" style={{ gap: 6 }}>
+              {topSearches.map(([q, v]) => <span key={q} className={`badge ${v.none ? "b-bad" : "b-short"}`}>{q} · {v.n}{v.none ? " · no results" : ""}</span>)}
+            </div>
           </div>
         )}
         <p className="small muted" style={{ marginTop: 12 }}>Brochure downloads and WhatsApp clicks are counted here and also sent to Google Analytics 4. Learner progress is on the Learners tab.</p>
@@ -171,6 +215,7 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
     body = (
       <div className="stack" style={{ gap: 16 }}>
         <EnrolForm courses={courseList ?? []} />
+        <BulkEnrolForm courses={courseList ?? []} />
         <div className="row" style={{ justifyContent: "space-between" }}>
           <p className="small muted">Completion records: progress, results and last activity for every enrolment. Paid enrolments are removed through a refund on the Orders tab.</p>
           <div className="row" style={{ gap: 6 }}>
@@ -178,7 +223,7 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
             <a className="btn btn-ghost btn-sm" href="/admin/export/learners">Download CSV</a>
           </div>
         </div>
-        <div className="panel tscroll" style={{ padding: "6px 10px" }}>
+        <div className="panel tscroll" tabIndex={0} style={{ padding: "6px 10px" }}>
           <table className="tbl">
             <thead><tr><th>Learner</th><th>Course</th><th>Enrolled</th><th>How</th><th>Progress</th><th>Result</th><th>Last activity</th><th></th></tr></thead>
             <tbody>
@@ -233,7 +278,7 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
           </div>
           <button className="btn btn-primary btn-sm">Filter</button>
         </form>
-        <div className="panel tscroll" style={{ padding: "6px 10px" }}>
+        <div className="panel tscroll" tabIndex={0} style={{ padding: "6px 10px" }}>
           <table className="tbl">
             <thead><tr><th>Person</th><th>Joined</th><th>Last sign-in</th><th>Courses</th><th>Role</th><th>Teaches</th><th>POPIA</th></tr></thead>
             <tbody>
@@ -252,6 +297,7 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
                         <select name="role" defaultValue={u.role} aria-label={`Role for ${u.full_name ?? u.email}`} style={sel}>
                           {Object.entries(ROLE_LABEL).map(([k, v]) => <option key={k} value={k} title={ROLE_HELP[k as Role]}>{v}</option>)}
                         </select>
+                        <input name="company" defaultValue={(u as U & { company?: string | null }).company ?? ""} placeholder="Company (employers)" aria-label="Employer company" style={{ ...sel, width: 150 }} />
                         <button className="btn btn-ghost btn-sm">Save</button>
                       </form>
                     )}
@@ -327,7 +373,7 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
           <p className="muted small">Click a course to edit everything on its page: content, intakes, accreditation and certificates.</p>
           <Link className="btn btn-primary btn-sm" href="/admin/courses/new">Add a course</Link>
         </div>
-        <div className="panel tscroll" style={{ padding: "6px 10px" }}>
+        <div className="panel tscroll" tabIndex={0} style={{ padding: "6px 10px" }}>
           <table className="tbl">
             <thead><tr><th>Course</th><th>Type</th><th>Quick price change (R, incl. VAT)</th><th>Visibility</th></tr></thead>
             <tbody>
@@ -366,7 +412,7 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
     ]);
     const nameOf = new Map(((people ?? []) as { id: string; full_name: string | null; email: string }[]).map((p) => [p.id, p.full_name ?? p.email]));
     body = (
-      <div className="panel tscroll" style={{ padding: "6px 10px" }}>
+      <div className="panel tscroll" tabIndex={0} style={{ padding: "6px 10px" }}>
         <table className="tbl">
           <thead><tr><th>When</th><th>Who</th><th>What</th><th>Detail</th></tr></thead>
           <tbody>

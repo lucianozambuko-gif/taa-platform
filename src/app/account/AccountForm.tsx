@@ -10,7 +10,7 @@ export default function AccountForm({ profile, email }: { profile: P; email: str
   return (
     <form action={action} className="panel stack" style={{ gap: 14 }}>
       <div className="field"><label htmlFor="full_name">Full name</label><input id="full_name" name="full_name" defaultValue={profile.full_name ?? ""} required /></div>
-      <div className="field"><label>Email</label><input value={email} disabled /></div>
+      <div className="field"><label htmlFor="acc-email">Email</label><input id="acc-email" value={email} disabled /></div>
       <div className="field"><label htmlFor="phone">Mobile number (for WhatsApp)</label><input id="phone" name="phone" inputMode="tel" defaultValue={profile.phone ?? ""} placeholder="e.g. 082 123 4567" /></div>
       <div className="field">
         <label htmlFor="language">Language</label>

@@ -2,7 +2,8 @@
 
 import { useActionState } from "react";
 import type { Announcement, Stat, Testimonial } from "@/lib/siteContent";
-import { addRedirect, purgeOldLeads, saveFaqs, saveSeo, saveSiteContent, type ContentState } from "./actions";
+import { addRedirect, purgeOldLeads, saveDutyRoster, saveFaqs, saveSeo, saveSiteContent, type ContentState } from "./actions";
+import { TEAM_LABEL, type Duty, type DutyTeam } from "@/lib/dutyTeams";
 
 export function SiteContentForm({ stats, testimonials, announcement, sample }: { stats: Stat[]; testimonials: Testimonial[]; announcement: Announcement; sample: boolean }) {
   const [state, action, pending] = useActionState<ContentState, FormData>(saveSiteContent, {});
@@ -108,5 +109,28 @@ export function RetentionForm() {
       {state.error && <p className="form-error small">{state.error}</p>}
       {state.message && <p className="form-ok small">{state.message}</p>}
     </form>
+  );
+}
+
+/** Who answers each WhatsApp button on the site. Empty or switched-off slots go to the Academy's main number. */
+export function DutyRosterForm({ duty }: { duty: Partial<Duty> }) {
+  const [state, action, pending] = useActionState<ContentState, FormData>(saveDutyRoster, {});
+  return (
+    <details className="panel">
+      <summary style={{ cursor: "pointer", fontWeight: 700 }}>WhatsApp duty roster: who answers each chat button</summary>
+      <form action={action} className="stack" style={{ gap: 10, marginTop: 12 }}>
+        <p className="small muted">Course pages go to the course advisor, the learnership checker to admissions, and the help button to learner support. When a slot is off, chats go to the Academy’s main WhatsApp number.</p>
+        {(Object.keys(TEAM_LABEL) as DutyTeam[]).map((team) => (
+          <div key={team} className="row" style={{ gap: 8, alignItems: "end" }}>
+            <div className="field" style={{ flex: "1 1 160px" }}><label>{TEAM_LABEL[team]}: name</label><input name={`${team}_name`} defaultValue={duty[team]?.name ?? ""} placeholder="e.g. Thandi" /></div>
+            <div className="field" style={{ flex: "1 1 160px" }}><label>WhatsApp number</label><input name={`${team}_phone`} inputMode="tel" defaultValue={duty[team]?.phone ?? ""} placeholder="082 123 4567" /></div>
+            <label className="small" style={{ paddingBottom: 10 }}><input type="checkbox" name={`${team}_on`} defaultChecked={duty[team]?.on ?? false} /> On duty</label>
+          </div>
+        ))}
+        {state.error && <p className="notice" role="alert">{state.error}</p>}
+        {state.message && <p className="notice ok" role="status">{state.message}</p>}
+        <div><button className="btn btn-primary btn-sm" disabled={pending}>{pending ? "Saving…" : "Save roster"}</button></div>
+      </form>
+    </details>
   );
 }

@@ -1,4 +1,5 @@
 import { createAdminClient } from "@/lib/supabase/server";
+import { sendWhatsApp, whatsappConfigured } from "@/lib/whatsapp";
 
 // Server-only module: never import from a client component.
 
@@ -10,6 +11,8 @@ type Message = {
   subject: string;
   body: string;
   link?: string | null;
+  /** Also send by WhatsApp when the learner opted in (reminders, payments, results). */
+  whatsapp?: boolean;
 };
 
 const site = () => process.env.NEXT_PUBLIC_SITE_URL ?? "";
@@ -51,6 +54,14 @@ export async function notify(m: Message) {
         : await sendEmail(to, m.subject, m.body, m.link)
       : null;
     const status = sent === true ? "sent" : sent === false ? "failed" : m.userId ? "in_app" : "queued";
+    // WhatsApp for learners who opted in, when the WhatsApp API is configured
+    if (m.whatsapp !== false && m.userId && whatsappConfigured()) {
+      const { data: p } = await admin.from("profiles").select("phone, whatsapp_opt_in").eq("id", m.userId).maybeSingle();
+      if (p?.whatsapp_opt_in && p.phone) {
+        const site = process.env.NEXT_PUBLIC_SITE_URL ?? "";
+        await sendWhatsApp(process.env.NOTIFY_TEST_TO_PHONE || p.phone, `${m.subject}. ${m.body}${m.link ? ` ${m.link.startsWith("http") ? m.link : site + m.link}` : ""}`);
+      }
+    }
     await admin.from("notifications").insert({
       user_id: m.userId ?? null,
       audience: m.audience,

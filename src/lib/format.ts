@@ -8,9 +8,14 @@ export function vatIncluded(cents: number) {
   return Math.round((cents * 15) / 115);
 }
 
-export function whatsappLink(message: string) {
-  const number = process.env.NEXT_PUBLIC_WHATSAPP_NUMBER ?? "";
-  return `https://wa.me/${number}?text=${encodeURIComponent(message)}`;
+/** WhatsApp chat link. Goes through /api/wa, which routes the chat to the staff member on duty for that team. */
+export function whatsappLink(message: string, team: "general" | "advisor" | "sales" | "admissions" | "centre" | "support" = "general") {
+  return `/api/wa?team=${team}&m=${encodeURIComponent(message)}`;
+}
+
+/** Direct wa.me link (used by the router and staff buttons). */
+export function waDirect(number: string, message: string) {
+  return `https://wa.me/${number.replace(/\D/g, "").replace(/^0/, "27")}?text=${encodeURIComponent(message)}`;
 }
 
 export const KIND_LABEL: Record<string, string> = {

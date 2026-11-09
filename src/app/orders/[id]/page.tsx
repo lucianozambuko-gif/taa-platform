@@ -41,7 +41,7 @@ export default async function ReceiptPage({ params }: { params: Promise<{ id: st
             <div className="small"><div className="eyebrow">Billed to</div><b>{profile?.full_name ?? ""}</b><br />{user.email}<br />{profile?.phone ?? ""}</div>
             <div className="small"><div className="eyebrow">From</div><b>Training Africa Academy</b><br /><span className="tbc">[Address and VAT number to be supplied]</span></div>
           </div>
-          <div className="tscroll">
+          <div className="tscroll" tabIndex={0}>
             <table className="tbl">
               <thead><tr><th>Description</th><th style={{ textAlign: "right" }}>Amount</th></tr></thead>
               <tbody>

@@ -30,7 +30,7 @@ const SUPPORTING: Row[] = [
 
 function Table({ rows }: { rows: Row[] }) {
   return (
-    <div className="panel tscroll" style={{ padding: "6px 10px" }}>
+    <div className="panel tscroll" tabIndex={0} style={{ padding: "6px 10px" }}>
       <table className="tbl">
         <thead><tr><th>Page</th><th>Status</th><th>Notes</th><th /></tr></thead>
         <tbody>

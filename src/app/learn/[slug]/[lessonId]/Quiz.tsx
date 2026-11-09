@@ -11,7 +11,7 @@ export default function Quiz({ lessonId, slug, title, questions, alreadyPassed }
     <form action={action} className="panel quiz">
       <input type="hidden" name="lesson" value={lessonId} />
       <input type="hidden" name="slug" value={slug} />
-      <h2 style={{ fontSize: "1.35rem" }}>{title}</h2>
+      <h1 style={{ fontSize: "1.35rem" }}>{title}</h1>
       <p className="muted small">Pass mark 70%. You can retake the quiz.{alreadyPassed && " You've already passed this quiz."}</p>
       {questions.map((q, qi) => (
         <div className="q" key={qi}>

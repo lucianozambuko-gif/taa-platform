@@ -25,7 +25,7 @@ export default async function SiteContentTab({ supabase }: { supabase: DB }) {
           <h3>News, insights and resources</h3>
           <Link className="btn btn-primary btn-sm" href="/admin/posts/new">New article</Link>
         </div>
-        <div className="tscroll">
+        <div className="tscroll" tabIndex={0}>
           <table className="tbl">
             <thead><tr><th>Article</th><th>Category</th><th>Status</th><th>Updated</th></tr></thead>
             <tbody>
@@ -55,7 +55,7 @@ export default async function SiteContentTab({ supabase }: { supabase: DB }) {
         <h3>Redirects from the old website</h3>
         <p className="small muted">When the new site goes live, old links from Google, adverts and emails keep working by sending visitors to the right new page (permanent 301 redirect).</p>
         <RedirectForm />
-        <div className="tscroll">
+        <div className="tscroll" tabIndex={0}>
           <table className="tbl">
             <thead><tr><th>Old page</th><th>New page</th><th>Used</th><th></th></tr></thead>
             <tbody>
