@@ -7,7 +7,7 @@ import { ROUTING } from "@/lib/format";
 type Entry = { from: "user" | "bot"; text: string; at: string };
 const MAX_TURNS = 80;
 
-export async function chatTurn(opts: { channel: "web" | "whatsapp"; chatId?: string | null; contact?: string | null; text: string }) {
+export async function chatTurn(opts: { channel: "web" | "whatsapp"; chatId?: string | null; contact?: string | null; text: string; state?: AdvisorState }) {
   const admin = createAdminClient();
   type Chat = { id: string; state: AdvisorState; transcript: Entry[]; unanswered: number; lead_id: string | null };
   let chat = null as Chat | null;
@@ -24,7 +24,8 @@ export async function chatTurn(opts: { channel: "web" | "whatsapp"; chatId?: str
   if (chat && chat.transcript.length >= MAX_TURNS * 2)
     return { chatId: chat.id, turn: { replies: [{ text: "This chat has got long. Please WhatsApp us and an advisor will help you directly.", link: { label: "WhatsApp us", href: "/api/wa?team=advisor" } }], state: chat.state, matched: true } as Turn };
 
-  const turn = await advise(opts.text, chat?.state ?? {}, opts.channel, opts.contact ?? undefined);
+  // The website also sends the conversation state back, so the chat keeps working even if saving it fails.
+  const turn = await advise(opts.text, chat?.state ?? opts.state ?? {}, opts.channel, opts.contact ?? undefined);
   const now = new Date().toISOString();
   const transcript: Entry[] = [
     ...(chat?.transcript ?? []),

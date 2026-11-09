@@ -12,6 +12,7 @@ export default function AdvisorChat() {
   const [open, setOpen] = useState(false);
   const [msgs, setMsgs] = useState<Msg[]>([]);
   const [chatId, setChatId] = useState<string | null>(null);
+  const [state, setState] = useState<Record<string, unknown>>({});
   const [text, setText] = useState("");
   const [busy, setBusy] = useState(false);
   const list = useRef<HTMLDivElement>(null);
@@ -20,13 +21,13 @@ export default function AdvisorChat() {
   useEffect(() => {
     try {
       const saved = JSON.parse(sessionStorage.getItem(KEY) ?? "null");
-      if (saved) { setMsgs(saved.msgs ?? []); setChatId(saved.chatId ?? null); }
+      if (saved) { setMsgs(saved.msgs ?? []); setChatId(saved.chatId ?? null); setState(saved.state ?? {}); }
     } catch {}
   }, []);
   useEffect(() => {
-    try { sessionStorage.setItem(KEY, JSON.stringify({ msgs: msgs.slice(-40), chatId })); } catch {}
+    try { sessionStorage.setItem(KEY, JSON.stringify({ msgs: msgs.slice(-40), chatId, state })); } catch {}
     list.current?.scrollTo({ top: list.current.scrollHeight });
-  }, [msgs, chatId]);
+  }, [msgs, chatId, state]);
   useEffect(() => {
     if (!open) return;
     if (!msgs.length) send("hi", true);
@@ -44,9 +45,10 @@ export default function AdvisorChat() {
     if (!silent) setMsgs((m) => [...m, { from: "user", reply: { text: q } }]);
     setText("");
     try {
-      const res = await fetch("/api/advisor", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ text: q, chatId }) });
-      const data = (await res.json()) as { chatId: string | null; replies: Reply[] };
+      const res = await fetch("/api/advisor", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ text: q, chatId, state }) });
+      const data = (await res.json()) as { chatId: string | null; state?: Record<string, unknown>; replies: Reply[] };
       if (data.chatId) setChatId(data.chatId);
+      if (data.state) setState(data.state);
       setMsgs((m) => [...m, ...data.replies.map((r) => ({ from: "bot" as const, reply: r }))]);
     } catch {
       setMsgs((m) => [...m, { from: "bot", reply: { text: "You seem to be offline. Please try again, or WhatsApp us." } }]);
