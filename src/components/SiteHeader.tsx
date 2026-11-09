@@ -4,31 +4,14 @@ import { signOut } from "@/app/(auth)/actions";
 import { Suspense } from "react";
 import DisplaySettings from "./DisplaySettings";
 import NavAutoClose from "./NavAutoClose";
-import { isBackOffice } from "@/lib/roles";
 import { getT } from "@/lib/i18n";
-import NavLinks, { type NavItem } from "./NavLinks";
-import { teachingCounts } from "@/lib/teaching";
+import RoleNav from "./RoleNav";
+import { menuFor } from "@/lib/menus";
 
 export default async function SiteHeader() {
   const [{ supabase, user, profile }, { lang, t }] = await Promise.all([getUserAndProfile(), getT()]);
-  const role = profile?.role;
-  // Facilitators and moderators get a menu for their work instead of the public website links.
-  let roleMenu: NavItem[] | null = null;
-  if (user && role === "facilitator") {
-    const c = await teachingCounts(supabase, user.id);
-    roleMenu = [
-      { href: "/facilitator", label: "My learners" },
-      { href: "/facilitator/results", label: "To assess", count: c.toAssess },
-      { href: "/facilitator/attendance", label: "Attendance" },
-      { href: "/facilitator/results?view=portfolios", label: "Portfolios" },
-      { href: "/admin/guide", label: "Staff guide" },
-    ];
-  } else if (user && role === "moderator") {
-    roleMenu = [
-      { href: "/moderator", label: "To moderate" },
-      { href: "/admin/guide", label: "Staff guide" },
-    ];
-  }
+  // Staff and employers get a menu built around their work instead of the public website links.
+  const roleMenu = user ? await menuFor(supabase, user.id, profile?.role) : null;
   return (
     <header className="site">
       <div className="wrap" style={{ position: "relative" }}>
@@ -47,8 +30,7 @@ export default async function SiteHeader() {
         <nav className="navlinks" aria-label="Main">
           {roleMenu ? (
             <>
-              <Suspense fallback={null}><NavLinks items={roleMenu} /></Suspense>
-              <Link href="/" className="nav-site">View website</Link>
+              <Suspense fallback={null}><RoleNav items={roleMenu} /></Suspense>
             </>
           ) : (
             <>
@@ -65,13 +47,7 @@ export default async function SiteHeader() {
           )}
           {user ? (
             <>
-              {isBackOffice(profile?.role) ? (
-                <Link href="/admin">Back office</Link>
-              ) : roleMenu ? null : profile?.role === "employer" ? (
-                <Link href="/employer">My staff</Link>
-              ) : (
-                <Link href="/dashboard">{t("nav.mylearning")}</Link>
-              )}
+              {!roleMenu && <Link href="/dashboard">{t("nav.mylearning")}</Link>}
               <form action={signOut}>
                 <button className="btn btn-ghost btn-sm" type="submit">{t("nav.signout")}</button>
               </form>

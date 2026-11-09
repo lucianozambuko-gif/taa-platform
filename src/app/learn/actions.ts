@@ -44,6 +44,13 @@ export async function submitQuiz(_: QuizState, formData: FormData): Promise<Quiz
   });
   const score = Math.round((right / quiz.length) * 100);
   const passed = score >= 70;
+  // Every attempt is kept (passed or not) so facilitators can see who is struggling and which questions are missed.
+  const { data: { user } } = await supabase.auth.getUser();
+  if (user)
+    await supabase.from("quiz_attempts").insert({
+      user_id: user.id, lesson_id: lessonId, score, passed,
+      answers: quiz.map((_, i) => (formData.get(`q${i}`) == null ? null : Number(formData.get(`q${i}`)))),
+    });
   if (passed) {
     await record(lessonId, score);
     revalidatePath(`/learn/${slug}`, "layout");

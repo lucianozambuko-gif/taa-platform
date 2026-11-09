@@ -94,7 +94,7 @@ export default async function EmployerPortal() {
           <div><a className="btn btn-ghost btn-sm" href="/employer/export?type=bbbee">Download for your verification agent (CSV)</a></div>
         </div>
 
-        <div className="grid g2" style={{ alignItems: "start" }}>
+        <div className="grid g2" style={{ alignItems: "start" }} id="register">
           <LeadForm type="multi_learner" source="employer_portal" submitLabel="Send staff list" successTitle="Staff list received" successText="{team} will enrol them and each person gets a link to set their password.">
             <h3>Register more staff</h3>
             <p className="small muted">Paste from Excel: one person per line as name, email, phone.</p>

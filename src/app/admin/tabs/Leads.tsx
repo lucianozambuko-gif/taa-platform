@@ -79,7 +79,7 @@ export default async function LeadsTab({ supabase, userId, sp, isAdmin }: { supa
   }
   return (
     <div className="stack" style={{ gap: 14 }}>
-      <DutyRosterForm duty={duty} />
+      <div id="duty"><DutyRosterForm duty={duty} /></div>
       <div className="row" style={{ justifyContent: "space-between" }}>
         <div className="row" style={{ gap: 6 }}>
           {VIEWS.map(([k, label, n]) => (

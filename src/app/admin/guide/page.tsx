@@ -8,8 +8,9 @@ export const metadata = { title: "Staff guide" };
 
 const GUIDE: { id: string; title: string; roles: Role[]; steps: string[] }[] = [
   { id: "start", title: "Signing in and finding your way", roles: ["admin", "sales", "content", "facilitator", "moderator"], steps: [
-    "Sign in with your staff email. You land on your own area: the Back office for admin, sales and content staff, or Teaching for facilitators.",
-    "The tabs you see depend on your role. On a phone, use the bar at the bottom of the screen.",
+    "Sign in with your staff email. You land on your own area: the Dashboard for admin, sales and content staff, My learners for facilitators, and To moderate for moderators.",
+    "The menu at the top of every page is built for your role. Items with an arrow open a short list (for example Leads → Assigned to me). An orange number shows how many things are waiting for you. On a phone, tap Menu, or use the bar at the bottom of the screen.",
+    "View website (in the menu) shows the public site as learners see it.",
     "Everything you change is saved straight away and written to the audit log with your name.",
   ]},
   { id: "courses", title: "Adding or changing a course", roles: ["admin", "content"], steps: [
@@ -71,6 +72,7 @@ const GUIDE: { id: string; title: string; roles: Role[]; steps: string[] }[] = [
     "For classroom and accredited programmes, choose Competent or Not yet competent, add a note and Save. The result goes to the moderator; the learner gets a statement of results once it's endorsed.",
     "Open portfolio shows the learner's full portfolio of evidence: lessons and quiz scores, attendance, evidence files and sign-offs. Add photos or signed checklists there or from the Teaching page.",
     "If the moderator refers a result back, the reason shows on the Teaching page. Fix the evidence or decision and save the result again.",
+    "Quizzes (in your menu): who passed each quiz, who has failed it twice or more, and which questions most learners get wrong. Change the questions there for the courses you teach; learners get the new questions on their next attempt.",
   ]},
   { id: "moderation", title: "Moderators: endorsing results and the verification pack", roles: ["admin", "moderator"], steps: [
     "Moderation lists every assessed result waiting for you, with a suggested sample: all ‘not yet competent’ decisions and at least one in four competent decisions per assessor.",
