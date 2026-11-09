@@ -104,7 +104,7 @@ export default async function FacilitatorPage({ searchParams }: { searchParams: 
           <div className="grid g2">
             {awaiting.length > 0 && (
               <div className="panel stack" style={{ gap: 10 }}>
-                <h3>Awaiting your assessment</h3>
+                <h2 className="h3">Awaiting your assessment</h2>
                 {awaiting.slice(0, 5).map((r) => (
                   <Link key={r.id} className="row" style={{ justifyContent: "space-between", textDecoration: "none" }} href={`/facilitator?course=${r.course.slug}#e-${r.id}`}>
                     <span><b>{person.get(r.user_id)?.full_name ?? "Learner"}</b><br /><span className="small muted">{r.course.title}</span></span>
@@ -115,7 +115,7 @@ export default async function FacilitatorPage({ searchParams }: { searchParams: 
             )}
             {stalled.length > 0 && (
               <div className="panel stack" style={{ gap: 10 }}>
-                <h3>Learners who've gone quiet</h3>
+                <h2 className="h3">Learners who've gone quiet</h2>
                 {stalled.slice(0, 5).map((r) => (
                   <div key={r.id} className="row" style={{ justifyContent: "space-between" }}>
                     <span><b>{person.get(r.user_id)?.full_name ?? "Learner"}</b><br /><span className="small muted">{r.course.title} · {r.pct}% · last active {day(r.last ?? r.created_at)}</span></span>
@@ -131,7 +131,7 @@ export default async function FacilitatorPage({ searchParams }: { searchParams: 
 
         {!courses.length ? (
           <div className="panel stack">
-            <h3>No courses assigned yet</h3>
+            <h2 className="h3">No courses assigned yet</h2>
             <p className="muted">An administrator assigns facilitators to courses under Admin → Staff and roles.</p>
           </div>
         ) : (

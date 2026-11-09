@@ -401,7 +401,7 @@ body:has(.mobile-buy) .cookie-bar { bottom: calc(84px + env(safe-area-inset-bott
 /* Bottom navigation (logged-in learners on phones) */
 .bottom-nav { display: none; }
 @media (max-width: 900px) {
-  .bottom-nav { display: grid; grid-template-columns: repeat(4, 1fr); position: fixed; left: 0; right: 0; bottom: 0; z-index: 30; background: var(--surface); border-top: 1px solid var(--line);
+  .bottom-nav { display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; position: fixed; left: 0; right: 0; bottom: 0; z-index: 30; background: var(--surface); border-top: 1px solid var(--line);
     padding: 6px max(8px, env(safe-area-inset-right, 0px)) calc(6px + env(safe-area-inset-bottom, 0px)) max(8px, env(safe-area-inset-left, 0px)); }
   .bottom-nav a { display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 6px 4px; border-radius: 10px; color: var(--muted); font-size: .72rem; font-weight: 600; text-decoration: none; }
   .bottom-nav a[aria-current="page"] { color: var(--accent); background: var(--accent-soft); }
@@ -553,3 +553,8 @@ html[data-saver="on"] *, html[data-saver="on"] *::before, html[data-saver="on"] 
 .advisor-btn { font: inherit; font-weight: 700; }
 @media (max-width: 640px) { .advisor { right: 0; bottom: 0; width: 100vw; height: 100dvh; border-radius: 0; } }
 @media (max-width: 640px) { body:has(.cookie-bar) .wa-float { display: none; } }
+
+/* Role menus */
+.navlinks a[aria-current="page"] { color: var(--accent); font-weight: 700; background: var(--sunk); }
+.nav-count { display: inline-grid; place-items: center; min-width: 20px; height: 20px; padding: 0 6px; margin-left: 6px; border-radius: 99px; background: var(--ochre); color: #fff; font-size: .72rem; font-weight: 700; vertical-align: 1px; }
+.nav-site { color: var(--muted) !important; }

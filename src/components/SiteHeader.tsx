@@ -6,9 +6,29 @@ import DisplaySettings from "./DisplaySettings";
 import NavAutoClose from "./NavAutoClose";
 import { isBackOffice } from "@/lib/roles";
 import { getT } from "@/lib/i18n";
+import NavLinks, { type NavItem } from "./NavLinks";
+import { teachingCounts } from "@/lib/teaching";
 
 export default async function SiteHeader() {
-  const [{ user, profile }, { lang, t }] = await Promise.all([getUserAndProfile(), getT()]);
+  const [{ supabase, user, profile }, { lang, t }] = await Promise.all([getUserAndProfile(), getT()]);
+  const role = profile?.role;
+  // Facilitators and moderators get a menu for their work instead of the public website links.
+  let roleMenu: NavItem[] | null = null;
+  if (user && role === "facilitator") {
+    const c = await teachingCounts(supabase, user.id);
+    roleMenu = [
+      { href: "/facilitator", label: "My learners" },
+      { href: "/facilitator/results", label: "To assess", count: c.toAssess },
+      { href: "/facilitator/attendance", label: "Attendance" },
+      { href: "/facilitator/results?view=portfolios", label: "Portfolios" },
+      { href: "/admin/guide", label: "Staff guide" },
+    ];
+  } else if (user && role === "moderator") {
+    roleMenu = [
+      { href: "/moderator", label: "To moderate" },
+      { href: "/admin/guide", label: "Staff guide" },
+    ];
+  }
   return (
     <header className="site">
       <div className="wrap" style={{ position: "relative" }}>
@@ -25,24 +45,29 @@ export default async function SiteHeader() {
           <label htmlFor="navtoggle" className="menu-btn">Menu</label>
         </div>
         <nav className="navlinks" aria-label="Main">
-          <Link href="/courses">{t("nav.courses")}</Link>
-          <Link href="/online-learning">{t("nav.online")}</Link>
-          <Link href="/employers">{t("nav.employers")}</Link>
-          <Link href="/learnerships">{t("nav.learnerships")}</Link>
-          <Link href="/venue">{t("nav.centre")}</Link>
-          <Link href="/search" aria-label={t("nav.search")} className="nav-search">
+          {roleMenu ? (
+            <>
+              <Suspense fallback={null}><NavLinks items={roleMenu} /></Suspense>
+              <Link href="/" className="nav-site">View website</Link>
+            </>
+          ) : (
+            <>
+              <Link href="/courses">{t("nav.courses")}</Link>
+              <Link href="/online-learning">{t("nav.online")}</Link>
+              <Link href="/employers">{t("nav.employers")}</Link>
+              <Link href="/learnerships">{t("nav.learnerships")}</Link>
+              <Link href="/venue">{t("nav.centre")}</Link>
+              <Link href="/search" aria-label={t("nav.search")} className="nav-search">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true"><circle cx="11" cy="11" r="6.5" /><path d="M20 20l-4.3-4.3" /></svg>
             <span className="nav-search-label">{t("nav.search")}</span>
-          </Link>
+              </Link>
+            </>
+          )}
           {user ? (
             <>
               {isBackOffice(profile?.role) ? (
                 <Link href="/admin">Back office</Link>
-              ) : profile?.role === "moderator" ? (
-                <Link href="/moderator">Moderation</Link>
-              ) : profile?.role === "facilitator" ? (
-                <Link href="/facilitator">Teaching</Link>
-              ) : profile?.role === "employer" ? (
+              ) : roleMenu ? null : profile?.role === "employer" ? (
                 <Link href="/employer">My staff</Link>
               ) : (
                 <Link href="/dashboard">{t("nav.mylearning")}</Link>

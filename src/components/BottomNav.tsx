@@ -12,7 +12,9 @@ const EN: Labels = { home: "Home", courses: "Courses", learning: "My learning", 
 
 export default function BottomNav({ role = "learner", labels = EN }: { role?: string; labels?: Labels }) {
   const path = usePathname();
-  const tab = useSearchParams().get("tab") ?? "overview";
+  const params = useSearchParams();
+  const tab = params.get("tab") ?? "overview";
+  const useView = params.get("view");
   const is = (p: string) => (p === "/" ? path === "/" : path.startsWith(p));
 
   if (role === "sales" || role === "content") {
@@ -59,7 +61,28 @@ export default function BottomNav({ role = "learner", labels = EN }: { role?: st
     );
   }
 
-  const teach = role === "facilitator";
+  if (role === "facilitator") {
+    const on = (p: string, v?: string) => (path === p && (useView ?? undefined) === v ? "page" : undefined);
+    return (
+      <nav className="bottom-nav" aria-label="Teaching navigation">
+        <Link href="/facilitator" aria-current={on("/facilitator")}>
+          <svg {...ICON}><circle cx="9" cy="8" r="3.2" /><path d="M3.5 19a5.5 5.5 0 0 1 11 0" /><path d="M16 6h5M16 10h5M17 14h4" /></svg>Learners
+        </Link>
+        <Link href="/facilitator/results" aria-current={on("/facilitator/results")}>
+          <svg {...ICON}><path d="M9 12l2 2 4-4" /><rect x="4" y="4" width="16" height="16" rx="3" /></svg>To assess
+        </Link>
+        <Link href="/facilitator/attendance" aria-current={path.startsWith("/facilitator/attendance") ? "page" : undefined}>
+          <svg {...ICON}><rect x="3.5" y="5" width="17" height="15" rx="2" /><path d="M3.5 10h17M8 3v4M16 3v4" /><path d="M9 15l2 2 4-4" /></svg>Attendance
+        </Link>
+        <Link href="/facilitator/results?view=portfolios" aria-current={on("/facilitator/results", "portfolios") ?? (path.startsWith("/poe") ? "page" : undefined)}>
+          <svg {...ICON}><path d="M4 7a2 2 0 0 1 2-2h4l2 2h6a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2z" /></svg>Portfolios
+        </Link>
+        <a href={whatsappLink("Hi, I'm a facilitator and need help with the teaching system.", "support")} target="_blank" rel="noopener">
+          <svg {...ICON}><path d="M4 20l1.3-4A8 8 0 1 1 8 19z" /><path d="M9 10h.01M12 10h.01M15 10h.01" /></svg>{labels.help}
+        </a>
+      </nav>
+    );
+  }
   return (
     <nav className="bottom-nav" aria-label="Learner navigation">
       <Link href="/" aria-current={is("/") ? "page" : undefined}>
@@ -71,10 +94,6 @@ export default function BottomNav({ role = "learner", labels = EN }: { role?: st
       {role === "moderator" ? (
         <Link href="/moderator" aria-current={is("/moderator") || is("/poe") ? "page" : undefined}>
           <svg {...ICON}><path d="M9 12l2 2 4-4" /><path d="M12 3l7 3v6c0 4.5-3 7.5-7 9-4-1.5-7-4.5-7-9V6z" /></svg>Moderation
-        </Link>
-      ) : teach ? (
-        <Link href="/facilitator" aria-current={is("/facilitator") ? "page" : undefined}>
-          <svg {...ICON}><circle cx="9" cy="8" r="3.2" /><path d="M3.5 19a5.5 5.5 0 0 1 11 0" /><path d="M16 6h5M16 10h5M17 14h4" /></svg>Teaching
         </Link>
       ) : role === "employer" ? (
         <Link href="/employer" aria-current={is("/employer") ? "page" : undefined}>

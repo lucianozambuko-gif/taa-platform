@@ -14,8 +14,9 @@ export default async function Attendance({ searchParams }: { searchParams: Promi
   const { supabase, user, profile } = await getUserAndProfile();
   if (!user) redirect("/login?next=/facilitator");
   if (!["facilitator", "admin"].includes(profile?.role ?? "")) redirect("/");
-  const { data: course } = await supabase.from("courses").select("id, title, slug, location").eq("slug", slug ?? "").maybeSingle();
-  if (!course) redirect("/facilitator");
+  if (!slug) return <CoursePicker userId={user.id} isAdmin={profile?.role === "admin"} />;
+  const { data: course } = await supabase.from("courses").select("id, title, slug, location").eq("slug", slug).maybeSingle();
+  if (!course) redirect("/facilitator/attendance");
   const [{ data: sessions }, { data: enrols }] = await Promise.all([
     supabase.from("class_sessions").select("id, date, title, location").eq("course_id", course.id).order("date", { ascending: false }),
     supabase.from("enrolments").select("user_id").eq("course_id", course.id),
@@ -31,7 +32,7 @@ export default async function Attendance({ searchParams }: { searchParams: Promi
   return (
     <section className="block" style={{ paddingTop: 28 }}>
       <div className="wrap stack" style={{ gap: 16, maxWidth: 820 }}>
-        <div className="crumbs"><Link href={`/facilitator?course=${course.slug}`}>Teaching</Link><span>/</span><span>{course.title}</span><span>/</span><span>Attendance</span></div>
+        <div className="crumbs"><Link href="/facilitator/attendance">Attendance</Link><span>/</span><span>{course.title}</span></div>
         <h1 style={{ fontSize: "clamp(1.6rem,3.4vw,2.2rem)" }}>Attendance register</h1>
 
         <form action={createSession} className="panel row" style={{ gap: 8, alignItems: "end" }}>
@@ -72,6 +73,38 @@ export default async function Attendance({ searchParams }: { searchParams: Promi
         ) : (
           <p className="muted">No class days yet. Start a register above.</p>
         )}
+      </div>
+    </section>
+  );
+}
+
+/** No course chosen yet: pick one of the courses you teach. */
+async function CoursePicker({ userId, isAdmin }: { userId: string; isAdmin: boolean }) {
+  const { supabase } = await getUserAndProfile();
+  const { loadTeaching } = await import("@/lib/teaching");
+  const { courses, rows } = await loadTeaching(supabase, userId, isAdmin);
+  const { data: sessions } = courses.length
+    ? await supabase.from("class_sessions").select("course_id, date").in("course_id", courses.map((c) => c.id)).order("date", { ascending: false })
+    : { data: [] };
+  const ordered = [...courses].sort((a, b) => Number(a.has_lms && a.format === "Online") - Number(b.has_lms && b.format === "Online"));
+  return (
+    <section className="block" style={{ paddingTop: 32 }}>
+      <div className="wrap stack" style={{ gap: 16, maxWidth: 820 }}>
+        <div>
+          <div className="eyebrow">Attendance</div>
+          <h1 style={{ fontSize: "clamp(1.8rem,3.6vw,2.5rem)", marginTop: 6 }}>Which class are you taking?</h1>
+          <p className="muted" style={{ marginTop: 6 }}>Choose the course, then start today’s register.</p>
+        </div>
+        {ordered.map((c) => {
+          const days = (sessions ?? []).filter((s) => s.course_id === c.id);
+          return (
+            <Link key={c.id} href={`/facilitator/attendance?course=${c.slug}`} className="panel row" style={{ justifyContent: "space-between", gap: 10, textDecoration: "none", color: "inherit" }}>
+              <span><b>{c.title}</b><br /><span className="small muted">{rows.filter((r) => r.course_id === c.id).length} learner{rows.filter((r) => r.course_id === c.id).length === 1 ? "" : "s"} · {c.format}{days.length ? ` · last register ${day(days[0].date)}` : " · no registers yet"}</span></span>
+              <span className="btn btn-primary btn-sm">Open register</span>
+            </Link>
+          );
+        })}
+        {!courses.length && <div className="panel"><p className="muted">No courses assigned to you yet. Ask an admin to assign you under Users.</p></div>}
       </div>
     </section>
   );
