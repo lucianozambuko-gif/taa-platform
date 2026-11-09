@@ -6,22 +6,11 @@ import { SEO_PAGES } from "@/lib/seo";
 import { createClient } from "@/lib/supabase/server";
 import { getT } from "@/lib/i18n";
 import { whatsappLink } from "@/lib/format";
+import { norm, score } from "@/lib/searchScore";
 
 export const metadata = { title: "Search", description: "Search courses, articles, FAQs and pages at Training Africa Academy." };
 export const dynamic = "force-dynamic";
 
-const norm = (s: string) => s.toLowerCase().normalize("NFKD").replace(/[^\w\s]/g, " ");
-/** Scores a text against every search word; all words must appear somewhere. Titles count three times. */
-function score(words: string[], title: string, rest: string) {
-  const t = norm(title), r = norm(rest);
-  let total = 0;
-  for (const w of words) {
-    const inT = t.includes(w), inR = r.includes(w);
-    if (!inT && !inR) return 0;
-    total += (inT ? 3 : 0) + (inR ? 1 : 0) + (t.startsWith(w) ? 1 : 0);
-  }
-  return total;
-}
 function snippet(text: string, words: string[]) {
   const i = Math.max(0, ...words.map((w) => norm(text).indexOf(w)).filter((n) => n >= 0).slice(0, 1));
   const start = Math.max(0, i - 60);

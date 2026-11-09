@@ -33,3 +33,24 @@ export async function sendWhatsApp(phone: string, text: string): Promise<boolean
     return false;
   }
 }
+
+/**
+ * Replies inside a conversation the customer started (Meta's 24-hour customer service window), so plain text
+ * and up to three reply buttons are allowed without a template. Needs WHATSAPP_TOKEN and WHATSAPP_PHONE_ID.
+ */
+export async function replyWhatsApp(phone: string, text: string, buttons: string[] = []): Promise<boolean | null> {
+  if (!process.env.WHATSAPP_TOKEN || !process.env.WHATSAPP_PHONE_ID) return null;
+  const body = buttons.length && buttons.length <= 3 && buttons.every((b) => b.length <= 20)
+    ? { type: "interactive", interactive: { type: "button", body: { text: text.slice(0, 1024) }, action: { buttons: buttons.map((b, i) => ({ type: "reply", reply: { id: `opt${i}`, title: b.slice(0, 20) } })) } } }
+    : { type: "text", text: { body: (buttons.length ? `${text}\n\n${buttons.map((b, i) => `${i + 1}. ${b}`).join("\n")}` : text).slice(0, 4096), preview_url: true } };
+  try {
+    const res = await fetch(`https://graph.facebook.com/v20.0/${process.env.WHATSAPP_PHONE_ID}/messages`, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${process.env.WHATSAPP_TOKEN}`, "Content-Type": "application/json" },
+      body: JSON.stringify({ messaging_product: "whatsapp", to: toE164(phone), ...body }),
+    });
+    return res.ok;
+  } catch {
+    return false;
+  }
+}

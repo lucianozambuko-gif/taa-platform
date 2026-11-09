@@ -16,7 +16,8 @@ export async function recordAssessment(_: AssessState, fd: FormData): Promise<As
   const { error } = await supabase.rpc("record_assessment", { enrolment, outcome, note });
   if (error) return { error: "Couldn't save the result. Please try again." };
   revalidatePath("/facilitator");
-  return { message: outcome ? "Result saved. The learner sees it on their dashboard." : "Result cleared." };
+  revalidatePath(`/poe/${enrolment}`);
+  return { message: outcome ? "Result saved and sent to the moderator. The learner sees it on their dashboard." : "Result cleared." };
 }
 
 // ---------------------------------------------------------------------------

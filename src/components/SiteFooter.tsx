@@ -10,7 +10,8 @@ export default function SiteFooter() {
           <Link href="/online-learning">Online learning</Link><br />
           <Link href="/learnerships">Qualifications &amp; learnerships</Link><br />
           <Link href="/pathways">Career pathways</Link><br />
-          <Link href="/faqs">Resources &amp; FAQs</Link>
+          <Link href="/faqs">Resources &amp; FAQs</Link><br />
+          <Link href="/data-free">Data-free &amp; data saver</Link>
         </div>
         <div>
           <h2>Organisations</h2>

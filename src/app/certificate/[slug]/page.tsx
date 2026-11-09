@@ -15,8 +15,8 @@ export default async function CertificatePage({ params }: { params: Promise<{ sl
   if (!state) redirect(`/login?next=/certificate/${slug}`);
   const { course, enrolled, pct, supabase, user, lessons } = state;
   if (!enrolled) notFound();
-  const { data: enrolment } = await supabase.from("enrolments").select("result, assessed_at, cert_code").eq("course_id", course.id).eq("user_id", user.id).maybeSingle();
-  const assessed = enrolment?.result === "competent";
+  const { data: enrolment } = await supabase.from("enrolments").select("result, assessed_at, moderation, cert_code").eq("course_id", course.id).eq("user_id", user.id).maybeSingle();
+  const assessed = enrolment?.result === "competent" && enrolment?.moderation === "endorsed";
 
   if (!assessed && (!course.certificate_auto || pct < 100)) {
     return (
@@ -26,7 +26,9 @@ export default async function CertificatePage({ params }: { params: Promise<{ sl
             <h1 style={{ fontSize: "1.6rem" }}>Certificate not available yet</h1>
             <p className="muted">
               {!course.certificate_auto
-                ? "This programme's certificate is issued by the Academy after assessment, not automatically online."
+                ? enrolment?.result === "competent"
+                  ? "You were assessed as competent. Your statement of results becomes available here as soon as the Academy's moderator has endorsed the result."
+                  : "This programme's certificate is issued by the Academy after assessment and moderation, not automatically online."
                 : `Complete every lesson to receive your certificate. You're ${pct}% of the way there.`}
             </p>
             <div><Link className="btn btn-primary" href={course.certificate_auto ? `/learn/${slug}` : "/dashboard"}>{course.certificate_auto ? "Continue learning" : "Back to dashboard"}</Link></div>

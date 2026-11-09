@@ -9,11 +9,12 @@ const STATUS_BADGE: Record<string, string> = { new: "b-warn", contacted: "b-shor
 
 /** Every enquiry with owner, status and notes. Sales staff can filter to their own leads. */
 export default async function LeadsTab({ supabase, userId, sp, isAdmin }: { supabase: DB; userId: string; sp: Record<string, string | undefined>; isAdmin: boolean }) {
-  const [{ data: leads }, { data: staff }, { data: courseList }, duty] = await Promise.all([
+  const [{ data: leads }, { data: staff }, { data: courseList }, duty, { data: chats }] = await Promise.all([
     supabase.from("leads").select("*, courses(title)").order("created_at", { ascending: false }).limit(300),
     supabase.rpc("staff_directory"),
     supabase.from("courses").select("id, title").order("title"),
     getDuty(),
+    supabase.from("advisor_chats").select("id, channel, contact, transcript, handed_over, unanswered, lead_id, updated_at").order("updated_at", { ascending: false }).limit(60),
   ]);
   const people = (staff ?? []) as { id: string; full_name: string | null; role: string }[];
   const nameOf = new Map(people.map((p) => [p.id, p.full_name ?? "Staff"]));
@@ -28,7 +29,54 @@ export default async function LeadsTab({ supabase, userId, sp, isAdmin }: { supa
     ["unassigned", "Unassigned", all.filter((l) => !l.assigned_to && !["won", "lost"].includes(l.status)).length],
     ["closed", "Won / lost", all.filter((l) => ["won", "lost"].includes(l.status)).length],
     ["all", "All", all.length],
+    ["chats", "Advisor chats", (chats ?? []).length],
   ];
+  if (view === "chats") {
+    type Entry = { from: string; text: string; at: string };
+    const list = chats ?? [];
+    const misses = list.flatMap((c) => {
+      const t = (c.transcript ?? []) as Entry[];
+      return t.flatMap((e, i) => (e.from === "user" && t[i + 1]?.text.match(/^(I'm not sure|Sorry, I can't|I couldn't find)/) ? [e.text] : []));
+    });
+    return (
+      <div className="stack" style={{ gap: 14 }}>
+        <div className="row" style={{ gap: 6 }}>
+          {VIEWS.map(([k, label, n]) => (
+            <a key={k} href={`/admin?tab=leads&view=${k}`} className={`btn btn-sm ${view === k ? "btn-primary" : "btn-ghost"}`}>{label} <span className="tnum">({n})</span></a>
+          ))}
+        </div>
+        <div className="kpis">
+          <div className="card kpi"><div className="eyebrow">Conversations</div><div className="v tnum">{list.length}</div><div className="d">{list.filter((c) => c.channel === "whatsapp").length} on WhatsApp · {list.filter((c) => c.channel === "web").length} on the website</div></div>
+          <div className="card kpi"><div className="eyebrow">Handed to staff</div><div className="v tnum">{list.filter((c) => c.handed_over).length}</div><div className="d">became leads</div></div>
+          <div className="card kpi"><div className="eyebrow">Answered by the advisor</div><div className="v tnum">{list.length ? Math.round((list.filter((c) => !c.handed_over).length / list.length) * 100) : 0}%</div><div className="d">no staff time needed</div></div>
+        </div>
+        {misses.length > 0 && (
+          <div className="panel stack" style={{ gap: 8 }}>
+            <h3>Questions the advisor couldn't answer</h3>
+            <p className="small muted">Add these to the FAQs (Site content) and the advisor will answer them next time.</p>
+            <div className="row" style={{ gap: 6 }}>{[...new Set(misses)].slice(0, 20).map((q) => <span key={q} className="badge b-short">{q}</span>)}</div>
+          </div>
+        )}
+        {list.map((c) => {
+          const t = (c.transcript ?? []) as Entry[];
+          return (
+            <details key={c.id} className="panel">
+              <summary style={{ cursor: "pointer" }}>
+                <b>{c.channel === "whatsapp" ? `WhatsApp ${c.contact ?? ""}` : "Website visitor"}</b>
+                <span className="small muted"> · {when(c.updated_at)} · {t.filter((e) => e.from === "user").length} messages</span>
+                {c.handed_over && <span className="badge b-warn" style={{ marginLeft: 8 }}>Handed to staff</span>}
+                <br /><span className="small muted">“{t.find((e) => e.from === "user" && !/^(hi|hello)$/i.test(e.text))?.text ?? "…"}”</span>
+              </summary>
+              <div className="stack" style={{ gap: 6, marginTop: 10 }}>
+                {t.map((e, i) => <div key={i} className={`bubble ${e.from === "user" ? "user" : "bot"}`} style={{ maxWidth: "80%" }}>{e.text.replace(/\*/g, "")}</div>)}
+              </div>
+            </details>
+          );
+        })}
+        {!list.length && <p className="muted">No advisor chats yet. They appear here as soon as someone uses the chat on the website or WhatsApp.</p>}
+      </div>
+    );
+  }
   return (
     <div className="stack" style={{ gap: 14 }}>
       <DutyRosterForm duty={duty} />

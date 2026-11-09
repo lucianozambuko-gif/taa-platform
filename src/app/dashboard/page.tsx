@@ -27,12 +27,13 @@ export default async function DashboardPage() {
   const { supabase, user, profile } = await getUserAndProfile();
   if (!user) redirect("/login?next=/dashboard");
   if (profile?.role === "facilitator") redirect("/facilitator");
+  if (profile?.role === "moderator") redirect("/moderator");
   if (isBackOffice(profile?.role)) redirect("/admin");
   if (profile?.role === "employer") redirect("/employer");
 
   const { data: enrolments } = await supabase
     .from("enrolments")
-    .select("id, created_at, result, result_note, courses(*, modules(position, lessons(id, title, position, minutes)))")
+    .select("id, created_at, result, result_note, moderation, poe_submitted_at, courses(*, modules(position, lessons(id, title, position, minutes)))")
     .eq("user_id", user.id)
     .order("created_at", { ascending: false });
   const { data: progress } = await supabase.from("lesson_progress").select("lesson_id, completed_at").eq("user_id", user.id);
@@ -62,7 +63,7 @@ export default async function DashboardPage() {
   const unread = (messages ?? []).filter((m) => !m.read_at).length;
 
   type L = { id: string; title: string; position: number; minutes: number };
-  type Row = { id: string; created_at: string; result: string | null; result_note: string | null; courses: Course & { modules: { position: number; lessons: L[] }[] } };
+  type Row = { id: string; created_at: string; result: string | null; result_note: string | null; moderation: string | null; poe_submitted_at: string | null; courses: Course & { modules: { position: number; lessons: L[] }[] } };
   const lastTouched = new Map((progress ?? []).map((p) => [p.lesson_id, p.completed_at as string]));
   const rows = ((enrolments ?? []) as unknown as Row[]).map((e) => {
     const ordered = [...e.courses.modules]
@@ -126,12 +127,13 @@ export default async function DashboardPage() {
                   <p className="small muted">
                     {r.courses.has_lms ? (r.pct === 100 ? (r.courses.certificate_auto ? "Complete. Your certificate is ready." : "Complete.") : `${r.pct}% complete`) : `Classroom programme · ${r.courses.intakes[0] ?? ""}`}
                   </p>
-                  {!r.courses.certificate_auto && (
+                  {!r.courses.certificate_auto && (<>
                     <p className="small">
-                      {r.result === "competent" ? <span className="badge b-good">Assessed: competent</span> : r.result === "not_yet_competent" ? <span className="badge b-warn">Assessed: not yet competent</span> : <span className="badge b-short">Assessment result pending</span>}
+                      {r.result === "competent" ? <span className={`badge ${r.moderation === "endorsed" ? "b-good" : "b-short"}`}>{r.moderation === "endorsed" ? "Competent · moderated" : "Competent · awaiting moderation"}</span> : r.result === "not_yet_competent" ? <span className="badge b-warn">Assessed: not yet competent</span> : <span className="badge b-short">{r.poe_submitted_at ? "Portfolio submitted · awaiting assessment" : "Assessment result pending"}</span>}
                       {r.result_note && <span className="muted"> · {r.result_note}</span>}
                     </p>
-                  )}
+                    <p className="small"><Link href={`/poe/${r.id}`}>{r.poe_submitted_at ? "View my portfolio of evidence" : "Build my portfolio of evidence →"}</Link></p>
+                  </>)}
                 </div>
                 {r.courses.has_lms ? (
                   <Link className="btn btn-primary btn-sm" href={`/learn/${r.courses.slug}`}>{r.pct > 0 ? "Resume" : "Start"}</Link>
@@ -177,14 +179,14 @@ export default async function DashboardPage() {
             )}
             <div className="panel stack">
               <h2 className="h3">Certificates</h2>
-              {rows.filter((r) => (r.courses.has_lms && r.pct === 100 && r.courses.certificate_auto) || r.result === "competent").map((r) => (
+              {rows.filter((r) => (r.courses.has_lms && r.pct === 100 && r.courses.certificate_auto) || (r.result === "competent" && r.moderation === "endorsed")).map((r) => (
                 <div className="row" style={{ justifyContent: "space-between" }} key={r.id}>
                   <span>{r.courses.title}</span>
                   <Link className="btn btn-primary btn-sm" href={`/certificate/${r.courses.slug}`}>Download certificate</Link>
                 </div>
               ))}
               <p className="muted small">
-                Online skills courses issue a certificate automatically when every lesson is complete. Accredited results are issued by the Academy after assessment.
+                Online skills courses issue a certificate automatically when every lesson is complete. Accredited results are issued by the Academy after assessment and moderation.
               </p>
             </div>
             {orders.length > 0 && (

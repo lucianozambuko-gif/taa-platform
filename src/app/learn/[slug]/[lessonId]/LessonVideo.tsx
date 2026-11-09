@@ -3,11 +3,12 @@
 import { useEffect, useState } from "react";
 
 /** In data-saver mode the video doesn't download anything until the learner taps play. */
-export default function LessonVideo({ src, captions, title, poster }: { src: string; captions: string | null; title: string; poster: React.ReactNode }) {
+export default function LessonVideo({ src, captions, title, poster, minutes = 0 }: { src: string; captions: string | null; title: string; poster: React.ReactNode; minutes?: number }) {
   const [saver, setSaver] = useState(false);
+  const [df, setDf] = useState(false);
   const [load, setLoad] = useState(false);
   useEffect(() => {
-    const read = () => setSaver(document.documentElement.dataset.saver === "on");
+    const read = () => { setSaver(document.documentElement.dataset.saver === "on"); setDf(document.documentElement.dataset.datafree === "on"); };
     read();
     window.addEventListener("taa-display-change", read);
     return () => window.removeEventListener("taa-display-change", read);
@@ -22,7 +23,10 @@ export default function LessonVideo({ src, captions, title, poster }: { src: str
         <button className="play" onClick={() => setLoad(true)} aria-label={`Load and play ${title}`}>
           <svg width="26" height="26" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 4l14 8-14 8z" fill="#0E6B5A" /></svg>
         </button>
-        <div className="cap">Data saver is on: the video loads when you tap play.</div>
+        <div className="cap">
+          {df ? "This video isn't data-free: it uses your mobile data." : "Data saver is on: the video loads when you tap play."}
+          {minutes > 0 && <> About {Math.max(5, Math.round(minutes * 4))} MB for {minutes} minutes at low quality.</>}
+        </div>
       </div>
     );
   if (embed)

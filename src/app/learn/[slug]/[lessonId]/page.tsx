@@ -82,6 +82,7 @@ export default async function LessonPage({ params }: { params: Promise<{ slug: s
                     src={videoUrl}
                     captions={captionsUrl}
                     title={lesson.title}
+                    minutes={lesson.minutes}
                     poster={<><div className="art" /><div className="ttl"><small>Lesson {index + 1} of {lessons.length}</small>{lesson.title}</div></>}
                   />
                 ) : (

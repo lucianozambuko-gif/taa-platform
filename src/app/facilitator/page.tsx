@@ -40,7 +40,7 @@ export default async function FacilitatorPage({ searchParams }: { searchParams: 
 
   const ids = courses.map((c) => c.id);
   const { data: enrolRows } = ids.length
-    ? await supabase.from("enrolments").select("id, user_id, course_id, source, created_at, result, result_note, assessed_at").in("course_id", ids)
+    ? await supabase.from("enrolments").select("id, user_id, course_id, source, created_at, result, result_note, assessed_at, moderation, moderation_note, poe_submitted_at").in("course_id", ids)
     : { data: [] };
   const enrols = enrolRows ?? [];
   const userIds = [...new Set(enrols.map((e) => e.user_id))];
@@ -178,6 +178,11 @@ export default async function FacilitatorPage({ searchParams }: { searchParams: 
                                 {r.result && <div className="small muted" style={{ marginBottom: 6 }}>Recorded {r.assessed_at ? day(r.assessed_at) : ""}</div>}
                                 <AssessForm enrolment={r.id} result={r.result} note={r.result_note} />
                                 <Evidence courseId={r.course_id} enrolmentId={r.id} files={evidence.get(r.id) ?? []} />
+                                <div className="row" style={{ gap: 6, marginTop: 6 }}>
+                                  <Link className="small" href={`/poe/${r.id}`}>Open portfolio{r.poe_submitted_at ? " (learner signed)" : ""}</Link>
+                                  {r.moderation && <span className={`badge ${r.moderation === "endorsed" ? "b-good" : r.moderation === "referred" ? "b-bad" : "b-short"}`}>{r.moderation === "endorsed" ? "Moderated" : r.moderation === "referred" ? "Referred back" : "With moderator"}</span>}
+                                </div>
+                                {r.moderation === "referred" && r.moderation_note && <p className="small" style={{ color: "var(--bad)" }}>Moderator: {r.moderation_note}</p>}
                               </>
                             )}
                           </td>

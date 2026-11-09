@@ -160,7 +160,7 @@ export async function setUserRole(fd: FormData) {
   const { supabase, user } = await requireAdmin();
   const id = String(fd.get("user_id") ?? "");
   const role = String(fd.get("role") ?? "");
-  if (!id || !["learner", "employer", "facilitator", "sales", "content", "admin"].includes(role) || (id === user.id && role !== "admin")) return;
+  if (!id || !["learner", "employer", "facilitator", "moderator", "sales", "content", "admin"].includes(role) || (id === user.id && role !== "admin")) return;
   const company = String(fd.get("company") ?? "").trim() || null;
   if (role === "employer" && !company) return;
   await supabase.from("profiles").update({ role, company: role === "employer" ? company : null }).eq("id", id);

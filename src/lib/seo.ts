@@ -12,6 +12,7 @@ export const SEO_PAGES: { path: string; title: string; description: string }[] =
   { path: "/venue", title: "Assessment centre and venue hire", description: "Training rooms, a practical cleaning lab and a computer room in Johannesburg. Check availability and request a booking." },
   { path: "/facilitators", title: "Facilitators and training approach", description: "Who teaches at Training Africa Academy and how our practical, workplace-focused training works." },
   { path: "/about", title: "About and accreditations", description: "About Training Africa Academy and the accreditations behind our programmes." },
+  { path: "/data-free", title: "Data-free learning and data saver", description: "Study on prepaid data: data saver mode, light pages, offline lessons and a data-free address." },
   { path: "/faqs", title: "Resources and FAQs", description: "Answers about enrolling, paying, accreditation, practicals, employer bookings and your personal information." },
   { path: "/news", title: "News and insights", description: "Intakes, training advice and news from Training Africa Academy." },
   { path: "/contact", title: "Contact and locations", description: "Contact Training Africa Academy by phone, WhatsApp or email, or visit our Johannesburg centre." },

@@ -38,6 +38,8 @@ export default async function SiteHeader() {
             <>
               {isBackOffice(profile?.role) ? (
                 <Link href="/admin">Back office</Link>
+              ) : profile?.role === "moderator" ? (
+                <Link href="/moderator">Moderation</Link>
               ) : profile?.role === "facilitator" ? (
                 <Link href="/facilitator">Teaching</Link>
               ) : profile?.role === "employer" ? (

@@ -68,7 +68,11 @@ export default function BottomNav({ role = "learner", labels = EN }: { role?: st
       <Link href="/courses" aria-current={is("/courses") ? "page" : undefined}>
         <svg {...ICON}><circle cx="11" cy="11" r="6.5" /><path d="M20 20l-4.3-4.3" /></svg>{labels.courses}
       </Link>
-      {teach ? (
+      {role === "moderator" ? (
+        <Link href="/moderator" aria-current={is("/moderator") || is("/poe") ? "page" : undefined}>
+          <svg {...ICON}><path d="M9 12l2 2 4-4" /><path d="M12 3l7 3v6c0 4.5-3 7.5-7 9-4-1.5-7-4.5-7-9V6z" /></svg>Moderation
+        </Link>
+      ) : teach ? (
         <Link href="/facilitator" aria-current={is("/facilitator") ? "page" : undefined}>
           <svg {...ICON}><circle cx="9" cy="8" r="3.2" /><path d="M3.5 19a5.5 5.5 0 0 1 11 0" /><path d="M16 6h5M16 10h5M17 14h4" /></svg>Teaching
         </Link>

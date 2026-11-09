@@ -7,7 +7,7 @@ import { getUserAndProfile } from "@/lib/supabase/server";
 export const metadata = { title: "Staff guide" };
 
 const GUIDE: { id: string; title: string; roles: Role[]; steps: string[] }[] = [
-  { id: "start", title: "Signing in and finding your way", roles: ["admin", "sales", "content", "facilitator"], steps: [
+  { id: "start", title: "Signing in and finding your way", roles: ["admin", "sales", "content", "facilitator", "moderator"], steps: [
     "Sign in with your staff email. You land on your own area: the Back office for admin, sales and content staff, or Teaching for facilitators.",
     "The tabs you see depend on your role. On a phone, use the bar at the bottom of the screen.",
     "Everything you change is saved straight away and written to the audit log with your name.",
@@ -68,7 +68,20 @@ const GUIDE: { id: string; title: string; roles: Role[]; steps: string[] }[] = [
   { id: "teaching", title: "Facilitators: tracking learners and recording results", roles: ["admin", "facilitator"], steps: [
     "Teaching shows only the courses you're assigned to.",
     "See each learner's progress, quiz average and last activity. ‘Gone quiet’ learners can be nudged on WhatsApp.",
-    "For classroom and accredited programmes, choose Competent or Not yet competent, add a note and Save. The learner is notified and gets a statement of results.",
+    "For classroom and accredited programmes, choose Competent or Not yet competent, add a note and Save. The result goes to the moderator; the learner gets a statement of results once it's endorsed.",
+    "Open portfolio shows the learner's full portfolio of evidence: lessons and quiz scores, attendance, evidence files and sign-offs. Add photos or signed checklists there or from the Teaching page.",
+    "If the moderator refers a result back, the reason shows on the Teaching page. Fix the evidence or decision and save the result again.",
+  ]},
+  { id: "moderation", title: "Moderators: endorsing results and the verification pack", roles: ["admin", "moderator"], steps: [
+    "Moderation lists every assessed result waiting for you, with a suggested sample: all ‘not yet competent’ decisions and at least one in four competent decisions per assessor.",
+    "Open portfolio, check the evidence is valid, authentic, current and sufficient, and that the assessor's decision is fair. Write your report.",
+    "Endorse the result to release the learner's statement of results, or Refer back to the assessor with the reason. The facilitator is notified either way.",
+    "Download verification pack gives a spreadsheet for QCTO or SETA visits: each learner's evidence, attendance, assessor and moderator sign-off, with a link to the portfolio. Print any portfolio to PDF from its page.",
+  ]},
+  { id: "advisor", title: "The course advisor chat", roles: ["admin", "sales"], steps: [
+    "The ‘Ask an advisor’ chat on the website (and on WhatsApp, once connected) answers questions about courses, prices, dates, learnerships and company training from the live course list and FAQs.",
+    "When someone asks for a person, it takes their name and number, creates a lead routed to the right team, and gives them the WhatsApp link of whoever is on duty.",
+    "Leads → Advisor chats shows every conversation and the questions it couldn't answer. Add those to the FAQs and it will answer them next time.",
   ]},
   { id: "users", title: "Users, roles and POPIA (admin)", roles: ["admin"], steps: [
     "Users tab: change anyone's role. Facilitators also need courses assigned.",
@@ -89,7 +102,7 @@ export default async function StaffGuide() {
     <section className="block" style={{ paddingTop: 28 }}>
       <div className="wrap stack" style={{ gap: 18, maxWidth: 860 }}>
         <div className="row no-print" style={{ justifyContent: "space-between" }}>
-          <Link href={role === "facilitator" ? "/facilitator" : "/admin"}>← Back</Link>
+          <Link href={role === "facilitator" ? "/facilitator" : role === "moderator" ? "/moderator" : "/admin"}>← Back</Link>
           <PrintButton label="Print / save as PDF" />
         </div>
         <div>

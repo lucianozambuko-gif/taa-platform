@@ -511,3 +511,45 @@ body:has(.bottom-nav) .cmp-bar{bottom:calc(76px + env(safe-area-inset-bottom,0px
 
 .sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
 .tscroll:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+
+/* Portfolio of evidence */
+.poe-steps { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+.poe-step { display: flex; gap: 10px; align-items: flex-start; padding: 12px 14px; border: 1px solid var(--line); border-radius: 12px; background: var(--surface); }
+.poe-step .dot { flex: none; width: 22px; height: 22px; border-radius: 50%; border: 2px solid var(--line); display: grid; place-items: center; font-size: .75rem; font-weight: 700; }
+.poe-step.done .dot { background: var(--good); border-color: var(--good); color: #fff; }
+.poe-grid { display: grid; grid-template-columns: 140px 1fr; gap: 6px 14px; }
+.poe-file { border-bottom: 1px dashed var(--line); padding-bottom: 6px; }
+@media (max-width: 640px) { .poe-steps { grid-template-columns: 1fr; } .poe-grid { grid-template-columns: 1fr; } .poe-grid .muted { margin-top: 6px; } }
+@media print { .poe .panel { break-inside: avoid; box-shadow: none; } }
+
+/* Data saver and data-free */
+.df-bar { display: flex; flex-wrap: wrap; gap: 6px 14px; justify-content: space-between; align-items: center; padding: 8px max(16px, env(safe-area-inset-left, 0px)); background: var(--ochre-soft); color: var(--ink); font-size: .86rem; border-bottom: 1px solid var(--line); }
+.df-bar a, .df-bar .linklike { color: var(--ink); font-weight: 700; text-decoration: underline; }
+.linklike { background: none; border: 0; padding: 0; font: inherit; cursor: pointer; }
+html[data-datafree="on"] a[target="_blank"]::after { content: " (uses data)"; font-size: .8em; font-weight: 500; opacity: .8; }
+html[data-saver="on"] .celebrate .dots, html[data-saver="on"] .avatar { display: none; }
+html[data-saver="on"] *, html[data-saver="on"] *::before, html[data-saver="on"] *::after { animation-duration: 0s !important; transition-duration: 0s !important; }
+.video-size { font-size: .82rem; }
+
+/* Course advisor chat */
+.advisor { position: fixed; right: calc(16px + env(safe-area-inset-right, 0px)); bottom: calc(16px + env(safe-area-inset-bottom, 0px)); z-index: 45; width: min(380px, calc(100vw - 32px)); height: min(560px, calc(100dvh - 32px)); display: flex; flex-direction: column; background: var(--surface); border: 1px solid var(--line); border-radius: 16px; box-shadow: 0 18px 50px rgba(0,0,0,.22); overflow: hidden; }
+.advisor-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; padding: 12px 14px; background: var(--accent); color: var(--accent-ink, #fff); }
+.advisor-head .small { opacity: .9; }
+.advisor-x { background: none; border: 0; color: inherit; font-size: 1.6rem; line-height: 1; cursor: pointer; padding: 0 4px; }
+.advisor-msgs { flex: 1; overflow-y: auto; padding: 12px; display: flex; flex-direction: column; gap: 8px; background: var(--bg); }
+.bubble { max-width: 88%; padding: 9px 12px; border-radius: 14px; font-size: .92rem; line-height: 1.4; }
+.bubble.bot { align-self: flex-start; background: var(--surface); border: 1px solid var(--line); border-bottom-left-radius: 4px; }
+.bubble.user { align-self: flex-end; background: var(--accent); color: var(--accent-ink, #fff); border-bottom-right-radius: 4px; }
+.bubble-link { display: inline-block; margin-top: 6px; font-weight: 700; }
+.bubble.typing { display: flex; gap: 4px; }
+.bubble.typing i { width: 7px; height: 7px; border-radius: 50%; background: var(--muted); animation: blink 1s infinite; }
+.bubble.typing i:nth-child(2) { animation-delay: .15s; } .bubble.typing i:nth-child(3) { animation-delay: .3s; }
+@keyframes blink { 50% { opacity: .25; } }
+.advisor-opts { display: flex; flex-wrap: wrap; gap: 6px; padding: 8px 12px 0; }
+.advisor-opts button { border: 1.5px solid var(--accent); color: var(--accent); background: var(--surface); border-radius: 99px; padding: 6px 11px; font: inherit; font-size: .84rem; font-weight: 600; cursor: pointer; }
+.advisor-form { display: flex; gap: 8px; padding: 10px 12px; }
+.advisor-form input { flex: 1; min-width: 0; padding: 10px 12px; border-radius: 10px; border: 1.5px solid var(--line); background: var(--surface); color: var(--ink); font: inherit; }
+.advisor-wa { display: block; text-align: center; font-size: .84rem; padding: 0 12px 12px; font-weight: 600; }
+.advisor-btn { font: inherit; font-weight: 700; }
+@media (max-width: 640px) { .advisor { right: 0; bottom: 0; width: 100vw; height: 100dvh; border-radius: 0; } }
+@media (max-width: 640px) { body:has(.cookie-bar) .wa-float { display: none; } }

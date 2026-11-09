@@ -15,6 +15,7 @@ const PAGES: Row[] = [
   ["Assessment centre and venue hire", "/venue", "Built", "Facilities and booking request"],
   ["Facilitators / training approach", "/facilitators", "Template", "Awaits facilitator profiles"],
   ["Resources / FAQs", "/faqs", "Built", "Common questions"],
+  ["Data-free & data saver", "/data-free", "Built", "Low-data learning, data-free address"],
   ["News / insights", "/news", "Built", "Article listing and article template"],
   ["Contact / locations", "/contact", "Template", "Awaits address and phone"],
   ["Privacy notice", "/privacy", "Template", "Awaits Information Officer approval"],

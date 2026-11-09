@@ -6,7 +6,9 @@ import TrackedLink from "@/components/TrackedLink";
 import Analytics from "@/components/Analytics";
 import BottomNav from "@/components/BottomNav";
 import { ServiceWorker } from "@/components/AppInstall";
-import { displayBootScript } from "@/components/DisplaySettings";
+import { FONTS_URL, displayBootScript } from "@/components/DisplaySettings";
+import DataFreeBar from "@/components/DataFreeBar";
+import AdvisorChat from "@/components/AdvisorChat";
 import { createClient } from "@/lib/supabase/server";
 import { whatsappLink } from "@/lib/format";
 import { getSiteContent } from "@/lib/siteContent";
@@ -40,13 +42,11 @@ export default async function RootLayout({ children }: { children: React.ReactNo
       <head>
         <script dangerouslySetInnerHTML={{ __html: displayBootScript }} />
         <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link
-          rel="stylesheet"
-          href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=Figtree:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap"
-        />
+        <noscript><link rel="stylesheet" href={FONTS_URL} /></noscript>
       </head>
       <body>
         <a className="skip-link" href="#main">Skip to content</a>
+        <DataFreeBar />
         <Analytics gaId={ga} />
         <ServiceWorker />
         {announcement.on && announcement.text && (
@@ -59,16 +59,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         <main id="main">{children}</main>
         <SiteFooter />
         {signedIn && <Suspense fallback={null}><BottomNav role={role} labels={{ home: t("nav.home"), courses: t("nav.courses"), learning: t("nav.mylearning"), help: t("nav.help") }} /></Suspense>}
-        <aside aria-label="Chat on WhatsApp"><TrackedLink
-          className="wa-float"
-          href={whatsappLink("Hi Training Africa Academy, I'd like help choosing a course.")}
-          target="_blank"
-          rel="noopener"
-          event="whatsapp_click"
-          params={{ page: "float" }}
-        >
-          WhatsApp us
-        </TrackedLink></aside>
+        <AdvisorChat />
       </body>
     </html>
   );
