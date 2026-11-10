@@ -102,6 +102,8 @@ export async function saveCourse(_: CourseFormState, fd: FormData): Promise<Cour
     approved_scope: text(fd.get("approved_scope")),
     accreditation_approved: fd.get("accreditation_approved") === "on",
     brochure_url: text(fd.get("brochure_url")),
+    image_url: text(fd.get("image_url")),
+    image_alt: text(fd.get("image_alt")),
     has_lms: fd.get("has_lms") === "on",
     certificate_auto: fd.get("certificate_auto") === "on",
     featured: fd.get("featured") === "on",

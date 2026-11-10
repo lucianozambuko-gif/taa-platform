@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Photo from "@/components/Photo";
 import { CourseCard, KindBadge, PriceBlock } from "@/components/CourseBits";
 import TrackedLink from "@/components/TrackedLink";
 import { getCourse, getOutline, relatedCourses } from "@/lib/courses";
@@ -83,6 +84,7 @@ export default async function CoursePage({ params }: { params: Promise<{ slug: s
               <h1 style={{ fontSize: "clamp(1.8rem,3.8vw,2.7rem)" }}>{course.title}</h1>
               <p className="muted" style={{ fontSize: "1.08rem" }}>{(lang === "zu" && course.summary_zu) || (lang === "st" && course.summary_st) || course.summary}</p>
             </div>
+            {course.image_url && <Photo url={course.image_url} alt={course.image_alt ?? ""} className="photo-wide" sizes="(max-width: 860px) 100vw, 720px" eager />}
             <dl className="specs" style={{ margin: 0 }}>
               <div><dt>{t("course.duration")}</dt><dd>{course.duration}</dd></div>
               <div><dt>{t("course.delivery")}</dt><dd>{course.format_note ?? course.format}</dd></div>

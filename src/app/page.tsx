@@ -1,4 +1,6 @@
 import Link from "next/link";
+import Photo from "@/components/Photo";
+import { HOME_PHOTOS, gallery } from "@/lib/gallery";
 import { CourseCard } from "@/components/CourseBits";
 import { listCourses } from "@/lib/courses";
 import { getSiteContent } from "@/lib/siteContent";
@@ -58,6 +60,26 @@ export default async function HomePage() {
             <Link className="btn btn-ghost" href="/courses">See all {courses.length} courses</Link>
           </div>
           <div className="grid g3">{featured.map((c) => <CourseCard key={c.id} course={c} />)}</div>
+        </div>
+      </section>
+
+      <section className="block gallery-block" style={{ paddingTop: 0 }}>
+        <div className="wrap stack" style={{ gap: 18 }}>
+          <div className="sec-head" style={{ marginBottom: 0 }}>
+            <div>
+              <div className="eyebrow">From our training rooms</div>
+              <h2 style={{ marginTop: 6 }}>Hands-on training, in class and on site</h2>
+            </div>
+            <Link className="btn btn-ghost" href="/news">Read our news</Link>
+          </div>
+          <div className="gallery-strip">
+            {HOME_PHOTOS.map((p) => (
+              <figure key={p.name}>
+                <Photo url={gallery(p.name)} alt={p.caption} sizes="(max-width: 860px) 50vw, 300px" />
+                <figcaption>{p.caption}</figcaption>
+              </figure>
+            ))}
+          </div>
         </div>
       </section>
 

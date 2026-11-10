@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Photo from "@/components/Photo";
 import { listPosts } from "@/lib/posts";
 import { seoFor } from "@/lib/seo";
 
@@ -26,7 +27,8 @@ export default async function NewsPage({ searchParams }: { searchParams: Promise
         )}
         <div className="grid g3">
           {posts.map((p) => (
-            <Link key={p.id} href={`/news/${p.slug}`} className="ccard">
+            <Link key={p.id} href={`/news/${p.slug}`} className={`ccard${p.image_url ? " has-photo" : ""}`}>
+              {p.image_url && <div className="photo-cover"><Photo url={p.image_url} alt="" /></div>}
               <span className="badge b-short" style={{ alignSelf: "flex-start" }}>{p.category}</span>
               <h2 style={{ fontSize: "1.15rem" }}>{p.title}</h2>
               {p.summary && <p className="muted small">{p.summary}</p>}

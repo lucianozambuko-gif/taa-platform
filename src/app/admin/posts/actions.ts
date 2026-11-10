@@ -21,6 +21,8 @@ export async function savePost(_: PostState, fd: FormData): Promise<PostState> {
   const slug = (s("slug") || title).toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 80);
   const ctaLink = s("cta_link");
   if (ctaLink && !/^(\/|https:\/\/)/.test(ctaLink)) return { error: "The button link must start with / or https://" };
+  const imageUrl = s("image_url");
+  if (imageUrl && !/^(\/|https:\/\/)/.test(imageUrl)) return { error: "The photo link must start with / or https://" };
   const published = fd.get("published") === "on";
   const { data: before } = id ? await supabase.from("posts").select("published_at").eq("id", id).maybeSingle() : { data: null };
   const row = {
@@ -31,6 +33,8 @@ export async function savePost(_: PostState, fd: FormData): Promise<PostState> {
     meta_description: s("meta_description").slice(0, 300) || null,
     cta_label: s("cta_label") || null,
     cta_link: ctaLink || null,
+    image_url: imageUrl || null,
+    image_alt: s("image_alt") || null,
     published,
     published_at: published ? before?.published_at ?? new Date().toISOString() : before?.published_at ?? null,
     updated_at: new Date().toISOString(),

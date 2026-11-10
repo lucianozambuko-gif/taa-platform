@@ -3,7 +3,7 @@
      still open without signal.
    - Static files: cache first.
    - Videos, payments, APIs and the back office are never cached. */
-const VERSION = "taa-v1";
+const VERSION = "taa-v2";
 const PAGES = `${VERSION}-pages`;
 const ASSETS = `${VERSION}-assets`;
 const OFFLINE = "/offline";

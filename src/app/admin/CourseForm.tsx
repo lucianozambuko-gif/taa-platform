@@ -78,6 +78,8 @@ export default function CourseForm({ course }: { course?: Course }) {
           <F label="Certificate type" name="certificate" value={c?.certificate} wide />
           <T label="Intake dates (one per line)" name="intakes" value={c?.intakes.join("\n")} />
           <F label="Brochure PDF link" name="brochure_url" value={c?.brochure_url} wide />
+          <F label="Photo link (course card and page)" name="image_url" value={c?.image_url} wide />
+          <F label="Photo description (for screen readers)" name="image_alt" value={c?.image_alt} wide />
           <T label="Eligibility check (one question per line)" name="eligibility" value={(c?.eligibility ?? []).map((e) => `${e.q} | ${e.ok} | ${e.fail}`).join("\n")} hint="Format: Question? | yes or no (the answer that meets the requirement) | Message if they don't meet it. Leave empty to hide the check." />
           <T label="Summary in isiZulu" name="summary_zu" value={c?.summary_zu} hint="Shown when a visitor chooses isiZulu. Have it checked by a first-language speaker." />
           <T label="Summary in Sesotho" name="summary_st" value={c?.summary_st} />

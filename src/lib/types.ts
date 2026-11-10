@@ -28,6 +28,8 @@ export type Course = {
   approved_scope: string | null;
   certificate_auto: boolean;
   brochure_url: string | null;
+  image_url?: string | null;
+  image_alt?: string | null;
   has_lms: boolean;
   featured: boolean;
   published: boolean;

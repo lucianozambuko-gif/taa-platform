@@ -20,6 +20,10 @@ export default function PostForm({ post }: { post?: Post }) {
           </div>
         </div>
         <div className="field"><label>Summary (shown on the news page)</label><input name="summary" defaultValue={post?.summary ?? ""} /></div>
+        <div className="grid g2" style={{ gap: 12 }}>
+          <div className="field"><label htmlFor="pf-img">Photo link</label><input id="pf-img" name="image_url" defaultValue={post?.image_url ?? ""} placeholder="https://… (from the Academy photo library)" /></div>
+          <div className="field"><label htmlFor="pf-alt">Photo description (for screen readers)</label><input id="pf-alt" name="image_alt" defaultValue={post?.image_alt ?? ""} placeholder="e.g. Learners practising with a floor scrubber" /></div>
+        </div>
         <div className="field">
           <label>Article</label>
           <textarea name="body" rows={14} defaultValue={post?.body ?? ""} />

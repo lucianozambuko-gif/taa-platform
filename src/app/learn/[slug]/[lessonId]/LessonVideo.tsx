@@ -21,7 +21,7 @@ export default function LessonVideo({ src, captions, title, poster, minutes = 0 
       <div className="player">
         {poster}
         <button className="play" onClick={() => setLoad(true)} aria-label={`Load and play ${title}`}>
-          <svg width="26" height="26" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 4l14 8-14 8z" fill="#0E6B5A" /></svg>
+          <svg width="26" height="26" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 4l14 8-14 8z" fill="#DB0B0B" /></svg>
         </button>
         <div className="cap">
           {df ? "This video isn't data-free: it uses your mobile data." : "Data saver is on: the video loads when you tap play."}

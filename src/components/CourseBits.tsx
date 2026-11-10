@@ -2,6 +2,7 @@ import Link from "next/link";
 import { KIND_LABEL, rand } from "@/lib/format";
 import type { Course } from "@/lib/types";
 import { CompareToggle } from "./Compare";
+import Photo from "./Photo";
 
 export function KindBadge({ course }: { course: Course }) {
   if (course.kind === "accredited")
@@ -74,12 +75,26 @@ const DEFAULT_STYLE = {
 
 export function SubjectCover({ course }: { course: Course }) {
   const style = SUBJECT_STYLE[course.subject] ?? DEFAULT_STYLE;
+  if (course.image_url)
+    return (
+      <>
+        <div className="photo-cover">
+          <Photo url={course.image_url} alt="" />
+          <span className="cover-label">{course.subject}</span>
+        </div>
+        <SubjectArt tone={style.tone} icon={style.icon} subject={course.subject} saverOnly />
+      </>
+    );
+  return <SubjectArt tone={style.tone} icon={style.icon} subject={course.subject} />;
+}
+
+function SubjectArt({ tone, icon, subject, saverOnly }: { tone: string; icon: React.ReactNode; subject: string; saverOnly?: boolean }) {
   return (
-    <div className={`cover tone-${style.tone}`} aria-hidden="true">
+    <div className={`cover tone-${tone}${saverOnly ? " saver-only" : ""}`} aria-hidden="true">
       <svg viewBox="0 0 36 34" width="44" height="42" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-        {style.icon}
+        {icon}
       </svg>
-      <span className="cover-label">{course.subject}</span>
+      <span className="cover-label">{subject}</span>
     </div>
   );
 }

@@ -16,9 +16,15 @@ export default async function SiteHeader() {
     <header className="site">
       <div className="wrap" style={{ position: "relative" }}>
         <Link href="/" className="brand" aria-label="Training Africa Academy home">
-          <span className="mark">TA</span>
+          <span className="mark" aria-hidden="true">
+            <svg viewBox="0 0 64 64">
+              <polygon points="6,58 18,58 25,32 13,32" fill="#FFFFFF" />
+              <polygon points="23,58 35,58 42,20 30,20" fill="#DB0B0B" />
+              <polygon points="40,58 52,58 59,8 47,8" fill="#FFFFFF" />
+            </svg>
+          </span>
           <span className="name">
-            Training Africa<small>Academy</small>
+            Training <em>Africa</em><small>Academy</small>
           </span>
         </Link>
         <Suspense fallback={null}><NavAutoClose /></Suspense>
