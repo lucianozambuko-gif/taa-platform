@@ -5,8 +5,8 @@ const BASE = "https://uyswlagazjcwejgpxbeg.supabase.co/storage/v1/object/public/
 export const gallery = (name: string) => `${BASE}/${name}.webp`;
 
 export const HOME_PHOTOS = [
-  { name: "training-and-practical-june-25-11", caption: "Practical day: floor scrubbing machine" },
-  { name: "pmb-training-5", caption: "Classroom workshop" },
-  { name: "training-and-practical-june-25-5", caption: "Carpet extraction practical" },
-  { name: "false-bay-college-5", caption: "Training at False Bay College" },
+  { name: "training-and-practical-june-25-11", caption: "Practical day: floor scrubbing machine", post: "learning-by-doing-inside-a-practical-training-day" },
+  { name: "pmb-training-5", caption: "Classroom workshop", post: "pricing-cleaning-contracts-costing-and-estimation" },
+  { name: "training-and-practical-june-25-5", caption: "Carpet extraction practical", post: "five-signs-your-cleaning-team-needs-refresher-training" },
+  { name: "false-bay-college-5", caption: "Training at False Bay College", post: "training-that-travels-to-colleges-and-workplaces" },
 ];

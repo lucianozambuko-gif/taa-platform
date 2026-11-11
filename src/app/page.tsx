@@ -74,10 +74,12 @@ export default async function HomePage() {
           </div>
           <div className="gallery-strip">
             {HOME_PHOTOS.map((p) => (
-              <figure key={p.name}>
-                <Photo url={gallery(p.name)} alt={p.caption} sizes="(max-width: 860px) 50vw, 300px" />
-                <figcaption>{p.caption}</figcaption>
-              </figure>
+              <Link key={p.name} href={`/news/${p.post}`} className="gallery-link">
+                <figure>
+                  <Photo url={gallery(p.name)} alt="" sizes="(max-width: 860px) 50vw, 300px" />
+                  <figcaption>{p.caption}<span className="gallery-more">Read the story →</span></figcaption>
+                </figure>
+              </Link>
             ))}
           </div>
         </div>

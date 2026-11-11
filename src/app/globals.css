@@ -700,3 +700,10 @@ body:has(.bottom-nav) .offline-bar{bottom:calc(84px + env(safe-area-inset-bottom
 .nav-count{background:#DB0B0B;color:#fff;min-width:22px;height:22px}
 .bn-icon{position:relative;display:flex;line-height:0}
 .bn-dot{position:absolute;top:-6px;right:-11px;min-width:19px;height:19px;padding:0 5px;border-radius:99px;background:#DB0B0B;color:#fff;font-size:.66rem;font-weight:800;display:grid;place-items:center;border:2px solid var(--surface);line-height:1}
+
+/* Home gallery photos open their news story */
+.gallery-link{display:block;color:inherit;text-decoration:none;border-radius:var(--r)}
+.gallery-link figure .photo img{transition:transform .35s ease}
+.gallery-link:hover figure .photo img,.gallery-link:focus-visible figure .photo img{transform:scale(1.05)}
+.gallery-link:focus-visible{outline:3px solid var(--accent);outline-offset:3px}
+.gallery-more{display:block;margin-top:3px;font-size:.72rem;font-weight:700;color:#FFB4AE}
