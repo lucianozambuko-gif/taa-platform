@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
+import MoreButton from "./MoreButton";
 
 const ICON = { width: 22, height: 22, viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: 1.9, strokeLinecap: "round" as const, strokeLinejoin: "round" as const, "aria-hidden": true };
 
@@ -35,7 +36,6 @@ const STAFF: Record<string, Item[]> = {
     ["/facilitator/learners", "Learners", "people"],
     ["/facilitator/results", "To assess", "check", "toAssess", ["/poe"]],
     ["/facilitator/attendance", "Register", "calendar"],
-    ["/facilitator/lessons", "Lessons", "book", undefined, ["/facilitator/quizzes"]],
   ],
   moderator: [
     ["/moderator", "Home", "home"],
@@ -48,28 +48,24 @@ const STAFF: Record<string, Item[]> = {
     ["/employer?view=staff", "My staff", "people"],
     ["/employer?view=register", "Register", "plus"],
     ["/employer?view=requests", "Requests", "receipt", "open"],
-    ["/employer?view=reports", "Reports", "chart"],
   ],
   content: [
     ["/content", "Home", "home"],
     ["/admin?tab=courses", "Courses", "book", undefined, ["/admin/courses"]],
     ["/admin?tab=approvals", "Approvals", "approve", "waiting"],
     ["/admin?tab=content", "Website", "pen", undefined, ["/admin/posts"]],
-    ["/content/media", "Media", "image"],
   ],
   sales: [
     ["/sales", "Home", "home"],
     ["/admin?tab=leads", "Leads", "inbox", "fresh"],
     ["/admin?tab=orders", "Orders", "receipt"],
     ["/admin?tab=venue", "Venue", "calendar", "venue"],
-    ["/admin?tab=learners", "Learners", "people"],
   ],
   admin: [
     ["/admin", "Home", "home"],
     ["/admin?tab=leads", "Leads", "inbox", "fresh"],
     ["/admin?tab=courses", "Courses", "book", undefined, ["/admin/courses"]],
     ["/admin?tab=learners", "Learners", "people"],
-    ["/admin?tab=users", "Users", "key"],
   ],
 };
 
@@ -106,6 +102,7 @@ export default function BottomNav({ role = "learner", labels = EN, unread = 0, c
             </Link>
           );
         })}
+        <MoreButton icon={<svg {...ICON}><circle cx="5" cy="12" r="1.6" /><circle cx="12" cy="12" r="1.6" /><circle cx="19" cy="12" r="1.6" /></svg>} />
       </nav>
     );
   }
@@ -121,9 +118,6 @@ export default function BottomNav({ role = "learner", labels = EN, unread = 0, c
       <Link href="/dashboard/results" aria-current={on("/dashboard/results") ?? on("/certificate") ?? on("/poe")}>
         <svg {...ICON}><circle cx="12" cy="9" r="5" /><path d="M8.5 13l-1.5 8 5-3 5 3-1.5-8" /></svg>Results
       </Link>
-      <Link href="/dashboard/payments" aria-current={on("/dashboard/payments") ?? on("/orders")}>
-        <svg {...ICON}><rect x="3" y="6" width="18" height="13" rx="2" /><path d="M3 10h18M7 15h4" /></svg>Payments
-      </Link>
       <Link href="/dashboard/messages" aria-current={on("/dashboard/messages")} aria-label={unread ? `Messages, ${unread} unread` : "Messages"}>
         <span className="bn-icon">
           <svg {...ICON}><path d="M4 5h16v11H9l-5 4z" /></svg>
@@ -131,6 +125,7 @@ export default function BottomNav({ role = "learner", labels = EN, unread = 0, c
         </span>
         Messages
       </Link>
+      <MoreButton icon={<svg {...ICON}><circle cx="5" cy="12" r="1.6" /><circle cx="12" cy="12" r="1.6" /><circle cx="19" cy="12" r="1.6" /></svg>} />
     </nav>
   );
 }
