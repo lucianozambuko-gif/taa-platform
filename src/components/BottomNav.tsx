@@ -2,103 +2,110 @@
 
 import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
-import { whatsappLink } from "@/lib/format";
 
 const ICON = { width: 22, height: 22, viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: 1.9, strokeLinecap: "round" as const, strokeLinejoin: "round" as const, "aria-hidden": true };
 
-/** App-style navigation for signed-in users on phones; admins get their control panel instead of learner links. */
+/** App-style navigation for signed-in users on phones: each role gets the bar for its own workspace. */
 type Labels = { home: string; courses: string; learning: string; help: string };
 const EN: Labels = { home: "Home", courses: "Courses", learning: "My learning", help: "Help" };
 
-export default function BottomNav({ role = "learner", labels = EN, unread = 0 }: { role?: string; labels?: Labels; unread?: number }) {
+// Phone bars for staff and employers: [link, label, icon, count shown as a red dot, other paths that keep it lit]
+type Item = [href: string, label: string, icon: keyof typeof I, count?: string, deep?: string[]];
+const I = {
+  home: <><rect x="3.5" y="3.5" width="7" height="7" rx="1.5" /><rect x="13.5" y="3.5" width="7" height="7" rx="1.5" /><rect x="3.5" y="13.5" width="7" height="7" rx="1.5" /><rect x="13.5" y="13.5" width="7" height="7" rx="1.5" /></>,
+  people: <><circle cx="9" cy="8" r="3.2" /><path d="M3.5 19a5.5 5.5 0 0 1 11 0" /><circle cx="17" cy="9" r="2.4" /><path d="M16 14.2a4.5 4.5 0 0 1 5 4.8" /></>,
+  check: <><path d="M9 12l2 2 4-4" /><rect x="4" y="4" width="16" height="16" rx="3" /></>,
+  calendar: <><rect x="3.5" y="5" width="17" height="15" rx="2" /><path d="M3.5 10h17M8 3v4M16 3v4" /></>,
+  book: <><path d="M4 5h6a2 2 0 0 1 2 2v13a2 2 0 0 0-2-2H4z" /><path d="M20 5h-6a2 2 0 0 0-2 2v13a2 2 0 0 1 2-2h6z" /></>,
+  shield: <><path d="M9 12l2 2 4-4" /><path d="M12 3l7 3v6c0 4.5-3 7.5-7 9-4-1.5-7-4.5-7-9V6z" /></>,
+  history: <><path d="M3.5 12a8.5 8.5 0 1 0 2.6-6.1L3.5 8.5" /><path d="M3.5 4v4.5H8" /><path d="M12 7.5V12l3 2" /></>,
+  mail: <><path d="M4 6h16v12H4z" /><path d="M4 7l8 6 8-6" /></>,
+  plus: <><path d="M12 5v14M5 12h14" /></>,
+  receipt: <><path d="M6 3h12v18l-3-2-3 2-3-2-3 2z" /><path d="M9 8h6M9 12h6" /></>,
+  chart: <><path d="M4 20V4" /><path d="M4 20h16" /><path d="M8 16v-4M12 16V8M16 16v-6" /></>,
+  approve: <path d="M4 12.5l4.5 4.5L20 6" />,
+  pen: <><path d="M4 20h4l10-10-4-4L4 16z" /><path d="M13.5 6.5l4 4" /></>,
+  image: <><rect x="3.5" y="4.5" width="17" height="15" rx="2" /><circle cx="9" cy="10" r="1.6" /><path d="M4 17l5-4.5 4 3.5 3-2.5 4.5 4" /></>,
+  inbox: <><path d="M4 13l2.5-8h11L20 13v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1z" /><path d="M4 13h4.5l1 2.5h5l1-2.5H20" /></>,
+  key: <><circle cx="8" cy="15" r="4" /><path d="M11 12l8.5-8.5M16 7l2.5 2.5" /></>,
+};
+const STAFF: Record<string, Item[]> = {
+  facilitator: [
+    ["/facilitator", "Home", "home"],
+    ["/facilitator/learners", "Learners", "people"],
+    ["/facilitator/results", "To assess", "check", "toAssess", ["/poe"]],
+    ["/facilitator/attendance", "Register", "calendar"],
+    ["/facilitator/lessons", "Lessons", "book", undefined, ["/facilitator/quizzes"]],
+  ],
+  moderator: [
+    ["/moderator", "Home", "home"],
+    ["/moderator?view=queue", "To moderate", "shield", "pending", ["/poe"]],
+    ["/moderator?view=history", "Moderated", "history"],
+    ["/inbox", "Messages", "mail", "unread"],
+  ],
+  employer: [
+    ["/employer", "Home", "home"],
+    ["/employer?view=staff", "My staff", "people"],
+    ["/employer?view=register", "Register", "plus"],
+    ["/employer?view=requests", "Requests", "receipt", "open"],
+    ["/employer?view=reports", "Reports", "chart"],
+  ],
+  content: [
+    ["/content", "Home", "home"],
+    ["/admin?tab=courses", "Courses", "book", undefined, ["/admin/courses"]],
+    ["/admin?tab=approvals", "Approvals", "approve", "waiting"],
+    ["/admin?tab=content", "Website", "pen", undefined, ["/admin/posts"]],
+    ["/content/media", "Media", "image"],
+  ],
+  sales: [
+    ["/sales", "Home", "home"],
+    ["/admin?tab=leads", "Leads", "inbox", "fresh"],
+    ["/admin?tab=orders", "Orders", "receipt"],
+    ["/admin?tab=venue", "Venue", "calendar", "venue"],
+    ["/admin?tab=learners", "Learners", "people"],
+  ],
+  admin: [
+    ["/admin", "Home", "home"],
+    ["/admin?tab=leads", "Leads", "inbox", "fresh"],
+    ["/admin?tab=courses", "Courses", "book", undefined, ["/admin/courses"]],
+    ["/admin?tab=learners", "Learners", "people"],
+    ["/admin?tab=users", "Users", "key"],
+  ],
+};
+
+export default function BottomNav({ role = "learner", labels = EN, unread = 0, counts = {} }: { role?: string; labels?: Labels; unread?: number; counts?: Record<string, number> }) {
   const path = usePathname();
   const params = useSearchParams();
-  const tab = params.get("tab") ?? "overview";
-  const useView = params.get("view");
-  const is = (p: string) => (p === "/" ? path === "/" : path.startsWith(p));
 
-  if (role === "sales" || role === "content") {
-    const on = (t: string) => (path === "/admin" && tab === t) || (t === "courses" && path.startsWith("/admin/courses")) ? "page" : undefined;
-    const items: [string, string, React.ReactNode][] = role === "sales"
-      ? [["overview", "Overview", <><rect x="3.5" y="3.5" width="7" height="7" rx="1.5" /><rect x="13.5" y="3.5" width="7" height="7" rx="1.5" /><rect x="3.5" y="13.5" width="7" height="7" rx="1.5" /><rect x="13.5" y="13.5" width="7" height="7" rx="1.5" /></>],
-         ["leads", "Leads", <><path d="M4 6h16v12H4z" /><path d="M4 7l8 6 8-6" /></>],
-         ["orders", "Orders", <><path d="M6 3h12v18l-3-2-3 2-3-2-3 2z" /><path d="M9 8h6M9 12h6" /></>],
-         ["venue", "Venue", <><rect x="3.5" y="5" width="17" height="15" rx="2" /><path d="M3.5 10h17M8 3v4M16 3v4" /></>]]
-      : [["overview", "Overview", <><rect x="3.5" y="3.5" width="7" height="7" rx="1.5" /><rect x="13.5" y="3.5" width="7" height="7" rx="1.5" /><rect x="3.5" y="13.5" width="7" height="7" rx="1.5" /><rect x="13.5" y="13.5" width="7" height="7" rx="1.5" /></>],
-         ["courses", "Courses", <><path d="M4 5h6a2 2 0 0 1 2 2v13a2 2 0 0 0-2-2H4z" /><path d="M20 5h-6a2 2 0 0 0-2 2v13a2 2 0 0 1 2-2h6z" /></>],
-         ["content", "Site content", <><path d="M4 20h4l10-10-4-4L4 16z" /><path d="M13.5 6.5l4 4" /></>]];
+  const staff = STAFF[role];
+  if (staff) {
+    // Highlight the closest match: same page and the same tab / view.
+    const cur = (k: string) => params.get(k) ?? (k === "tab" && path === "/admin" ? "overview" : null);
+    const score = ([href, , , , deep]: Item) => {
+      const [p, q] = href.split("?");
+      const want = new URLSearchParams(q ?? "");
+      if (p === "/admin" && !want.has("tab")) want.set("tab", "overview");
+      if (path === p) return [...want].every(([k, v]) => cur(k) === v) ? 1000 + p.length * 10 + [...want].length : -1;
+      const d = (deep ?? []).filter((m) => path === m || path.startsWith(m + "/")).sort((x, y) => y.length - x.length)[0];
+      return d ? d.length : -1;
+    };
+    const best = staff.map(score).reduce((bi, sc, i, all) => (sc > all[bi] ? i : bi), 0);
+    const any = staff.some((i) => score(i) >= 0);
     return (
-      <nav className="bottom-nav" aria-label="Staff navigation">
-        {items.map(([key, label, icon]) => (
-          <Link key={key} href={key === "overview" ? "/admin" : `/admin?tab=${key}`} aria-current={on(key)}>
-            <svg {...ICON}>{icon}</svg>{label}
-          </Link>
-        ))}
-        <Link href="/">
-          <svg {...ICON}><path d="M3 11l9-7 9 7" /><path d="M5 10v10h14V10" /></svg>Website
-        </Link>
-      </nav>
-    );
-  }
-
-  if (role === "admin") {
-    const on = (t: string) => (path === "/admin" && tab === t) || (t === "courses" && path.startsWith("/admin/courses")) ? "page" : undefined;
-    return (
-      <nav className="bottom-nav" aria-label="Admin navigation">
-        <Link href="/admin" aria-current={on("overview")}>
-          <svg {...ICON}><rect x="3.5" y="3.5" width="7" height="7" rx="1.5" /><rect x="13.5" y="3.5" width="7" height="7" rx="1.5" /><rect x="3.5" y="13.5" width="7" height="7" rx="1.5" /><rect x="13.5" y="13.5" width="7" height="7" rx="1.5" /></svg>Overview
-        </Link>
-        <Link href="/admin?tab=leads" aria-current={on("leads")}>
-          <svg {...ICON}><path d="M4 6h16v12H4z" /><path d="M4 7l8 6 8-6" /></svg>Leads
-        </Link>
-        <Link href="/admin?tab=courses" aria-current={on("courses")}>
-          <svg {...ICON}><path d="M4 5h6a2 2 0 0 1 2 2v13a2 2 0 0 0-2-2H4z" /><path d="M20 5h-6a2 2 0 0 0-2 2v13a2 2 0 0 1 2-2h6z" /></svg>Courses
-        </Link>
-        <Link href="/admin?tab=users" aria-current={on("users")}>
-          <svg {...ICON}><circle cx="9" cy="8" r="3.2" /><path d="M3.5 19a5.5 5.5 0 0 1 11 0" /><circle cx="17" cy="9" r="2.4" /><path d="M16 14.2a4.5 4.5 0 0 1 5 4.8" /></svg>Users
-        </Link>
-      </nav>
-    );
-  }
-
-  if (role === "moderator" || role === "employer") {
-    const items: [string, string, boolean, React.ReactNode][] = role === "moderator"
-      ? [["/moderator", "To moderate", is("/moderator") || is("/poe"), <><path d="M9 12l2 2 4-4" /><path d="M12 3l7 3v6c0 4.5-3 7.5-7 9-4-1.5-7-4.5-7-9V6z" /></>],
-         ["/admin/guide", "Guide", is("/admin/guide"), <><path d="M4 5h6a2 2 0 0 1 2 2v13a2 2 0 0 0-2-2H4z" /><path d="M20 5h-6a2 2 0 0 0-2 2v13a2 2 0 0 1 2-2h6z" /></>],
-         ["/", "Website", path === "/", <><path d="M3 11l9-7 9 7" /><path d="M5 10v10h14V10" /></>]]
-      : [["/employer", "My staff", is("/employer"), <><circle cx="9" cy="8" r="3.2" /><path d="M3.5 19a5.5 5.5 0 0 1 11 0" /><circle cx="17" cy="9" r="2.4" /><path d="M16 14.2a4.5 4.5 0 0 1 5 4.8" /></>],
-         ["/employer#register", "Register", false, <><path d="M12 5v14M5 12h14" /></>],
-         ["/courses", "Courses", is("/courses"), <><circle cx="11" cy="11" r="6.5" /><path d="M20 20l-4.3-4.3" /></>]];
-    return (
-      <nav className="bottom-nav" aria-label={role === "moderator" ? "Moderation navigation" : "Employer navigation"}>
-        {items.map(([href, label, current, icon]) => (
-          <Link key={href} href={href} aria-current={current ? "page" : undefined}><svg {...ICON}>{icon}</svg>{label}</Link>
-        ))}
-        <a href={whatsappLink("Hi Training Africa Academy, I need help with the system.", "support")} target="_blank" rel="noopener">
-          <svg {...ICON}><path d="M4 20l1.3-4A8 8 0 1 1 8 19z" /><path d="M9 10h.01M12 10h.01M15 10h.01" /></svg>{labels.help}
-        </a>
-      </nav>
-    );
-  }
-  if (role === "facilitator") {
-    const on = (p: string, v?: string) => (path === p && (useView ?? undefined) === v ? "page" : undefined);
-    return (
-      <nav className="bottom-nav" aria-label="Teaching navigation">
-        <Link href="/facilitator" aria-current={on("/facilitator")}>
-          <svg {...ICON}><circle cx="9" cy="8" r="3.2" /><path d="M3.5 19a5.5 5.5 0 0 1 11 0" /><path d="M16 6h5M16 10h5M17 14h4" /></svg>Learners
-        </Link>
-        <Link href="/facilitator/results" aria-current={on("/facilitator/results")}>
-          <svg {...ICON}><path d="M9 12l2 2 4-4" /><rect x="4" y="4" width="16" height="16" rx="3" /></svg>To assess
-        </Link>
-        <Link href="/facilitator/attendance" aria-current={path.startsWith("/facilitator/attendance") ? "page" : undefined}>
-          <svg {...ICON}><rect x="3.5" y="5" width="17" height="15" rx="2" /><path d="M3.5 10h17M8 3v4M16 3v4" /><path d="M9 15l2 2 4-4" /></svg>Attendance
-        </Link>
-        <Link href="/facilitator/lessons" aria-current={path.startsWith("/facilitator/lessons") || path.startsWith("/facilitator/quizzes") ? "page" : undefined}>
-          <svg {...ICON}><circle cx="12" cy="12" r="8.5" /><path d="M9.5 9.5a2.5 2.5 0 1 1 3.5 2.3c-.6.3-1 .9-1 1.6V14" /><path d="M12 17h.01" /></svg>Lessons
-        </Link>
-        <a href={whatsappLink("Hi, I'm a facilitator and need help with the teaching system.", "support")} target="_blank" rel="noopener">
-          <svg {...ICON}><path d="M4 20l1.3-4A8 8 0 1 1 8 19z" /><path d="M9 10h.01M12 10h.01M15 10h.01" /></svg>{labels.help}
-        </a>
+      <nav className="bottom-nav" aria-label={`${role} navigation`}>
+        {staff.map((item, i) => {
+          const [href, label, icon, key] = item;
+          const n = key ? counts[key] ?? 0 : 0;
+          return (
+            <Link key={href} href={href} aria-current={any && i === best ? "page" : undefined} aria-label={n ? `${label}, ${n} waiting` : undefined}>
+              <span className="bn-icon">
+                <svg {...ICON}>{I[icon]}</svg>
+                {n > 0 && <span className="bn-dot">{n > 9 ? "9+" : n}</span>}
+              </span>
+              {label}
+            </Link>
+          );
+        })}
       </nav>
     );
   }

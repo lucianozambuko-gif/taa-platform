@@ -15,7 +15,7 @@ export async function recordAssessment(_: AssessState, fd: FormData): Promise<As
   const note = String(fd.get("note") ?? "");
   const { error } = await supabase.rpc("record_assessment", { enrolment, outcome, note });
   if (error) return { error: "Couldn't save the result. Please try again." };
-  revalidatePath("/facilitator");
+  revalidatePath("/facilitator", "layout");
   revalidatePath(`/poe/${enrolment}`);
   return { message: outcome ? "Result saved and sent to the moderator. The learner sees it on their dashboard." : "Result cleared." };
 }
@@ -66,6 +66,6 @@ export async function addEvidence(enrolmentId: string, path: string, name: strin
   const { error } = await supabase.from("assessment_evidence").insert({ enrolment_id: enrolmentId, path, name: name.slice(0, 120), uploaded_by: user.id });
   if (error) return { error: "Couldn't record the file." };
   await supabase.from("audit_log").insert({ actor: user.id, action: "evidence_upload", entity: "enrolment", entity_id: enrolmentId, detail: { title: name } });
-  revalidatePath("/facilitator");
+  revalidatePath("/facilitator", "layout");
   return { ok: true };
 }

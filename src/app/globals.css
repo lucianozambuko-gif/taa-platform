@@ -707,3 +707,51 @@ body:has(.bottom-nav) .offline-bar{bottom:calc(84px + env(safe-area-inset-bottom
 .gallery-link:hover figure .photo img,.gallery-link:focus-visible figure .photo img{transform:scale(1.05)}
 .gallery-link:focus-visible{outline:3px solid var(--accent);outline-offset:3px}
 .gallery-more{display:block;margin-top:3px;font-size:.72rem;font-weight:700;color:#FFB4AE}
+
+/* Staff and employer workspaces: the same frame as the student portal, with each role's own menu */
+.work-main > section.block, .work-main section.block{padding:0 !important}
+.work-main .wrap{max-width:none;margin:0;padding-left:0;padding-right:0}
+.work-main > .wrap, .work-main section.block > .wrap{width:100%}
+.work .portal-side{max-height:calc(100vh - 100px);overflow-y:auto;scrollbar-width:thin}
+.work-nav{gap:0}
+.work-group{display:flex;flex-direction:column;gap:2px}
+.work-group + .work-group{margin-top:6px;padding-top:6px;border-top:1px solid var(--line)}
+.work-group-title{padding:6px 12px 2px;font-size:.7rem;font-weight:700;letter-spacing:.09em;text-transform:uppercase;color:var(--muted)}
+.work-label{display:none;color:var(--muted)}
+.work-label b{color:var(--ink)}
+.todo-text{display:flex;gap:10px;align-items:flex-start;min-width:0}
+.todo-text .badge{margin-top:2px}
+.todo .btn{flex:none}
+.pipeline{display:grid;grid-template-columns:repeat(5,1fr);gap:8px}
+.pipeline a{display:flex;flex-direction:column;gap:2px;padding:12px;border-radius:var(--r);background:var(--sunk);color:var(--ink);text-decoration:none;border:1px solid transparent;min-width:0}
+.pipeline a:hover{border-color:var(--accent)}
+.pipeline a b{font-family:var(--display);font-size:1.5rem;line-height:1.1}
+.pipeline a span{font-size:.8rem;color:var(--muted);overflow:hidden;text-overflow:ellipsis}
+.pipeline a.hot{background:var(--accent-soft)}
+.pipeline a.hot b{color:var(--accent)}
+.checklist{display:flex;flex-direction:column}
+.checklist .todo{align-items:flex-start}
+.media-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:12px}
+.media-item{display:flex;flex-direction:column;gap:6px;min-width:0}
+.media-item .thumb{aspect-ratio:4/3;border-radius:8px;overflow:hidden;background:var(--sunk);border:1px solid var(--line);display:grid;place-items:center;color:var(--muted);font-size:.8rem;font-weight:700}
+.media-item .thumb img{width:100%;height:100%;object-fit:cover;display:block}
+.media-item .name{font-size:.78rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.copy-row{display:flex;gap:6px;align-items:center;min-width:0}
+.copy-row code{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-family:var(--mono);font-size:.78rem;background:var(--sunk);padding:6px 8px;border-radius:6px}
+@media (max-width:900px){
+  .work .portal-side{max-height:none;overflow:visible;gap:8px}
+  .work-label{display:block;padding:0 2px}
+  .work-nav .work-group{flex-direction:row;display:contents}
+  .work-group-title{display:none}
+  .work-group + .work-group{margin:0;padding:0;border:0}
+  .work-nav a .pcount{min-width:20px;height:20px}
+  .pipeline{grid-template-columns:repeat(2,1fr)}
+  .pipeline a:first-child{grid-column:1 / -1}
+}
+@media print{
+  .work .portal-grid{display:block}
+  .work.block{padding:0 !important}
+}
+
+/* Staff workspaces do not need the visitor advisor button */
+body:has(.ws-shell) .advisor-btn{display:none}

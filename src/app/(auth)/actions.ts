@@ -2,6 +2,7 @@
 
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { homeFor } from "@/lib/roles";
 
 function safeNext(value: FormDataEntryValue | null) {
   const next = typeof value === "string" ? value : "";
@@ -17,7 +18,14 @@ export async function signIn(_: AuthState, formData: FormData): Promise<AuthStat
     password: String(formData.get("password") ?? ""),
   });
   if (error) return { error: "That email and password don't match an account. Check them and try again." };
-  redirect(safeNext(formData.get("next")));
+  const next = safeNext(formData.get("next"));
+  // No particular page was asked for: go straight to this role's own workspace.
+  if (next === "/dashboard") {
+    const { data: { user } } = await supabase.auth.getUser();
+    const { data: me } = user ? await supabase.from("profiles").select("role").eq("id", user.id).maybeSingle() : { data: null };
+    redirect(homeFor(me?.role));
+  }
+  redirect(next);
 }
 
 export async function signUp(_: AuthState, formData: FormData): Promise<AuthState> {

@@ -6,7 +6,9 @@ import { deleteRedirect } from "../actions";
 import type { DB } from "./shared";
 
 /** RFQ F02 editable content and F12/F13 redirects for old URLs. */
-export default async function SiteContentTab({ supabase }: { supabase: DB }) {
+export default async function SiteContentTab({ supabase, view }: { supabase: DB; view?: string }) {
+  // The content menu opens one part at a time (news, or SEO and redirects); "Site content" shows everything.
+  const show = (part: string) => !view || (view === "seo" ? part === "seo" || part === "redirects" : view === part);
   const [content, { data: redirects }, { data: posts }, { data: faqRow }, seo] = await Promise.all([
     getSiteContent(),
     supabase.from("redirects").select("*").order("from_path"),
@@ -17,10 +19,10 @@ export default async function SiteContentTab({ supabase }: { supabase: DB }) {
   const faqs = Array.isArray(faqRow?.value) ? (faqRow.value as { q: string; a: string }[]) : [];
   return (
     <div className="stack" style={{ gap: 18 }}>
-      <nav className="row" style={{ gap: 6 }} aria-label="Jump to">
+      {!view && <nav className="row" style={{ gap: 6 }} aria-label="Jump to">
         {[["#news", "News & resources"], ["#home", "Homepage & announcement"], ["#faqs", "FAQs"], ["#seo", "Page titles (SEO)"], ["#redirects", "Redirects"]].map(([h, l]) => <a key={h} className="btn btn-ghost btn-sm" href={h}>{l}</a>)}
-      </nav>
-      <div className="panel stack" style={{ gap: 12 }} id="news">
+      </nav>}
+      {show("news") && <div className="panel stack" style={{ gap: 12 }} id="news">
         <div className="row" style={{ justifyContent: "space-between" }}>
           <h3>News, insights and resources</h3>
           <Link className="btn btn-primary btn-sm" href="/admin/posts/new">New article</Link>
@@ -41,17 +43,17 @@ export default async function SiteContentTab({ supabase }: { supabase: DB }) {
             </tbody>
           </table>
         </div>
-      </div>
-      <div id="home"><SiteContentForm {...content} /></div>
-      <div className="panel stack" style={{ gap: 10 }} id="faqs">
+      </div>}
+      {show("home") && <div id="home"><SiteContentForm {...content} /></div>}
+      {show("faqs") && <div className="panel stack" style={{ gap: 10 }} id="faqs">
         <h3>Resources and FAQs page</h3>
         <FaqForm text={faqs.map((f) => `Q: ${f.q}\n${f.a}`).join("\n\n")} />
-      </div>
-      <div className="panel stack" style={{ gap: 10 }} id="seo">
+      </div>}
+      {show("seo") && <div className="panel stack" style={{ gap: 10 }} id="seo">
         <h3>Page titles and search descriptions</h3>
         <SeoForm pages={SEO_PAGES} overrides={seo} />
-      </div>
-      <div className="panel stack" style={{ gap: 12 }} id="redirects">
+      </div>}
+      {show("redirects") && <div className="panel stack" style={{ gap: 12 }} id="redirects">
         <h3>Redirects from the old website</h3>
         <p className="small muted">When the new site goes live, old links from Google, adverts and emails keep working by sending visitors to the right new page (permanent 301 redirect).</p>
         <RedirectForm />
@@ -71,7 +73,7 @@ export default async function SiteContentTab({ supabase }: { supabase: DB }) {
             </tbody>
           </table>
         </div>
-      </div>
+      </div>}
     </div>
   );
 }

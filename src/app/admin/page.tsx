@@ -4,7 +4,8 @@ import { KindBadge } from "@/components/CourseBits";
 import { LEAD_LABEL, rand } from "@/lib/format";
 import { getUserAndProfile } from "@/lib/supabase/server";
 import type { Course } from "@/lib/types";
-import { BACK_OFFICE, ROLE_HELP, ROLE_LABEL, canOpen, isBackOffice, type Role } from "@/lib/roles";
+import { ROLE_HELP, ROLE_LABEL, WORKSPACE_LABEL, canOpen, homeFor, isBackOffice, type Role } from "@/lib/roles";
+import { WorkHead } from "@/components/WorkBits";
 import { RetentionForm } from "./ContentForms";
 import { anonymiseUser, assignCourse, sendReportNow, revokeEnrolment, setUserRole, togglePublished, unassignFacilitator, updatePrice } from "./actions";
 import LeadsTab from "./tabs/Leads";
@@ -28,16 +29,12 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
   const { supabase, user, profile } = await getUserAndProfile();
   if (!user) redirect("/login?next=/admin");
   const role = (profile?.role ?? "learner") as Role;
-  if (!isBackOffice(role))
-    return (
-      <section className="block"><div className="wrap" style={{ maxWidth: 620 }}><div className="panel stack">
-        <h1 style={{ fontSize: "1.6rem" }}>Staff access only</h1>
-        <p className="muted">The back office is for Academy staff. An admin can give your account a staff role under Users.</p>
-      </div></div></section>
-    );
+  // Each role has its own workspace: non-staff go to theirs, and sales / content start on their own overview.
+  if (!isBackOffice(role)) redirect(homeFor(role));
   const sp = await searchParams;
-  const allowed = BACK_OFFICE.filter((t) => t.roles.includes(role));
-  const tab = sp.tab && canOpen(role, sp.tab) ? sp.tab : allowed[0].key;
+  if (!sp.tab && role !== "admin") redirect(homeFor(role));
+  if (sp.tab && !canOpen(role, sp.tab)) redirect(homeFor(role));
+  const tab = sp.tab ?? "overview";
   const isAdmin = role === "admin";
   const canSales = role === "admin" || role === "sales";
   const since = new Date(Date.now() - 30 * 864e5).toISOString();
@@ -367,7 +364,7 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
   } else if (tab === "coupons") {
     body = <CouponsTab supabase={supabase} isAdmin={isAdmin} />;
   } else if (tab === "content") {
-    body = <SiteContentTab supabase={supabase} />;
+    body = <SiteContentTab supabase={supabase} view={sp.view} />;
   } else if (tab === "approvals") {
     body = <ApprovalsTab supabase={supabase} />;
   } else if (tab === "courses") {
@@ -436,22 +433,20 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
     );
   }
 
+  const TITLE: Record<string, string> = {
+    overview: isAdmin ? "Academy overview" : "Reports",
+    leads: sp.view === "mine" ? "My leads" : sp.view === "chats" ? "Advisor chats" : "Leads",
+    orders: "Orders & refunds", learners: "Learners & progress", venue: "Venue bookings", coupons: "Coupons",
+    courses: "Courses & lessons", approvals: "Lesson approvals",
+    content: sp.view === "news" ? "News & articles" : sp.view === "seo" ? "SEO & redirects" : "Site content",
+    users: "Users & roles", audit: "Audit log",
+  };
   return (
-    <section className="block" style={{ paddingTop: 32 }}>
-      <div className="wrap">
-        <div className="sec-head">
-          <div><div className="eyebrow">Back office</div><h1 style={{ fontSize: "clamp(1.8rem,3.6vw,2.5rem)", marginTop: 6 }}>Academy dashboard</h1></div>
-          <span className="small muted">Signed in as {profile?.full_name ?? user.email} · {ROLE_LABEL[role]} · <Link href="/admin/guide">Staff guide</Link></span>
-        </div>
-        <nav className="tabs" aria-label="Admin sections">
-          {allowed.map(({ key, label }) => (
-            <Link key={key} href={`/admin?tab=${key}`} aria-current={tab === key ? "page" : undefined} style={{ padding: "10px 14px", fontWeight: 600, textDecoration: "none", color: tab === key ? "var(--accent)" : "var(--muted)", borderBottom: `2.5px solid ${tab === key ? "var(--accent)" : "transparent"}`, whiteSpace: "nowrap" }}>
-              {label}
-            </Link>
-          ))}
-        </nav>
-        {body}
-      </div>
-    </section>
+    <>
+      <WorkHead eyebrow={WORKSPACE_LABEL[role]} title={TITLE[tab] ?? "Back office"}>
+        <span className="small muted">{profile?.full_name ?? user.email} · {ROLE_LABEL[role]}</span>
+      </WorkHead>
+      <div>{body}</div>
+    </>
   );
 }

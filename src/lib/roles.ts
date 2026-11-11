@@ -40,8 +40,28 @@ export const isStaff = (role?: string | null) => isBackOffice(role) || role === 
 export const canOpen = (role: string | null | undefined, tab: string) =>
   !!role && !!BACK_OFFICE.find((t) => t.key === tab)?.roles.includes(role as Role);
 
-/** Where each role lands after signing in. */
-export const homeFor = (role?: string | null) => (isBackOffice(role) ? "/admin" : role === "facilitator" ? "/facilitator" : role === "moderator" ? "/moderator" : role === "employer" ? "/employer" : "/dashboard");
+/** Where each role lands after signing in: every role has its own workspace overview. */
+export const HOME: Record<Role, string> = {
+  learner: "/dashboard",
+  employer: "/employer",
+  facilitator: "/facilitator",
+  moderator: "/moderator",
+  sales: "/sales",
+  content: "/content",
+  admin: "/admin",
+};
+export const homeFor = (role?: string | null) => HOME[role as Role] ?? "/dashboard";
+
+/** The name shown above each role's workspace menu. */
+export const WORKSPACE_LABEL: Record<Role, string> = {
+  learner: "Student portal",
+  employer: "Employer portal",
+  facilitator: "Teaching workspace",
+  moderator: "Moderation workspace",
+  sales: "Sales & admissions desk",
+  content: "Content studio",
+  admin: "Academy administration",
+};
 
 export const ROOMS: [string, string, string][] = [
   ["Training room A", "30 seated", "Classroom training, workshops"],

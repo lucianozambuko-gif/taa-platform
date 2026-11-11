@@ -4,6 +4,9 @@ import { getUserAndProfile } from "@/lib/supabase/server";
 import { loadStudent } from "@/lib/student";
 import PortalShell from "@/components/PortalShell";
 import { PortalHead } from "@/components/PortalBits";
+import Workspace from "@/components/Workspace";
+import { WorkHead } from "@/components/WorkBits";
+import { WORKSPACE_LABEL, type Role } from "@/lib/roles";
 import AccountForm from "./AccountForm";
 
 export const metadata = { title: "My account" };
@@ -19,7 +22,7 @@ export default async function AccountPage() {
       <p className="small muted">We use your details only to run your courses, as explained in our <Link href="/privacy">privacy notice</Link>. To delete your account, contact the Academy.</p>
     </div>
   );
-  // Learners see their account inside the student portal; staff keep a plain page.
+  // Learners see their account inside the student portal.
   if (!me?.role || me.role === "learner") {
     const s = await loadStudent("/account");
     return (
@@ -29,12 +32,11 @@ export default async function AccountPage() {
       </PortalShell>
     );
   }
+  // Staff and employers see it inside their own workspace.
   return (
-    <section className="block" style={{ paddingTop: 28 }}>
-      <div className="wrap stack" style={{ maxWidth: 620, gap: 16 }}>
-        <h1 style={{ fontSize: "clamp(1.7rem,3.4vw,2.2rem)" }}>My account and reminders</h1>
-        {body}
-      </div>
-    </section>
+    <Workspace>
+      <WorkHead eyebrow={WORKSPACE_LABEL[me.role as Role] ?? "My account"} title="My profile and reminders" />
+      {body}
+    </Workspace>
   );
 }

@@ -1,7 +1,7 @@
 // Server-only: everything the student portal shows, loaded once per page.
 import { redirect } from "next/navigation";
 import { getUserAndProfile } from "@/lib/supabase/server";
-import { isBackOffice } from "@/lib/roles";
+import { homeFor } from "@/lib/roles";
 import type { Course } from "@/lib/types";
 
 type L = { id: string; title: string; position: number; minutes: number; kind: string };
@@ -13,10 +13,8 @@ type Raw = {
 export async function loadStudent(next = "/dashboard") {
   const { supabase, user, profile } = await getUserAndProfile();
   if (!user) redirect(`/login?next=${encodeURIComponent(next)}`);
-  if (profile?.role === "facilitator") redirect("/facilitator");
-  if (profile?.role === "moderator") redirect("/moderator");
-  if (isBackOffice(profile?.role)) redirect("/admin");
-  if (profile?.role === "employer") redirect("/employer");
+  // Staff and employers have their own workspaces; only learners use the student portal.
+  if (profile?.role && profile.role !== "learner") redirect(homeFor(profile.role));
 
   const [{ data: enrolments }, { data: progress }, { data: orderRows }, { data: messages }, { data: attempts }] = await Promise.all([
     supabase

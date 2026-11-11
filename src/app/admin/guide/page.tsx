@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import PrintButton from "@/components/PrintButton";
-import { ROLE_HELP, ROLE_LABEL, isStaff, type Role } from "@/lib/roles";
+import { ROLE_HELP, ROLE_LABEL, homeFor, isStaff, type Role } from "@/lib/roles";
 import { getUserAndProfile } from "@/lib/supabase/server";
 
 export const metadata = { title: "Staff guide" };
@@ -104,13 +104,13 @@ export default async function StaffGuide() {
   const { user, profile } = await getUserAndProfile();
   if (!user) redirect("/login?next=/admin/guide");
   const role = profile?.role as Role;
-  if (!isStaff(role)) redirect("/");
+  if (!isStaff(role)) redirect(homeFor(role));
   const mine = GUIDE.filter((g) => g.roles.includes(role));
   return (
     <section className="block" style={{ paddingTop: 28 }}>
       <div className="wrap stack" style={{ gap: 18, maxWidth: 860 }}>
         <div className="row no-print" style={{ justifyContent: "space-between" }}>
-          <Link href={role === "facilitator" ? "/facilitator" : role === "moderator" ? "/moderator" : "/admin"}>← Back</Link>
+          <Link href={homeFor(role)}>← Back to my overview</Link>
           <PrintButton label="Print / save as PDF" />
         </div>
         <div>

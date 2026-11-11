@@ -11,6 +11,7 @@ import { FONTS_URL, displayBootScript } from "@/components/DisplaySettings";
 import DataFreeBar from "@/components/DataFreeBar";
 import AdvisorChat from "@/components/AdvisorChat";
 import { createClient } from "@/lib/supabase/server";
+import { loadWorkspace } from "@/lib/workspace";
 import { whatsappLink } from "@/lib/format";
 import { getSiteContent } from "@/lib/siteContent";
 import { LANGS, getT } from "@/lib/i18n";
@@ -32,11 +33,13 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   let signedIn = false;
   let role = "learner";
   let unread = 0;
+  let counts: Record<string, number> = {};
   try {
     const supabase = await createClient();
     const user = (await supabase.auth.getUser()).data.user;
     signedIn = !!user;
     if (user) role = (await supabase.from("profiles").select("role").eq("id", user.id).maybeSingle()).data?.role ?? "learner";
+    if (user && role !== "learner") counts = (await loadWorkspace())?.counts ?? {};
     if (user && role === "learner") unread = (await supabase.from("notifications").select("id", { count: "exact", head: true }).eq("user_id", user.id).is("read_at", null)).count ?? 0;
   } catch {}
   const [{ announcement }, { lang, t }] = await Promise.all([getSiteContent(), getT()]);
@@ -62,7 +65,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         <SiteHeader />
         <main id="main">{children}</main>
         <SiteFooter />
-        {signedIn && <Suspense fallback={null}><BottomNav role={role} unread={unread} labels={{ home: t("nav.home"), courses: t("nav.courses"), learning: t("nav.mylearning"), help: t("nav.help") }} /></Suspense>}
+        {signedIn && <Suspense fallback={null}><BottomNav role={role} unread={unread} counts={counts} labels={{ home: t("nav.home"), courses: t("nav.courses"), learning: t("nav.mylearning"), help: t("nav.help") }} /></Suspense>}
         <AdvisorChat />
       </body>
     </html>

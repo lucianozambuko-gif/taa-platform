@@ -7,7 +7,7 @@ export type TCourse = Course & { modules: { lessons: { id: string }[] }[] };
 export type TRow = {
   id: string; user_id: string; course_id: string; created_at: string; result: string | null; result_note: string | null;
   assessed_at: string | null; poe_submitted_at: string | null; moderation: string | null; moderation_note: string | null;
-  course: TCourse; pct: number | null; name: string; phone: string | null; evidence: number;
+  course: TCourse; pct: number | null; name: string; phone: string | null; evidence: number; last: string | null;
 };
 
 /** Courses this facilitator teaches (admins: all) with every enrolment and its progress. */
@@ -26,19 +26,21 @@ export async function loadTeaching(supabase: DB, userId: string, isAdmin: boolea
   const [{ data: people }, { data: prog }, { data: ev }] = users.length
     ? await Promise.all([
         supabase.from("profiles").select("id, full_name, phone").in("id", users),
-        supabase.from("lesson_progress").select("user_id, lesson_id").in("user_id", users),
+        supabase.from("lesson_progress").select("user_id, lesson_id, completed_at").in("user_id", users),
         supabase.from("assessment_evidence").select("enrolment_id").in("enrolment_id", (enrols ?? []).map((e) => e.id)),
       ])
     : [{ data: [] }, { data: [] }, { data: [] }];
   const rows: TRow[] = (enrols ?? []).map((e) => {
     const course = courses.find((c) => c.id === e.course_id)!;
     const lessonIds = new Set(course.modules.flatMap((m) => m.lessons.map((l) => l.id)));
-    const done = (prog ?? []).filter((p) => p.user_id === e.user_id && lessonIds.has(p.lesson_id)).length;
+    const mine = (prog ?? []).filter((p) => p.user_id === e.user_id && lessonIds.has(p.lesson_id));
+    const done = mine.length;
     const person = (people ?? []).find((p) => p.id === e.user_id);
     return {
       ...e, course, pct: course.has_lms && lessonIds.size ? Math.min(100, Math.round((done / lessonIds.size) * 100)) : null,
       name: person?.full_name ?? "Learner", phone: person?.phone ?? null,
       evidence: (ev ?? []).filter((x) => x.enrolment_id === e.id).length,
+      last: mine.map((p) => (p as { completed_at?: string | null }).completed_at ?? "").sort().at(-1) || null,
     };
   });
   return { courses, rows };

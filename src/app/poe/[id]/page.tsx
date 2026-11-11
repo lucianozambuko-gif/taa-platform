@@ -69,7 +69,7 @@ export default async function PoePage({ params }: { params: Promise<{ id: string
     <section className="block" style={{ paddingTop: 28 }}>
       <div className="wrap stack poe" style={{ gap: 18, maxWidth: 980 }}>
         <div className="crumbs no-print">
-          <Link href={isLearner ? "/dashboard" : role === "moderator" ? "/moderator" : role === "facilitator" ? `/facilitator?course=${course.slug}` : "/admin?tab=learners"}>← Back</Link>
+          <Link href={isLearner ? "/dashboard" : role === "moderator" ? "/moderator?view=queue" : role === "facilitator" ? `/facilitator/learners?course=${course.slug}` : "/admin?tab=learners"}>← Back</Link>
         </div>
         <div className="sec-head" style={{ marginBottom: 0 }}>
           <div>

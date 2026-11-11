@@ -47,7 +47,7 @@ export default async function CoursePage({ params }: { params: Promise<{ slug: s
   let cta: React.ReactNode;
   if (role === "admin" || role === "content") cta = <Link className="btn btn-primary" href={`/admin/courses/${course.id}`}>Edit this course</Link>;
   else if (role === "sales") cta = <Link className="btn btn-primary" href="/admin?tab=learners">Give a learner access</Link>;
-  else if (role === "facilitator") cta = <Link className="btn btn-primary" href={`/facilitator?course=${course.slug}`}>View my learners</Link>;
+  else if (role === "facilitator") cta = <Link className="btn btn-primary" href={`/facilitator/learners?course=${course.slug}`}>View my learners</Link>;
   else if (course.kind === "qualification") cta = <Link className="btn btn-primary" href={`/learnerships/apply?course=${course.slug}`}>Apply for the {course.intakes[0] ?? "next intake"}</Link>;
   else if (course.price_basis !== "fixed") cta = <Link className="btn btn-primary" href={`/employers?course=${course.slug}`}>Request a quotation</Link>;
   else if (enrolled && course.has_lms) cta = <Link className="btn btn-primary" href={`/learn/${course.slug}`}>Continue learning</Link>;
