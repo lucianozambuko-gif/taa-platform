@@ -596,3 +596,12 @@ html[data-saver="on"] *, html[data-saver="on"] *::before, html[data-saver="on"] 
 @media (max-width:860px){.gallery-strip{grid-template-columns:repeat(2,1fr)}}
 html[data-saver="on"] .photo, html[data-saver="on"] .photo-cover, html[data-saver="on"] .gallery-block{display:none}
 html[data-saver="on"] .cover.saver-only{display:flex}
+
+/* Offline learning */
+.offline-bar{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(16px + env(safe-area-inset-bottom,0px));z-index:60;max-width:min(560px,calc(100% - 32px));background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:12px;font-size:.9rem;box-shadow:var(--shadow)}
+.offline-bar.ok{background:var(--good);color:#fff}
+.offline-bar .linkish{color:inherit;text-decoration:underline;background:none;border:0;padding:0;font:inherit;cursor:pointer;margin-left:6px}
+body:has(.bottom-nav) .offline-bar{bottom:calc(84px + env(safe-area-inset-bottom,0px))}
+.save-course{margin-top:10px;display:flex;flex-direction:column;gap:6px;align-items:flex-start}
+.save-course p{margin:0}
+.linkish{background:none;border:0;padding:0;color:var(--accent);text-decoration:underline;cursor:pointer;font:inherit}

@@ -2,7 +2,8 @@ import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { getLearningState } from "@/lib/learning";
 import type { QuizQuestion } from "@/lib/types";
-import { completeLesson } from "../../actions";
+import CompleteButton from "./CompleteButton";
+import SaveCourse from "@/components/SaveCourse";
 import Quiz from "./Quiz";
 import LessonVideo from "./LessonVideo";
 
@@ -44,6 +45,7 @@ export default async function LessonPage({ params }: { params: Promise<{ slug: s
             <div style={{ padding: "10px 10px 4px" }}>
               <div className="row" style={{ justifyContent: "space-between" }}><b>{course.title}</b><span className="tnum small muted">{pct}%</span></div>
               <div className="bar" style={{ marginTop: 8 }}><i style={{ width: `${pct}%` }} /></div>
+              <SaveCourse slug={slug} urls={["/dashboard", ...lessons.map((l) => `/learn/${slug}/${l.id}`)]} />
             </div>
             {outline.map((m) => (
               <div key={m.id}>
@@ -106,16 +108,11 @@ export default async function LessonPage({ params }: { params: Promise<{ slug: s
                 )}
               </div>
             )}
-            {lesson.kind === "quiz" && <Quiz lessonId={lesson.id} slug={slug} title={lesson.title} questions={questions} alreadyPassed={isDone} />}
+            {lesson.kind === "quiz" && <Quiz lessonId={lesson.id} slug={slug} title={lesson.title} next={next?.id ?? ""} questions={questions} alreadyPassed={isDone} />}
 
             <div className="row" style={{ justifyContent: "space-between" }}>
               {lesson.kind !== "quiz" ? (
-                <form action={completeLesson}>
-                  <input type="hidden" name="lesson" value={lesson.id} />
-                  <input type="hidden" name="slug" value={slug} />
-                  <input type="hidden" name="next" value={next?.id ?? ""} />
-                  <button className={`btn ${isDone ? "btn-ghost" : "btn-primary"}`}>{isDone ? "Completed ✓ — continue" : "Mark as complete"}</button>
-                </form>
+                <CompleteButton lesson={lesson.id} slug={slug} next={next?.id ?? ""} isDone={isDone} />
               ) : <span />}
               {next ? (
                 <Link className="btn btn-ghost" href={`/learn/${slug}/${next.id}`}>Next: {next.title} →</Link>

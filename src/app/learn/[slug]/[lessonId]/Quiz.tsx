@@ -1,14 +1,27 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useState } from "react";
+import { enqueue, isOffline } from "@/lib/offlineQueue";
 import { submitQuiz, type QuizState } from "../../actions";
 
-type Props = { lessonId: string; slug: string; title: string; questions: { q: string; o: string[] }[]; alreadyPassed: boolean };
+type Props = { lessonId: string; slug: string; title: string; next?: string; questions: { q: string; o: string[] }[]; alreadyPassed: boolean };
 
-export default function Quiz({ lessonId, slug, title, questions, alreadyPassed }: Props) {
+export default function Quiz({ lessonId, slug, title, next, questions, alreadyPassed }: Props) {
   const [state, action, pending] = useActionState<QuizState, FormData>(submitQuiz, {});
+  const [heldOffline, setHeldOffline] = useState(false);
   return (
-    <form action={action} className="panel quiz">
+    <form
+      action={action}
+      className="panel quiz"
+      onSubmit={(e) => {
+        if (!isOffline()) return;
+        // No signal: keep the answers on the phone. They are marked on the server once back online.
+        e.preventDefault();
+        const fd = new FormData(e.currentTarget);
+        enqueue({ kind: "quiz", lesson: lessonId, slug, title, at: new Date().toISOString(), answers: questions.map((_, i) => (fd.get(`q${i}`) == null ? null : Number(fd.get(`q${i}`)))) });
+        setHeldOffline(true);
+      }}
+    >
       <input type="hidden" name="lesson" value={lessonId} />
       <input type="hidden" name="slug" value={slug} />
       <h1 style={{ fontSize: "1.35rem" }}>{title}</h1>
@@ -35,6 +48,9 @@ export default function Quiz({ lessonId, slug, title, questions, alreadyPassed }
           </span>
         )}
         {state.error && <span className="form-error">{state.error}</span>}
+        {heldOffline && state.score == null && (
+          <span className="badge b-short">Answers saved on this phone. We’ll mark them when you’re back online.{next ? " You can carry on with the next lesson." : ""}</span>
+        )}
       </div>
     </form>
   );

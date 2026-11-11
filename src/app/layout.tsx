@@ -6,6 +6,7 @@ import TrackedLink from "@/components/TrackedLink";
 import Analytics from "@/components/Analytics";
 import BottomNav from "@/components/BottomNav";
 import { ServiceWorker } from "@/components/AppInstall";
+import OfflineSync from "@/components/OfflineSync";
 import { FONTS_URL, displayBootScript } from "@/components/DisplaySettings";
 import DataFreeBar from "@/components/DataFreeBar";
 import AdvisorChat from "@/components/AdvisorChat";
@@ -49,6 +50,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         <DataFreeBar />
         <Analytics gaId={ga} />
         <ServiceWorker />
+        <OfflineSync />
         {announcement.on && announcement.text && (
           <div className="announce" role="region" aria-label="Announcement">
             {announcement.link ? <a href={announcement.link}>{announcement.text} →</a> : <span>{announcement.text}</span>}
