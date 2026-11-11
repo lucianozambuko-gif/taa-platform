@@ -660,17 +660,22 @@ body:has(.bottom-nav) .offline-bar{bottom:calc(84px + env(safe-area-inset-bottom
   .stat-tiles{grid-template-columns:repeat(2,1fr)}
 }
 
-/* Portal tables become stacked cards on phones */
+/* Portal tables become stacked cards on phones (labels come from TableCards) */
 @media (max-width:640px){
   .tbl.stack-sm thead{display:none}
   .tbl.stack-sm, .tbl.stack-sm tbody, .tbl.stack-sm tr{display:block;width:100%}
-  .tbl.stack-sm tr{padding:12px 0;border-bottom:1px solid var(--line)}
+  .tbl.stack-sm tr{padding:12px 2px;border-bottom:1px solid var(--line)}
   .tbl.stack-sm tr:last-child{border-bottom:0}
-  .tbl.stack-sm td{display:flex;justify-content:space-between;align-items:center;gap:12px;border:0;padding:4px 0;text-align:right}
-  .tbl.stack-sm td::before{content:attr(data-label);color:var(--muted);font-size:.82rem;text-align:left}
-  .tbl.stack-sm td[data-label=""]{display:block;text-align:left}
+  .tbl.stack-sm td{display:block;border:0;padding:5px 0;text-align:right;overflow-wrap:anywhere;min-height:0}
+  .tbl.stack-sm td::after{content:"";display:block;clear:both}
+  .tbl.stack-sm td::before{content:attr(data-label);float:left;color:var(--muted);font-size:.82rem;text-align:left;padding-right:12px;max-width:45%}
+  .tbl.stack-sm td > div, .tbl.stack-sm td > .bar{margin-left:auto}
+  .tbl.stack-sm td[data-label=""]{text-align:left;font-size:1rem}
   .tbl.stack-sm td[data-label=""]::before{display:none}
-  .tbl.stack-sm td .bar{width:120px}
+  .tbl.stack-sm td[data-label=""] > div{margin-left:0}
+  .tbl.stack-sm td:empty{display:none}
+  .tbl.stack-sm td .bar{width:120px;display:block}
+  .tbl.stack-sm td select, .tbl.stack-sm td input:not([type=checkbox]):not([type=radio]){width:100%;margin-top:4px}
 }
 /* Quiz review */
 .q.q-right{border-left:4px solid var(--good);padding-left:12px}
@@ -755,3 +760,17 @@ body:has(.bottom-nav) .offline-bar{bottom:calc(84px + env(safe-area-inset-bottom
 
 /* Staff workspaces do not need the visitor advisor button */
 body:has(.ws-shell) .advisor-btn{display:none}
+
+/* Phones: portals are app screens, not web pages */
+@media (max-width:860px){
+  body:has(.portal-grid) footer.site, body:has(.portal-grid) .announce{display:none}
+  .portal-nav{-webkit-mask-image:linear-gradient(90deg,#000 85%,transparent);mask-image:linear-gradient(90deg,#000 85%,transparent);scroll-snap-type:x proximity}
+  .portal-nav a{scroll-snap-align:center}
+}
+@media (max-width:640px){
+  input,select,textarea{font-size:16px}
+  .portal-main form .row > select, .portal-main form .row > input:not([type=checkbox]):not([type=radio]):not([type=hidden]), .portal-main form .row > textarea{flex:1 1 100%;min-width:0}
+  .portal-main .btn{min-height:42px}
+  .portal-main h1{font-size:1.75rem}
+}
+@media (max-width:640px){form.assess{display:flex;flex-wrap:wrap;gap:8px}form.assess select,form.assess input[name=note]{flex:1 1 100%;width:100%;min-width:0}}

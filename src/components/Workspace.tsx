@@ -1,5 +1,6 @@
 import { Suspense } from "react";
 import WorkNav from "./WorkNav";
+import TableCards from "./TableCards";
 import { whatsappLink } from "@/lib/format";
 import { ROLE_LABEL } from "@/lib/roles";
 import { loadWorkspace } from "@/lib/workspace";
@@ -30,6 +31,7 @@ export default async function Workspace({ children }: { children: React.ReactNod
           </div>
         </aside>
         <div className="portal-main work-main">{children}</div>
+        <TableCards />
       </div>
     </section>
   );

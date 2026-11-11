@@ -1,5 +1,6 @@
 import Link from "next/link";
 import PortalNav from "./PortalNav";
+import TableCards from "./TableCards";
 import { whatsappLink } from "@/lib/format";
 import type { Student } from "@/lib/student";
 
@@ -24,6 +25,7 @@ export default function PortalShell({ s, children }: { s: Student; children: Rea
           </div>
         </aside>
         <div className="portal-main">{children}</div>
+        <TableCards />
       </div>
     </section>
   );
