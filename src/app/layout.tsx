@@ -24,7 +24,7 @@ export const metadata: Metadata = {
   ...(process.env.GOOGLE_SITE_VERIFICATION ? { verification: { google: process.env.GOOGLE_SITE_VERIFICATION } } : {}),
 };
 
-export const viewport: Viewport = { width: "device-width", initialScale: 1, viewportFit: "cover", themeColor: "#141416" };
+export const viewport: Viewport = { width: "device-width", initialScale: 1, viewportFit: "cover", themeColor: [{ media: "(prefers-color-scheme: dark)", color: "#0F1A2E" }, { media: "(prefers-color-scheme: light)", color: "#141416" }] };
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
   const ga = process.env.NEXT_PUBLIC_GA_ID;
