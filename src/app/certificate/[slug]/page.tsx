@@ -65,13 +65,18 @@ export default async function CertificatePage({ params }: { params: Promise<{ sl
   return (
     <section className="block cert-page">
       <div className="wrap stack" style={{ gap: 18, maxWidth: 980 }}>
-        <div className="row no-print" style={{ justifyContent: "space-between" }}>
-          <Link href="/dashboard">← My learning</Link>
+        <div className="row no-print" style={{ justifyContent: "space-between", gap: 10 }}>
+          <Link href="/dashboard/results">← Results and certificates</Link>
           <PrintButton label="Download PDF / print" />
         </div>
         <div className="certificate">
           <div className="cert-inner">
-            <div className="cert-brand"><span className="mark">TA</span><span>Training Africa Academy</span></div>
+            <div className="cert-brand">
+              <span className="mark" aria-hidden="true">
+                <svg viewBox="0 0 64 64"><polygon points="6,58 18,58 25,32 13,32" fill="#FFFFFF" /><polygon points="23,58 35,58 42,20 30,20" fill="#DB0B0B" /><polygon points="40,58 52,58 59,8 47,8" fill="#FFFFFF" /></svg>
+              </span>
+              <span>Training <em>Africa</em> Academy</span>
+            </div>
             <p className="cert-eyebrow">{assessed ? "Statement of results" : "Certificate of completion"}</p>
             <p className="cert-small">This certifies that</p>
             <h1 className="cert-name">{profile?.full_name || user.email}</h1>
