@@ -109,7 +109,7 @@ export default function BottomNav({ role = "learner", labels = EN }: { role?: st
         <svg {...ICON}><rect x="3.5" y="3.5" width="7" height="7" rx="1.5" /><rect x="13.5" y="3.5" width="7" height="7" rx="1.5" /><rect x="3.5" y="13.5" width="7" height="7" rx="1.5" /><rect x="13.5" y="13.5" width="7" height="7" rx="1.5" /></svg>{labels.home}
       </Link>
       <Link href="/dashboard/courses" aria-current={on("/dashboard/courses") ?? on("/learn")}>
-        <svg {...ICON}><path d="M4 5h6a2 2 0 0 1 2 2v13a2 2 0 0 0-2-2H4z" /><path d="M20 5h-6a2 2 0 0 0-2 2v13a2 2 0 0 1 2-2h6z" /></svg>{labels.learning}
+        <svg {...ICON}><path d="M4 5h6a2 2 0 0 1 2 2v13a2 2 0 0 0-2-2H4z" /><path d="M20 5h-6a2 2 0 0 0-2 2v13a2 2 0 0 1 2-2h6z" /></svg>Courses
       </Link>
       <Link href="/dashboard/results" aria-current={on("/dashboard/results") ?? on("/certificate") ?? on("/poe")}>
         <svg {...ICON}><circle cx="12" cy="9" r="5" /><path d="M8.5 13l-1.5 8 5-3 5 3-1.5-8" /></svg>Results
