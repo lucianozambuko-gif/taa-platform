@@ -31,11 +31,13 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   const ga = process.env.NEXT_PUBLIC_GA_ID;
   let signedIn = false;
   let role = "learner";
+  let unread = 0;
   try {
     const supabase = await createClient();
     const user = (await supabase.auth.getUser()).data.user;
     signedIn = !!user;
     if (user) role = (await supabase.from("profiles").select("role").eq("id", user.id).maybeSingle()).data?.role ?? "learner";
+    if (user && role === "learner") unread = (await supabase.from("notifications").select("id", { count: "exact", head: true }).eq("user_id", user.id).is("read_at", null)).count ?? 0;
   } catch {}
   const [{ announcement }, { lang, t }] = await Promise.all([getSiteContent(), getT()]);
   return (
@@ -60,7 +62,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         <SiteHeader />
         <main id="main">{children}</main>
         <SiteFooter />
-        {signedIn && <Suspense fallback={null}><BottomNav role={role} labels={{ home: t("nav.home"), courses: t("nav.courses"), learning: t("nav.mylearning"), help: t("nav.help") }} /></Suspense>}
+        {signedIn && <Suspense fallback={null}><BottomNav role={role} unread={unread} labels={{ home: t("nav.home"), courses: t("nav.courses"), learning: t("nav.mylearning"), help: t("nav.help") }} /></Suspense>}
         <AdvisorChat />
       </body>
     </html>

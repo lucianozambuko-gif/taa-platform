@@ -12,18 +12,26 @@ export default async function Messages() {
   return (
     <PortalShell s={s}>
       <PortalHead eyebrow="Student portal" title="Messages">
+        {s.unread > 0 && <span className="badge b-bad big-count">{s.unread} unread</span>}
         {s.unread > 0 && <form action={markMessagesRead}><button className="btn btn-ghost btn-sm">Mark all as read</button></form>}
       </PortalHead>
-      <div className="panel stack" style={{ gap: 0 }}>
+      <div className="panel stack" style={{ gap: 14 }}>
         {s.messages.length === 0 && <p className="muted small">Messages from the Academy about your courses, payments and results appear here. Copies are also sent by email{" "}and, if you agreed, WhatsApp.</p>}
         {s.messages.map((m) => (
-          <div key={m.id} className={`msg${m.read_at ? "" : " unread"}`}>
-            <div className="row" style={{ justifyContent: "space-between", flexWrap: "nowrap", gap: 10 }}>
-              <b style={{ fontWeight: m.read_at ? 600 : 800 }}>{!m.read_at && <span className="dot" aria-label="New" />}{m.subject}</b>
-              <span className="small muted" style={{ whiteSpace: "nowrap" }}>{day(m.created_at)}</span>
+          <div key={m.id} className={`bubble-row${m.read_at ? "" : " unread"}`}>
+            <span className="bubble-avatar" aria-hidden="true">TAA</span>
+            <div className="bubble">
+              {!m.read_at && <span className="bubble-dot" aria-label="Unread" />}
+              <div className="row" style={{ justifyContent: "space-between", flexWrap: "nowrap", gap: 10 }}>
+                <b>{m.subject}</b>
+                <span className="small muted" style={{ whiteSpace: "nowrap" }}>{day(m.created_at)}</span>
+              </div>
+              <p className="small">{m.body}</p>
+              <div className="row" style={{ gap: 10 }}>
+                {!m.read_at && <span className="badge b-bad">New</span>}
+                {m.link && <Link className="small" href={m.link}>Open →</Link>}
+              </div>
             </div>
-            <p className="small muted">{m.body}</p>
-            {m.link && <Link className="small" href={m.link}>Open →</Link>}
           </div>
         ))}
       </div>

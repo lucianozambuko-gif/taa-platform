@@ -10,7 +10,7 @@ const ICON = { width: 22, height: 22, viewBox: "0 0 24 24", fill: "none", stroke
 type Labels = { home: string; courses: string; learning: string; help: string };
 const EN: Labels = { home: "Home", courses: "Courses", learning: "My learning", help: "Help" };
 
-export default function BottomNav({ role = "learner", labels = EN }: { role?: string; labels?: Labels }) {
+export default function BottomNav({ role = "learner", labels = EN, unread = 0 }: { role?: string; labels?: Labels; unread?: number }) {
   const path = usePathname();
   const params = useSearchParams();
   const tab = params.get("tab") ?? "overview";
@@ -117,9 +117,13 @@ export default function BottomNav({ role = "learner", labels = EN }: { role?: st
       <Link href="/dashboard/payments" aria-current={on("/dashboard/payments") ?? on("/orders")}>
         <svg {...ICON}><rect x="3" y="6" width="18" height="13" rx="2" /><path d="M3 10h18M7 15h4" /></svg>Payments
       </Link>
-      <a href={whatsappLink("Hi Training Africa Academy, I need help with my course.", "support")} target="_blank" rel="noopener">
-        <svg {...ICON}><path d="M4 20l1.3-4A8 8 0 1 1 8 19z" /><path d="M9 10h.01M12 10h.01M15 10h.01" /></svg>{labels.help}
-      </a>
+      <Link href="/dashboard/messages" aria-current={on("/dashboard/messages")} aria-label={unread ? `Messages, ${unread} unread` : "Messages"}>
+        <span className="bn-icon">
+          <svg {...ICON}><path d="M4 5h16v11H9l-5 4z" /></svg>
+          {unread > 0 && <span className="bn-dot">{unread > 9 ? "9+" : unread}</span>}
+        </span>
+        Messages
+      </Link>
     </nav>
   );
 }

@@ -92,17 +92,21 @@ export default async function DashboardPage() {
           {messages.length > 0 && (
             <div className="panel stack" style={{ gap: 8 }}>
               <div className="row" style={{ justifyContent: "space-between" }}>
-                <h2 className="h3">Messages {unread > 0 && <span className="badge b-warn">{unread} new</span>}</h2>
+                <h2 className="h3">Messages {unread > 0 && <span className="badge b-bad big-count">{unread} new</span>}</h2>
                 <Link className="small" href="/dashboard/messages">All messages →</Link>
               </div>
               {messages.slice(0, 3).map((m) => (
-                <div key={m.id} className="msg">
-                  <div className="row" style={{ justifyContent: "space-between", flexWrap: "nowrap", gap: 10 }}>
-                    <b style={{ fontWeight: m.read_at ? 600 : 800 }}>{m.subject}</b>
-                    <span className="small muted" style={{ whiteSpace: "nowrap" }}>{day(m.created_at)}</span>
+                <Link key={m.id} href="/dashboard/messages" className={`bubble-row${m.read_at ? "" : " unread"}`} style={{ textDecoration: "none", color: "inherit" }}>
+                  <span className="bubble-avatar" aria-hidden="true">TAA</span>
+                  <div className="bubble">
+                    {!m.read_at && <span className="bubble-dot" aria-label="Unread" />}
+                    <div className="row" style={{ justifyContent: "space-between", flexWrap: "nowrap", gap: 10 }}>
+                      <b>{m.subject}</b>
+                      <span className="small muted" style={{ whiteSpace: "nowrap" }}>{day(m.created_at)}</span>
+                    </div>
+                    <p className="small">{m.body}</p>
                   </div>
-                  <p className="small muted">{m.body}</p>
-                </div>
+                </Link>
               ))}
             </div>
           )}

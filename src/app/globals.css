@@ -682,3 +682,21 @@ body:has(.bottom-nav) .offline-bar{bottom:calc(84px + env(safe-area-inset-bottom
 .review-opts li.mine.right,.review-opts li.correct{border-color:var(--good);background:var(--good-soft)}
 .review-opts li.mine.wrong{border-color:var(--bad);background:var(--bad-soft)}
 .review-opts li .small{font-weight:700;white-space:nowrap}
+
+/* Message bubbles; unread ones carry a large red dot */
+.bubble-row{display:flex;gap:10px;align-items:flex-start}
+.bubble-avatar{flex:none;width:36px;height:36px;border-radius:50%;background:var(--sunk);color:var(--muted);display:grid;place-items:center;font-size:.62rem;font-weight:800;letter-spacing:.02em}
+.bubble{position:relative;flex:1;min-width:0;background:var(--sunk);border:1px solid var(--line);border-radius:4px 16px 16px 16px;padding:12px 14px}
+.bubble p{margin:6px 0 4px;color:var(--muted)}
+.bubble-row.unread .bubble-avatar{background:#DB0B0B;color:#fff}
+.bubble-row.unread .bubble{background:var(--surface);border:2px solid #DB0B0B;box-shadow:0 4px 14px rgba(219,11,11,.12)}
+.bubble-row.unread .bubble p{color:var(--ink)}
+.bubble-row.unread .bubble b{font-weight:800}
+.bubble-dot{position:absolute;top:-8px;right:-8px;width:18px;height:18px;border-radius:50%;background:#DB0B0B;border:3px solid var(--surface);box-shadow:0 0 0 0 rgba(219,11,11,.5);animation:dotPulse 2s ease-out infinite}
+@keyframes dotPulse{0%{box-shadow:0 0 0 0 rgba(219,11,11,.5)}70%{box-shadow:0 0 0 10px rgba(219,11,11,0)}100%{box-shadow:0 0 0 0 rgba(219,11,11,0)}}
+@media (prefers-reduced-motion:reduce){.bubble-dot{animation:none}}
+.big-count{font-size:.85rem;padding:5px 12px;background:#DB0B0B;color:#fff}
+.pcount.alert{background:#DB0B0B;color:#fff;min-width:24px;height:24px}
+.nav-count{background:#DB0B0B;color:#fff;min-width:22px;height:22px}
+.bn-icon{position:relative;display:flex;line-height:0}
+.bn-dot{position:absolute;top:-6px;right:-11px;min-width:19px;height:19px;padding:0 5px;border-radius:99px;background:#DB0B0B;color:#fff;font-size:.66rem;font-weight:800;display:grid;place-items:center;border:2px solid var(--surface);line-height:1}
