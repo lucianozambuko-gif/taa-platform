@@ -13,9 +13,30 @@ async function count(q: PromiseLike<{ count: number | null }>) {
   try { return (await q).count ?? 0; } catch { return 0; }
 }
 
-/** Returns null for learners and visitors, who keep the public website menu. */
+/** Returns the menu for a signed-in user's role; visitors (no user) keep the public website menu. */
 export async function menuFor(supabase: DB, userId: string, role: string | null | undefined): Promise<MenuItem[] | null> {
   switch (role) {
+    case null:
+    case undefined:
+    case "learner": {
+      const [unread, pending] = await Promise.all([
+        count(supabase.from("notifications").select("id", { count: "exact", head: true }).eq("user_id", userId).is("read_at", null)),
+        count(supabase.from("orders").select("id", { count: "exact", head: true }).eq("user_id", userId).eq("status", "pending")),
+      ]);
+      return [
+        { href: "/dashboard", label: "Dashboard" },
+        { href: "/dashboard/courses", label: "My courses" },
+        { href: "/dashboard/results", label: "Results & certificates" },
+        { href: "/dashboard/payments", label: "Payments", count: pending },
+        { href: "/dashboard/messages", label: "Messages", count: unread },
+        { label: "More", children: [
+          { href: "/account", label: "Profile & reminders" },
+          { href: "/courses", label: "Find a course" },
+          { href: "/faqs", label: "Help & FAQs" },
+          site,
+        ] },
+      ];
+    }
     case "facilitator": {
       const c = await teachingCounts(supabase, userId);
       return [

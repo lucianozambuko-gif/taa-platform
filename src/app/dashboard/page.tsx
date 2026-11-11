@@ -1,221 +1,127 @@
 import Link from "next/link";
-import { redirect } from "next/navigation";
 import { KindBadge } from "@/components/CourseBits";
-import { getUserAndProfile } from "@/lib/supabase/server";
-import { isBackOffice } from "@/lib/roles";
-import { markMessagesRead } from "./actions";
-import { payNextInstalment } from "@/app/checkout/actions";
 import InstallApp from "@/components/AppInstall";
-import type { Course } from "@/lib/types";
+import PortalShell from "@/components/PortalShell";
+import { PortalHead, Ring, day } from "@/components/PortalBits";
+import { loadStudent } from "@/lib/student";
 import { rand } from "@/lib/format";
 
-export const metadata = { title: "My learning" };
+export const metadata = { title: "Student portal" };
 export const dynamic = "force-dynamic";
 
-function Ring({ pct }: { pct: number }) {
-  const r = 26, c = 2 * Math.PI * r;
-  return (
-    <svg className="ring" viewBox="0 0 64 64" aria-label={`${pct}% complete`}>
-      <circle cx="32" cy="32" r={r} fill="none" stroke="var(--sunk)" strokeWidth="7" />
-      <circle cx="32" cy="32" r={r} fill="none" stroke="var(--accent)" strokeWidth="7" strokeLinecap="round" strokeDasharray={c} strokeDashoffset={c * (1 - pct / 100)} transform="rotate(-90 32 32)" />
-      <text x="32" y="37" textAnchor="middle" fontSize="14" fontWeight="700" fill="var(--ink)">{pct}%</text>
-    </svg>
-  );
-}
-
 export default async function DashboardPage() {
-  const { supabase, user, profile } = await getUserAndProfile();
-  if (!user) redirect("/login?next=/dashboard");
-  if (profile?.role === "facilitator") redirect("/facilitator");
-  if (profile?.role === "moderator") redirect("/moderator");
-  if (isBackOffice(profile?.role)) redirect("/admin");
-  if (profile?.role === "employer") redirect("/employer");
+  const s = await loadStudent("/dashboard");
+  const { courses, current, duePlans, messages, unread, recommendations, certificates } = s;
+  const inProgress = courses.filter((c) => (c.courses.has_lms ? c.pct < 100 : !c.result)).length;
+  const nextPay = [...duePlans].sort((a, b) => (a.due?.getTime() ?? 0) - (b.due?.getTime() ?? 0))[0];
 
-  const { data: enrolments } = await supabase
-    .from("enrolments")
-    .select("id, created_at, result, result_note, moderation, poe_submitted_at, courses(*, modules(position, lessons(id, title, position, minutes)))")
-    .eq("user_id", user.id)
-    .order("created_at", { ascending: false });
-  const { data: progress } = await supabase.from("lesson_progress").select("lesson_id, completed_at").eq("user_id", user.id);
-  const done = new Set((progress ?? []).map((p) => p.lesson_id));
-  const { data: orderRows } = await supabase
-    .from("orders")
-    .select("id, invoice_no, status, amount_cents, instalments, instalment_no, plan_id, plan_total_cents, paid_at, created_at, courses(title)")
-    .eq("user_id", user.id)
-    .order("created_at", { ascending: false })
-    .limit(30);
-  const orders = (orderRows ?? []).slice(0, 10);
-  // Payment plans with instalments still to pay
-  const plans = new Map<string, { title: string; total: number; paid: number; count: number; of: number; lastPaid: string | null; open: boolean }>();
-  for (const o of orderRows ?? []) {
-    if (!o.plan_id || o.instalments < 2) continue;
-    const p = plans.get(o.plan_id) ?? { title: (o.courses as unknown as { title: string }).title, total: o.plan_total_cents ?? 0, paid: 0, count: 0, of: o.instalments, lastPaid: null, open: false };
-    if (o.status === "paid") {
-      p.paid += o.amount_cents;
-      p.count += 1;
-      if (!p.lastPaid || (o.paid_at ?? "") > p.lastPaid) p.lastPaid = o.paid_at;
-    }
-    if (o.status === "pending") p.open = true;
-    plans.set(o.plan_id, p);
+  // Things that need the learner's attention, most urgent first
+  type Todo = { key: string; title: string; detail: string; href: string; cta: string };
+  const todos: Todo[] = [];
+  for (const p of duePlans) todos.push({ key: `pay-${p.id}`, title: `Instalment ${p.count + 1} of ${p.of}: ${p.title}`, detail: `${rand(p.nextAmount)}${p.due ? ` · due ${day(p.due)}` : ""}`, href: "/dashboard/payments", cta: "Pay" });
+  for (const c of courses) {
+    if (!c.courses.certificate_auto && !c.poe_submitted_at && !c.result) todos.push({ key: `poe-${c.id}`, title: `Portfolio of evidence: ${c.courses.title}`, detail: "Add your evidence and sign the declaration", href: `/poe/${c.id}`, cta: "Open" });
+    if (c.courses.has_lms && c.next && c !== current) todos.push({ key: `les-${c.id}`, title: `Next lesson: ${c.next.title}`, detail: `${c.courses.title} · ${c.next.minutes} min`, href: `/learn/${c.courses.slug}/${c.next.id}`, cta: "Start" });
+    if (!c.courses.has_lms && c.courses.intakes?.[0] && !c.result) todos.push({ key: `cls-${c.id}`, title: `Class: ${c.courses.title}`, detail: `Starts ${c.courses.intakes[0]} · ${c.courses.location}`, href: `/courses/${c.courses.slug}`, cta: "Details" });
   }
-  const duePlans = [...plans.entries()].filter(([, p]) => p.count > 0 && p.count < p.of);
-  const { data: messages } = await supabase.from("notifications").select("id, subject, body, link, created_at, read_at").eq("user_id", user.id).order("created_at", { ascending: false }).limit(6);
-  const unread = (messages ?? []).filter((m) => !m.read_at).length;
-
-  type L = { id: string; title: string; position: number; minutes: number };
-  type Row = { id: string; created_at: string; result: string | null; result_note: string | null; moderation: string | null; poe_submitted_at: string | null; courses: Course & { modules: { position: number; lessons: L[] }[] } };
-  const lastTouched = new Map((progress ?? []).map((p) => [p.lesson_id, p.completed_at as string]));
-  const rows = ((enrolments ?? []) as unknown as Row[]).map((e) => {
-    const ordered = [...e.courses.modules]
-      .sort((a, b) => a.position - b.position)
-      .flatMap((m) => [...m.lessons].sort((a, b) => a.position - b.position));
-    const ids = ordered.map((l) => l.id);
-    const pct = ids.length ? Math.round((ids.filter((id) => done.has(id)).length / ids.length) * 100) : 0;
-    const next = ordered.find((l) => !done.has(l.id));
-    const minutesLeft = ordered.filter((l) => !done.has(l.id)).reduce((a, l) => a + l.minutes, 0);
-    const last = ids.map((id) => lastTouched.get(id) ?? "").sort().at(-1) || e.created_at;
-    return { ...e, pct, next, minutesLeft, last };
-  });
-  // The course to continue: online, not finished, most recently worked on.
-  const current = rows.filter((r) => r.courses.has_lms && r.pct < 100).sort((a, b) => b.last.localeCompare(a.last))[0];
-
-  const enrolledIds = rows.map((r) => r.courses.id);
-  const subjects = [...new Set(rows.map((r) => r.courses.subject))];
-  const { data: recs } = subjects.length
-    ? await supabase.from("courses").select("*").eq("published", true).in("subject", subjects).limit(6)
-    : await supabase.from("courses").select("*").eq("published", true).eq("featured", true).limit(3);
-  const recommendations = ((recs ?? []) as Course[]).filter((c) => !enrolledIds.includes(c.id)).slice(0, 3);
-  const firstName = (profile?.full_name ?? "").split(" ")[0] || "there";
 
   return (
-    <section className="block" style={{ paddingTop: 32 }}>
-      <div className="wrap">
-        <div className="sec-head">
-          <div>
-            <div className="eyebrow">My learning</div>
-            <h1 style={{ fontSize: "clamp(1.8rem,3.6vw,2.5rem)", marginTop: 6 }}>Welcome back, {firstName}</h1>
+    <PortalShell s={s}>
+      <PortalHead eyebrow={new Date().toLocaleDateString("en-ZA", { weekday: "long", day: "numeric", month: "long" })} title={`Welcome back, ${s.firstName}`} />
+
+      <div className="stat-tiles">
+        <Link href="/dashboard/courses" className="tile"><b className="tnum">{inProgress}</b><span>{inProgress === 1 ? "course in progress" : "courses in progress"}</span></Link>
+        <Link href="/dashboard/courses" className="tile"><b className="tnum">{s.lessonsDone}</b><span>lessons completed</span></Link>
+        <Link href="/dashboard/results" className="tile"><b className="tnum">{certificates.length}</b><span>{certificates.length === 1 ? "certificate" : "certificates"}</span></Link>
+        <Link href="/dashboard/payments" className={`tile${nextPay ? " warn" : ""}`}>
+          <b className="tnum">{nextPay ? rand(nextPay.nextAmount) : "Paid up"}</b>
+          <span>{nextPay ? `next instalment${nextPay.due ? `, ${day(nextPay.due)}` : ""}` : "no payments due"}</span>
+        </Link>
+      </div>
+
+      {current && current.next && (
+        <div className="continue">
+          <Ring pct={current.pct} />
+          <div className="stack" style={{ gap: 4, minWidth: 0 }}>
+            <span className="eyebrow">Continue where you left off</span>
+            <h2>{current.courses.title}</h2>
+            <p className="small">Next: {current.next.title} · about {current.minutesLeft} min left in the course</p>
           </div>
-          <Link className="btn btn-ghost btn-sm" href="/account">Account and reminders</Link>
+          <Link className="btn" href={`/learn/${current.courses.slug}/${current.next.id}`}>{current.pct > 0 ? "Resume" : "Start"}</Link>
         </div>
-        <div className="dash">
-          <div className="stack" style={{ gap: 14, minWidth: 0 }}>
-            {current && current.next && (
-              <div className="continue">
-                <Ring pct={current.pct} />
-                <div className="stack" style={{ gap: 4, minWidth: 0 }}>
-                  <span className="eyebrow">Continue where you left off</span>
-                  <h2>{current.courses.title}</h2>
-                  <p className="small">Next: {current.next.title} · about {current.minutesLeft} min left in the course</p>
-                </div>
-                <Link className="btn" href={`/learn/${current.courses.slug}/${current.next.id}`}>{current.pct > 0 ? "Resume" : "Start"}</Link>
-              </div>
-            )}
-            {rows.length === 0 && (
-              <div className="panel stack">
-                <h2 className="h3">You haven't enrolled in a course yet</h2>
-                <p className="muted">Browse the catalogue, pay online and your course appears here straight away.</p>
-                <div><Link className="btn btn-primary" href="/courses">Find a course</Link></div>
-              </div>
-            )}
-            {rows.length > 0 && <h2 className="sr-only">My courses</h2>}
-            {rows.map((r) => (
-              <div className="card enrol" key={r.id}>
-                <Ring pct={r.courses.has_lms ? r.pct : 0} />
-                <div className="stack" style={{ gap: 4, minWidth: 0 }}>
-                  <div className="row" style={{ gap: 6 }}><KindBadge course={r.courses} /></div>
-                  <h3>{r.courses.title}</h3>
-                  <p className="small muted">
-                    {r.courses.has_lms ? (r.pct === 100 ? (r.courses.certificate_auto ? "Complete. Your certificate is ready." : "Complete.") : `${r.pct}% complete`) : `Classroom programme · ${r.courses.intakes[0] ?? ""}`}
-                  </p>
-                  {!r.courses.certificate_auto && (<>
-                    <p className="small">
-                      {r.result === "competent" ? <span className={`badge ${r.moderation === "endorsed" ? "b-good" : "b-short"}`}>{r.moderation === "endorsed" ? "Competent · moderated" : "Competent · awaiting moderation"}</span> : r.result === "not_yet_competent" ? <span className="badge b-warn">Assessed: not yet competent</span> : <span className="badge b-short">{r.poe_submitted_at ? "Portfolio submitted · awaiting assessment" : "Assessment result pending"}</span>}
-                      {r.result_note && <span className="muted"> · {r.result_note}</span>}
-                    </p>
-                    <p className="small"><Link href={`/poe/${r.id}`}>{r.poe_submitted_at ? "View my portfolio of evidence" : "Build my portfolio of evidence →"}</Link></p>
-                  </>)}
-                </div>
-                {r.courses.has_lms ? (
-                  <Link className="btn btn-primary btn-sm" href={`/learn/${r.courses.slug}`}>{r.pct > 0 ? "Resume" : "Start"}</Link>
-                ) : (
-                  <Link className="btn btn-ghost btn-sm" href={`/courses/${r.courses.slug}`}>Details</Link>
-                )}
-              </div>
-            ))}
-            <InstallApp />
-            {duePlans.map(([planId, p]) => {
-              const due = p.lastPaid ? new Date(new Date(p.lastPaid).getTime() + 30 * 864e5) : null;
-              return (
-                <div key={planId} className="panel row" style={{ justifyContent: "space-between", gap: 10, borderColor: "var(--warn)" }}>
-                  <span>
-                    <b>{p.title}: instalment {p.count + 1} of {p.of}</b>
-                    <br />
-                    <span className="small muted">{rand(p.total - p.paid)} left to pay{due ? ` · next due ${due.toLocaleDateString("en-ZA", { day: "numeric", month: "long" })}` : ""}</span>
-                  </span>
-                  <form action={payNextInstalment}>
-                    <input type="hidden" name="plan" value={planId} />
-                    <button className="btn btn-primary btn-sm">Pay {rand(Math.ceil((p.total - p.paid) / (p.of - p.count)))}</button>
-                  </form>
-                </div>
-              );
-            })}
-            {(messages ?? []).length > 0 && (
-              <div className="panel stack" style={{ gap: 10 }}>
-                <div className="row" style={{ justifyContent: "space-between" }}>
-                  <h2 className="h3">Messages {unread > 0 && <span className="badge b-warn">{unread} new</span>}</h2>
-                  {unread > 0 && <form action={markMessagesRead}><button className="btn btn-ghost btn-sm">Mark as read</button></form>}
-                </div>
-                {(messages ?? []).map((m) => (
-                  <div key={m.id} style={{ borderBottom: "1px solid var(--line)", paddingBottom: 8 }}>
-                    <div className="row" style={{ justifyContent: "space-between", flexWrap: "nowrap", gap: 10 }}>
-                      <b style={{ fontWeight: m.read_at ? 600 : 800 }}>{m.subject}</b>
-                      <span className="small muted" style={{ whiteSpace: "nowrap" }}>{new Date(m.created_at).toLocaleDateString("en-ZA", { day: "numeric", month: "short" })}</span>
-                    </div>
-                    <p className="small muted">{m.body}</p>
-                    {m.link && <Link className="small" href={m.link}>Open →</Link>}
-                  </div>
-                ))}
-              </div>
-            )}
-            <div className="panel stack">
-              <h2 className="h3">Certificates</h2>
-              {rows.filter((r) => (r.courses.has_lms && r.pct === 100 && r.courses.certificate_auto) || (r.result === "competent" && r.moderation === "endorsed")).map((r) => (
-                <div className="row" style={{ justifyContent: "space-between" }} key={r.id}>
-                  <span>{r.courses.title}</span>
-                  <Link className="btn btn-primary btn-sm" href={`/certificate/${r.courses.slug}`}>Download certificate</Link>
+      )}
+
+      {courses.length === 0 && (
+        <div className="panel stack">
+          <h2 className="h3">You haven&apos;t enrolled in a course yet</h2>
+          <p className="muted">Browse the catalogue, pay online and your course appears here straight away.</p>
+          <div><Link className="btn btn-primary" href="/courses">Find a course</Link></div>
+        </div>
+      )}
+
+      <div className="dash">
+        <div className="stack" style={{ gap: 14, minWidth: 0 }}>
+          {todos.length > 0 && (
+            <div className="panel stack" style={{ gap: 4 }}>
+              <h2 className="h3">To do</h2>
+              {todos.slice(0, 6).map((t) => (
+                <div className="todo" key={t.key}>
+                  <span style={{ minWidth: 0 }}><b>{t.title}</b><br /><span className="small muted">{t.detail}</span></span>
+                  <Link className="btn btn-ghost btn-sm" href={t.href}>{t.cta}</Link>
                 </div>
               ))}
-              <p className="muted small">
-                Online skills courses issue a certificate automatically when every lesson is complete. Accredited results are issued by the Academy after assessment and moderation.
-              </p>
             </div>
-            {orders.length > 0 && (
-              <div className="panel stack">
-                <h2 className="h3">Payments and receipts</h2>
-                {orders.map((o) => (
-                  <div className="row" style={{ justifyContent: "space-between" }} key={o.id}>
-                    <span><span className="mono small">{o.invoice_no}</span> · {(o.courses as unknown as { title: string }).title}{o.instalments > 1 ? <span className="small muted"> · instalment {o.instalment_no}/{o.instalments}</span> : null}</span>
-                    <span className="row" style={{ gap: 10 }}>
-                      <span className={`badge ${o.status === "paid" ? "b-good" : "b-warn"}`}>{o.status}</span>
-                      <Link className="small" href={`/orders/${o.id}`}>Receipt</Link>
-                    </span>
-                  </div>
-                ))}
+          )}
+
+          {courses.length > 0 && (
+            <div className="panel stack" style={{ gap: 6 }}>
+              <div className="row" style={{ justifyContent: "space-between" }}>
+                <h2 className="h3">My courses</h2>
+                <Link className="small" href="/dashboard/courses">See all →</Link>
               </div>
-            )}
-          </div>
-          <aside className="stack" style={{ gap: 14 }}>
-            <div className="panel stack">
-              <div className="eyebrow">Recommended next</div>
-              {recommendations.map((c) => (
-                <Link key={c.id} className="lbtn" href={`/courses/${c.slug}`} style={{ padding: "10px 0", borderBottom: "1px solid var(--line)", borderRadius: 0 }}>
-                  <span><b>{c.title}</b><br /><span className="small muted">{c.format} · {rand(c.price_cents)}</span></span>
+              {courses.slice(0, 4).map((c) => (
+                <Link key={c.id} href={c.courses.has_lms ? `/learn/${c.courses.slug}` : "/dashboard/courses"} className="mini-course">
+                  <Ring pct={c.courses.has_lms ? c.pct : 0} size={44} />
+                  <span style={{ minWidth: 0 }}><b>{c.courses.title}</b><br /><span className="small muted">{c.courses.has_lms ? `${c.doneCount} of ${c.total} lessons` : `Classroom · ${c.courses.intakes?.[0] ?? ""}`}</span></span>
+                  <KindBadge course={c.courses} />
                 </Link>
               ))}
             </div>
-          </aside>
+          )}
+
+          {messages.length > 0 && (
+            <div className="panel stack" style={{ gap: 8 }}>
+              <div className="row" style={{ justifyContent: "space-between" }}>
+                <h2 className="h3">Messages {unread > 0 && <span className="badge b-warn">{unread} new</span>}</h2>
+                <Link className="small" href="/dashboard/messages">All messages →</Link>
+              </div>
+              {messages.slice(0, 3).map((m) => (
+                <div key={m.id} className="msg">
+                  <div className="row" style={{ justifyContent: "space-between", flexWrap: "nowrap", gap: 10 }}>
+                    <b style={{ fontWeight: m.read_at ? 600 : 800 }}>{m.subject}</b>
+                    <span className="small muted" style={{ whiteSpace: "nowrap" }}>{day(m.created_at)}</span>
+                  </div>
+                  <p className="small muted">{m.body}</p>
+                </div>
+              ))}
+            </div>
+          )}
+          <InstallApp />
         </div>
+
+        <aside className="stack" style={{ gap: 14 }}>
+          <div className="panel stack">
+            <div className="eyebrow">Recommended next</div>
+            <p className="small muted" style={{ margin: 0 }}>Based on what you&apos;re studying</p>
+            {recommendations.map((c) => (
+              <Link key={c.id} className="lbtn" href={`/courses/${c.slug}`} style={{ padding: "10px 0", borderBottom: "1px solid var(--line)", borderRadius: 0 }}>
+                <span><b>{c.title}</b><br /><span className="small muted">{c.format} · {c.price_cents ? rand(c.price_cents) : "Quote on request"}</span></span>
+              </Link>
+            ))}
+            <Link className="btn btn-ghost btn-sm" href="/courses">Browse all courses</Link>
+          </div>
+        </aside>
       </div>
-    </section>
+    </PortalShell>
   );
 }
