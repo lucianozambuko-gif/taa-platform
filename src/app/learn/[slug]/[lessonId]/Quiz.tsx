@@ -1,6 +1,7 @@
 "use client";
 
 import { useActionState, useState } from "react";
+import Link from "next/link";
 import { enqueue, isOffline } from "@/lib/offlineQueue";
 import { submitQuiz, type QuizState } from "../../actions";
 
@@ -27,8 +28,8 @@ export default function Quiz({ lessonId, slug, title, next, questions, alreadyPa
       <h1 style={{ fontSize: "1.35rem" }}>{title}</h1>
       <p className="muted small">Pass mark 70%. You can retake the quiz.{alreadyPassed && " You've already passed this quiz."}</p>
       {questions.map((q, qi) => (
-        <div className="q" key={qi}>
-          <b>{qi + 1}. {q.q}</b>
+        <div className={`q${state.marks ? (state.marks[qi] ? " q-right" : " q-wrong") : ""}`} key={qi}>
+          <b>{qi + 1}. {q.q}{state.marks && <span className={`badge ${state.marks[qi] ? "b-good" : "b-bad"}`} style={{ marginLeft: 8 }}>{state.marks[qi] ? "Right" : "Wrong"}</span>}</b>
           {q.o.map((o, oi) => {
             const cls = state.correct ? (state.correct[qi] === oi ? "opt right" : "opt") : "opt";
             return (
@@ -48,6 +49,8 @@ export default function Quiz({ lessonId, slug, title, next, questions, alreadyPa
           </span>
         )}
         {state.error && <span className="form-error">{state.error}</span>}
+        {state.score != null && state.review !== "off" && <Link className="small" href={`/dashboard/review/${lessonId}`}>Review my answers →</Link>}
+        {state.score != null && state.review === "off" && <span className="small muted">Your teacher shows scores only for this quiz.</span>}
         {heldOffline && state.score == null && (
           <span className="badge b-short">Answers saved on this phone. We’ll mark them when you’re back online.{next ? " You can carry on with the next lesson." : ""}</span>
         )}

@@ -19,3 +19,15 @@ export async function saveQuizQuestions(_: QuizEditState, fd: FormData): Promise
   revalidatePath("/facilitator/quizzes");
   return { message: `Saved ${quiz.length} question${quiz.length === 1 ? "" : "s"}. Learners get the new questions on their next attempt.` };
 }
+
+/** Chooses what learners see after a quiz: score only, right/wrong, or the correct answers too. */
+export async function setQuizReview(_: QuizEditState, fd: FormData): Promise<QuizEditState> {
+  const { supabase, user } = await getUserAndProfile();
+  if (!user) return { error: "Please sign in again." };
+  const lesson = String(fd.get("lesson") ?? "");
+  const mode = String(fd.get("mode") ?? "");
+  const { error } = await supabase.rpc("set_quiz_review", { lesson, mode });
+  if (error) return { error: "Couldn't save. You can only change quizzes on courses you teach." };
+  revalidatePath("/facilitator/quizzes");
+  return { message: "Saved. Learners see this from their next attempt." };
+}

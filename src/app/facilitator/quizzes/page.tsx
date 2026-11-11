@@ -4,6 +4,7 @@ import { getUserAndProfile } from "@/lib/supabase/server";
 import { quizToText } from "@/lib/quizText";
 import type { QuizQuestion } from "@/lib/types";
 import QuizEditForm from "./QuizEditForm";
+import ReviewSetting from "./ReviewSetting";
 import ProposalForm from "../lessons/ProposalForm";
 
 export const metadata = { title: "Quizzes" };
@@ -32,7 +33,7 @@ export default async function QuizzesPage({ searchParams }: { searchParams: Prom
 
   const [{ data: contents }, { data: attemptRows }, { data: enrols }] = ids.length
     ? await Promise.all([
-        supabase.from("lesson_content").select("lesson_id, quiz").in("lesson_id", ids),
+        supabase.from("lesson_content").select("lesson_id, quiz, quiz_review").in("lesson_id", ids),
         supabase.from("quiz_attempts").select("user_id, lesson_id, score, passed, answers, created_at").in("lesson_id", ids).order("created_at", { ascending: false }),
         supabase.from("enrolments").select("user_id").eq("course_id", active!.id),
       ])
@@ -130,7 +131,9 @@ export default async function QuizzesPage({ searchParams }: { searchParams: Prom
                   )}
                 </div>
                 <div className="stack" style={{ gap: 10 }}>
-                  <h3 style={{ fontSize: "1.05rem" }}>Change the questions</h3>
+                  <h3 style={{ fontSize: "1.05rem" }}>Reviewing answers</h3>
+                  <ReviewSetting lesson={lz.id} value={((contents ?? []).find((c) => c.lesson_id === lz.id)?.quiz_review as string) ?? "full"} />
+                  <h3 style={{ fontSize: "1.05rem", marginTop: 8 }}>Change the questions</h3>
                   {role === "facilitator" ? (
                     <>
                       <p className="small muted">Your changes go to an admin or content editor for approval before learners see them.</p>

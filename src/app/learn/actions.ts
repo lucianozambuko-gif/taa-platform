@@ -29,14 +29,16 @@ export async function completeLesson(formData: FormData) {
   redirect(next ? `/learn/${slug}/${next}` : `/learn/${slug}/${lessonId}`);
 }
 
-export type QuizState = { score?: number; passed?: boolean; correct?: number[]; error?: string };
+export type QuizState = { score?: number; passed?: boolean; correct?: number[]; marks?: boolean[]; review?: "off" | "mine" | "full"; error?: string };
 
 /** Marks a quiz on the server (answers never reach the browser), keeps the attempt and records a pass at 70% or more. */
 async function markQuiz(lessonId: string, answers: (number | null)[]) {
   const supabase = await createClient();
-  const { data } = await supabase.from("lesson_content").select("quiz").eq("lesson_id", lessonId).maybeSingle();
+  const { data } = await supabase.from("lesson_content").select("quiz, quiz_review").eq("lesson_id", lessonId).maybeSingle();
   const quiz = (data?.quiz ?? []) as QuizQuestion[];
   if (!quiz.length) return null;
+  // The teacher decides how much the learner sees afterwards: score only, right/wrong, or the correct answers too.
+  const review = ((data?.quiz_review as string) ?? "full") as "off" | "mine" | "full";
   let right = 0;
   quiz.forEach((q, i) => {
     if (answers[i] === q.a) right++;
@@ -47,7 +49,13 @@ async function markQuiz(lessonId: string, answers: (number | null)[]) {
   const { data: { user } } = await supabase.auth.getUser();
   if (user) await supabase.from("quiz_attempts").insert({ user_id: user.id, lesson_id: lessonId, score, passed, answers: quiz.map((_, i) => answers[i] ?? null) });
   if (passed) await record(lessonId, score);
-  return { score, passed, correct: quiz.map((q) => q.a) };
+  return {
+    score,
+    passed,
+    review,
+    marks: review === "off" ? undefined : quiz.map((q, i) => answers[i] === q.a),
+    correct: review === "full" ? quiz.map((q) => q.a) : undefined,
+  };
 }
 
 export async function submitQuiz(_: QuizState, formData: FormData): Promise<QuizState> {

@@ -659,3 +659,26 @@ body:has(.bottom-nav) .offline-bar{bottom:calc(84px + env(safe-area-inset-bottom
   .portal-nav a svg{display:none}
   .stat-tiles{grid-template-columns:repeat(2,1fr)}
 }
+
+/* Portal tables become stacked cards on phones */
+@media (max-width:640px){
+  .tbl.stack-sm thead{display:none}
+  .tbl.stack-sm, .tbl.stack-sm tbody, .tbl.stack-sm tr{display:block;width:100%}
+  .tbl.stack-sm tr{padding:12px 0;border-bottom:1px solid var(--line)}
+  .tbl.stack-sm tr:last-child{border-bottom:0}
+  .tbl.stack-sm td{display:flex;justify-content:space-between;align-items:center;gap:12px;border:0;padding:4px 0;text-align:right}
+  .tbl.stack-sm td::before{content:attr(data-label);color:var(--muted);font-size:.82rem;text-align:left}
+  .tbl.stack-sm td[data-label=""]{display:block;text-align:left}
+  .tbl.stack-sm td[data-label=""]::before{display:none}
+  .tbl.stack-sm td .bar{width:120px}
+}
+/* Quiz review */
+.q.q-right{border-left:4px solid var(--good);padding-left:12px}
+.q.q-wrong{border-left:4px solid var(--bad);padding-left:12px}
+.review-q.is-right{border-left:4px solid var(--good)}
+.review-q.is-wrong{border-left:4px solid var(--bad)}
+.review-opts{list-style:none;margin:10px 0 0;padding:0;display:flex;flex-direction:column;gap:6px}
+.review-opts li{display:flex;justify-content:space-between;gap:10px;padding:9px 12px;border:1px solid var(--line);border-radius:8px}
+.review-opts li.mine.right,.review-opts li.correct{border-color:var(--good);background:var(--good-soft)}
+.review-opts li.mine.wrong{border-color:var(--bad);background:var(--bad-soft)}
+.review-opts li .small{font-weight:700;white-space:nowrap}

@@ -43,17 +43,17 @@ export default async function Payments() {
           <p className="muted small">No payments yet. If your employer paid for your course, their invoice goes to them.</p>
         ) : (
           <div className="table-wrap">
-            <table className="tbl">
+            <table className="tbl stack-sm">
               <thead><tr><th>Invoice</th><th>Course</th><th>Date</th><th>Amount</th><th>Status</th><th><span className="sr-only">Receipt</span></th></tr></thead>
               <tbody>
                 {s.orders.map((o) => (
                   <tr key={o.id}>
-                    <td className="mono small">{o.invoice_no}</td>
-                    <td>{(o.courses as unknown as { title: string }).title}{o.instalments > 1 && <div className="small muted">Instalment {o.instalment_no} of {o.instalments}</div>}</td>
-                    <td className="small">{day(o.paid_at ?? o.created_at)}</td>
-                    <td className="tnum">{rand(o.amount_cents)}</td>
-                    <td><span className={`badge ${o.status === "paid" ? "b-good" : o.status === "refunded" ? "b-short" : "b-warn"}`}>{o.status === "paid" ? "Paid" : o.status === "pending" ? "Not completed" : o.status}</span></td>
-                    <td>{o.status === "paid" ? <Link className="small" href={`/orders/${o.id}`}>Receipt</Link> : o.status === "pending" ? <Link className="small" href={`/orders/${o.id}`}>Finish payment</Link> : null}</td>
+                    <td className="mono small" data-label="Invoice">{o.invoice_no}</td>
+                    <td data-label=""><b>{(o.courses as unknown as { title: string }).title}</b>{o.instalments > 1 && <div className="small muted">Instalment {o.instalment_no} of {o.instalments}</div>}</td>
+                    <td className="small" data-label="Date">{day(o.paid_at ?? o.created_at)}</td>
+                    <td className="tnum" data-label="Amount">{rand(o.amount_cents)}</td>
+                    <td data-label="Status"><span className={`badge ${o.status === "paid" ? "b-good" : o.status === "refunded" ? "b-short" : "b-warn"}`}>{o.status === "paid" ? "Paid" : o.status === "pending" ? "Not completed" : o.status}</span></td>
+                    <td data-label="">{o.status === "paid" ? <Link className="small" href={`/orders/${o.id}`}>Receipt</Link> : o.status === "pending" ? <Link className="small" href={`/orders/${o.id}`}>Finish payment</Link> : null}</td>
                   </tr>
                 ))}
               </tbody>
