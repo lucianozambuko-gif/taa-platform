@@ -988,3 +988,9 @@ html[data-saver="on"] .page-hero{background-image:none}
   .cmp-actions{padding:8px 0 4px}
   .cmp-actions .btn{width:100%}
 }
+
+/* WhatsApp button: just the logo in a round green button */
+.wa-float.wa-icon{width:58px;height:58px;padding:0;border-radius:50%;justify-content:center;background:#25D366;box-shadow:0 8px 22px rgba(37,211,102,.35),0 2px 6px rgba(0,0,0,.15)}
+.wa-float.wa-icon:hover{background:#1EBE5A}
+@media (max-width:640px){.wa-float.wa-icon{width:54px;height:54px;padding:0}}
+@media (prefers-reduced-motion:no-preference){.wa-float.wa-icon{animation:pop .45s .8s cubic-bezier(.3,1.6,.5,1) both}}

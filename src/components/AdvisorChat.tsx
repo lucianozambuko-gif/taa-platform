@@ -60,9 +60,11 @@ export default function AdvisorChat() {
   return (
     <aside aria-label="Course advisor">
       {!open && (
-        <button type="button" className="wa-float advisor-btn" onClick={() => setOpen(true)} aria-haspopup="dialog">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M4 20l1.3-4A8 8 0 1 1 8 19z" /></svg>
-          Ask an advisor
+        <button type="button" className="wa-float advisor-btn wa-icon" onClick={() => setOpen(true)} aria-haspopup="dialog" aria-label="Ask an advisor on WhatsApp" title="Ask an advisor">
+          <svg width="30" height="30" viewBox="0 0 32 32" aria-hidden="true">
+            <path fill="#FFFFFF" d="M16.04 3C9.4 3 4 8.33 4 14.9c0 2.3.67 4.45 1.83 6.27L4 29l8.06-2.05a12.2 12.2 0 0 0 3.98.67C22.68 27.62 28 22.3 28 15.72 28 9.15 22.68 3 16.04 3Zm0 22.37c-1.24 0-2.45-.22-3.59-.66l-.43-.17-4.78 1.22 1.24-4.6-.28-.45a9.86 9.86 0 0 1-1.57-5.35c0-5.46 4.48-9.9 9.41-9.9 5.42 0 9.69 4.43 9.69 9.86 0 5.43-4.27 10.05-9.69 10.05Z"/>
+            <path fill="#FFFFFF" d="M21.47 18.3c-.3-.15-1.75-.86-2.02-.96-.27-.1-.47-.15-.67.15-.2.29-.77.96-.94 1.15-.17.2-.35.22-.64.07-.3-.15-1.25-.46-2.38-1.46-.88-.78-1.47-1.75-1.64-2.04-.17-.3-.02-.45.13-.6.13-.13.3-.34.44-.51.15-.17.2-.3.3-.49.1-.2.05-.37-.03-.52-.07-.15-.67-1.6-.92-2.2-.24-.57-.48-.5-.67-.5h-.57c-.2 0-.52.07-.79.37-.27.29-1.04 1-1.04 2.45 0 1.44 1.06 2.84 1.21 3.03.15.2 2.09 3.18 5.06 4.46.71.3 1.26.49 1.69.62.71.23 1.36.2 1.87.12.57-.09 1.75-.71 2-1.4.25-.69.25-1.28.17-1.4-.07-.12-.27-.2-.57-.34Z"/>
+          </svg>
         </button>
       )}
       {open && (
