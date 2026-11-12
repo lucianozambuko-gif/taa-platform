@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import { usePathname } from "next/navigation";
 
 const KEY = "taa-compare";
 const read = (): string[] => {
@@ -55,7 +56,9 @@ export function CompareToggle({ slug, title }: { slug: string; title: string }) 
 /** Sticky bar that appears once 2 or more courses are ticked. */
 export function CompareBar() {
   const list = useCompare();
-  if (list.length < 2) return list.length === 1 ? <div className="cmp-bar"><span className="small">Tick one more course to compare</span><button className="btn btn-ghost btn-sm" onClick={() => write([])}>Clear</button></div> : null;
+  const path = usePathname();
+  if (path?.startsWith("/compare")) return null;
+  if (list.length < 2) return list.length === 1 ? <div className="cmp-bar"><span className="small"><b>1</b> course ticked. Tick one more to compare.</span><button className="btn btn-ghost btn-sm" onClick={() => write([])}>Clear</button></div> : null;
   return (
     <div className="cmp-bar">
       <span className="small"><b>{list.length}</b> courses ticked</span>

@@ -1,6 +1,5 @@
 import Link from "next/link";
 import { CourseCard } from "@/components/CourseBits";
-import { CompareBar } from "@/components/Compare";
 import FilterPanel from "@/components/FilterPanel";
 import { DURATION_BANDS, intakeKeys, listCourses, type CourseFilters } from "@/lib/courses";
 import { seoFor } from "@/lib/seo";
@@ -71,7 +70,6 @@ export default async function CoursesPage({ searchParams }: { searchParams: Prom
               <>
                 <h2 className="sr-only">Matching courses</h2>
                 <div className="grid g2">{courses.map((c) => <CourseCard key={c.id} course={c} />)}</div>
-                <CompareBar />
               </>
             ) : (
               <div className="panel stack" style={{ textAlign: "center", padding: 40 }}>

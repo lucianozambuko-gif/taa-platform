@@ -1,3 +1,4 @@
+import { CompareBar } from "@/components/Compare";
 import type { Metadata, Viewport } from "next";
 import { Suspense } from "react";
 import SiteHeader from "@/components/SiteHeader";
@@ -66,6 +67,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         <main id="main">{children}</main>
         <SiteFooter />
         {signedIn && <Suspense fallback={null}><BottomNav role={role} unread={unread} counts={counts} labels={{ home: t("nav.home"), courses: t("nav.courses"), learning: t("nav.mylearning"), help: t("nav.help") }} /></Suspense>}
+        <CompareBar />
         <AdvisorChat />
       </body>
     </html>
