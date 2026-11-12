@@ -2,7 +2,7 @@
 /* Layout: sticky site header over a single content column (max 1180px); presenter guide slides in from the right */
 :root{
   /* Training Africa Academy brand: logo red #DB0B0B and black, on the light grey of the original site */
-  --bg:#F3F5F8; --surface:#FFFFFF; --sunk:#E8EBF0; --ink:#141416; --muted:#575B63; --line:#D6D7DA;
+  --bg:#FFFFFF; --surface:#FFFFFF; --sunk:#F3F4F6; --ink:#141416; --muted:#575B63; --line:#D6D7DA;
   --accent:#DB0B0B; --accent-ink:#FFFFFF; --accent-soft:#FCE6E6;
   --ochre:#141416; --ochre-soft:#E8EBF0; --ochre-ink:#141416;
   --plum:#8C1D18; --plum-soft:#F5E9E8; --slate:#46607A; --slate-soft:#E4EBF2;
@@ -13,8 +13,9 @@
   --mono:'IBM Plex Mono',ui-monospace,Menlo,Consolas,monospace;
   --r:10px;
   --wm:none;
+  color-scheme:light;
 }
-@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+@media (prefers-color-scheme:dark){:root[data-theme="system"]{
   /* Night mode: deep night-blue with a faint pattern of the TAA rising-bars mark */
   --bg:#0F1A2E; --surface:#16243D; --sunk:#1C2C48; --ink:#E9EEF6; --muted:#A7B3C7; --line:#2A3B5A;
   --accent:#FF5A50; --accent-ink:#140404; --accent-soft:#3A1F2A;
@@ -798,3 +799,7 @@ body:has(.ws-shell) .advisor-btn{display:none}
 @keyframes sheetUp{from{transform:translateY(24px);opacity:0}to{transform:none;opacity:1}}
 @media (prefers-reduced-motion:reduce){html.more-open .portal-side{animation:none}}
 .bn-dot.bn-dot-sm{min-width:12px;width:12px;height:12px;padding:0;top:-3px;right:-6px}
+
+/* White theme: cards and bars are separated by hairlines and soft shadows rather than a grey page */
+.panel,.card,.tile,.stat{border-color:var(--line)}
+.bottom-nav{background:#FFFFFF;border-top:1px solid var(--line);box-shadow:0 -4px 16px rgba(20,20,22,.06)}
