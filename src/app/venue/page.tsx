@@ -1,3 +1,4 @@
+import PageHero from "@/components/PageHero";
 import LeadForm from "@/components/LeadForm";
 import VenueCalendar from "@/components/VenueCalendar";
 import { ROOMS } from "@/lib/roles";
@@ -19,11 +20,9 @@ export default async function VenuePage() {
   } catch {}
   return (
     <>
+      <PageHero eyebrow="Assessment centre and venue hire" title={<>Book a room at our Johannesburg centre</>} photo="costing-and-estimation-training-2"><p>For training, assessments, workshops and events. Bookings are confirmed by our centre coordinator with a written quotation.</p></PageHero>
       <section className="block" style={{ paddingTop: 36 }}>
         <div className="wrap">
-          <div className="eyebrow">Assessment centre and venue hire</div>
-          <h1 style={{ fontSize: "clamp(1.8rem,3.8vw,2.7rem)", margin: "8px 0 10px" }}>Book a room at our Johannesburg centre</h1>
-          <p className="muted" style={{ maxWidth: "62ch" }}>For training, assessments, workshops and events. Bookings are confirmed by our centre coordinator with a written quotation.</p>
           <div className="notice" style={{ marginTop: 18, maxWidth: 820 }}>
             <b>Scope</b>
             <span>Approved assessment uses are listed exactly as stated in the Academy's current approval letters. This page does not imply any assessment permission that has not been approved.</span>

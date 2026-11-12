@@ -1,3 +1,4 @@
+import PageHero from "@/components/PageHero";
 import Link from "next/link";
 import PlaceholderNote from "@/components/PlaceholderNote";
 import { seoFor } from "@/lib/seo";
@@ -13,14 +14,11 @@ const ROWS: [string, string, string][] = [
 
 export default function AboutPage() {
   return (
+    <>
+    <PageHero eyebrow="About the Academy" title={<>Practical skills training for work in South Africa</>} photo="taa-staff-1"><p>Training Africa Academy trains individuals and workplace teams through short skills courses, accredited programmes and learnerships, in our Johannesburg centre, at your workplace and online.</p></PageHero>
     <section className="block" style={{ paddingTop: 36 }}>
       <div className="wrap stack" style={{ gap: 22 }}>
         <div>
-          <div className="eyebrow">About the Academy</div>
-          <h1 style={{ fontSize: "clamp(1.8rem,3.8vw,2.7rem)", margin: "8px 0 10px", maxWidth: "24ch" }}>Practical skills training for work in South Africa</h1>
-          <p className="muted" style={{ maxWidth: "62ch", fontSize: "1.08rem" }}>
-            Training Africa Academy trains individuals and workplace teams through short skills courses, accredited programmes and learnerships, in our Johannesburg centre, at your workplace and online.
-          </p>
         </div>
         <PlaceholderNote />
         <div className="grid g3">
@@ -41,5 +39,6 @@ export default function AboutPage() {
         <div className="row"><Link className="btn btn-primary" href="/courses">Find a course</Link><Link className="btn btn-ghost" href="/contact">Contact us</Link></div>
       </div>
     </section>
+    </>
   );
 }

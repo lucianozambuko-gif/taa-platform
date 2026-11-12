@@ -1,3 +1,4 @@
+import PageHero from "@/components/PageHero";
 import Link from "next/link";
 
 export const metadata = { title: "Site map" };
@@ -52,19 +53,17 @@ function Table({ rows }: { rows: Row[] }) {
 export default function SiteMapPage() {
   const built = PAGES.filter((p) => p[2] === "Built").length;
   return (
+    <>
+    <PageHero eyebrow="Site map" title={<>All 15 required page templates</>} photo="training-and-practical-june-25-6"><p>Every page in RFQ section 3 exists. {built} are fully working; {PAGES.length - built} are built and waiting for the Academy's approved content.</p></PageHero>
     <section className="block" style={{ paddingTop: 36 }}>
       <div className="wrap stack" style={{ gap: 20 }}>
         <div>
-          <div className="eyebrow">Site map</div>
-          <h1 style={{ fontSize: "clamp(1.8rem,3.8vw,2.6rem)", margin: "8px 0 10px" }}>All 15 required page templates</h1>
-          <p className="muted" style={{ maxWidth: "64ch" }}>
-            Every page in RFQ section 3 exists. {built} are fully working; {PAGES.length - built} are built and waiting for the Academy's approved content.
-          </p>
         </div>
         <Table rows={PAGES} />
         <h2 style={{ fontSize: "1.3rem" }}>Supporting pages</h2>
         <Table rows={SUPPORTING} />
       </div>
     </section>
+    </>
   );
 }

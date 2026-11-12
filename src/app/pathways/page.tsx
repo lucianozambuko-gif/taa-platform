@@ -1,3 +1,4 @@
+import PageHero from "@/components/PageHero";
 import { CourseCard } from "@/components/CourseBits";
 import { listCourses } from "@/lib/courses";
 import { seoFor } from "@/lib/seo";
@@ -15,12 +16,11 @@ export default async function PathwaysPage() {
   const courses = await listCourses();
   const bySlug = new Map(courses.map((c) => [c.slug, c]));
   return (
+    <>
+    <PageHero eyebrow="Career and learning pathways" title={<>Start with where you want to be</>} photo="training-and-practical-june-25-6"><p>Each pathway lists courses in the order most learners take them. Start at any step that matches your experience.</p></PageHero>
     <section className="block" style={{ paddingTop: 36 }}>
       <div className="wrap stack" style={{ gap: 30 }}>
         <div>
-          <div className="eyebrow">Career and learning pathways</div>
-          <h1 style={{ fontSize: "clamp(1.8rem,3.8vw,2.7rem)", margin: "8px 0 10px" }}>Start with where you want to be</h1>
-          <p className="muted" style={{ maxWidth: "62ch" }}>Each pathway lists courses in the order most learners take them. Start at any step that matches your experience.</p>
         </div>
         {PATHS.map((p) => (
           <div key={p.title} className="stack" style={{ gap: 14 }}>
@@ -43,5 +43,6 @@ export default async function PathwaysPage() {
         ))}
       </div>
     </section>
+    </>
   );
 }

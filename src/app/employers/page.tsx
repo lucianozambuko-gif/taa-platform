@@ -1,3 +1,4 @@
+import PageHero from "@/components/PageHero";
 import LeadForm from "@/components/LeadForm";
 import TrackedLink from "@/components/TrackedLink";
 import { listCourses } from "@/lib/courses";
@@ -12,13 +13,9 @@ export default async function EmployersPage({ searchParams }: { searchParams: Pr
   const courses = await listCourses();
   return (
     <>
+      <PageHero eyebrow="Training for employers" title={<>Train your team, on-site or at our centre</>} photo="sedibeng-training-2"><p>Tell us what your team needs. A training advisor sends a quotation within one working day, with group pricing and dates that fit your shifts.</p></PageHero>
       <section className="block" style={{ paddingTop: 36 }}>
         <div className="wrap">
-          <div className="eyebrow">Training for employers</div>
-          <h1 style={{ fontSize: "clamp(1.8rem,3.8vw,2.7rem)", margin: "8px 0 10px", maxWidth: "22ch" }}>Train your team, on-site or at our centre</h1>
-          <p className="muted" style={{ maxWidth: "60ch", fontSize: "1.08rem" }}>
-            Tell us what your team needs. A training advisor sends a quotation within one working day, with group pricing and dates that fit your shifts.
-          </p>
           <div className="row" style={{ marginTop: 18 }}>
             <TrackedLink className="btn btn-ghost" href={process.env.NEXT_PUBLIC_CORPORATE_BROCHURE_URL || "/corporate-brochure.pdf"} target="_blank" rel="noopener" event="brochure_download" params={{ item: "corporate" }}>
               Download corporate brochure (PDF)

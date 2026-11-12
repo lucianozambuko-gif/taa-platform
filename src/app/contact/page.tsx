@@ -1,3 +1,4 @@
+import PageHero from "@/components/PageHero";
 import LeadForm from "@/components/LeadForm";
 import PlaceholderNote from "@/components/PlaceholderNote";
 import TrackedLink from "@/components/TrackedLink";
@@ -8,12 +9,11 @@ export const generateMetadata = () => seoFor("/contact");
 
 export default function ContactPage() {
   return (
+    <>
+    <PageHero eyebrow="Contact and locations" title={<>Talk to a course advisor</>} photo="false-bay-college-5"><p>We reply to messages within one working day. For the fastest answer, WhatsApp us.</p></PageHero>
     <section className="block" style={{ paddingTop: 36 }}>
       <div className="wrap stack" style={{ gap: 22 }}>
         <div>
-          <div className="eyebrow">Contact and locations</div>
-          <h1 style={{ fontSize: "clamp(1.8rem,3.8vw,2.7rem)", margin: "8px 0 10px" }}>Talk to a course advisor</h1>
-          <p className="muted" style={{ maxWidth: "62ch" }}>We reply to messages within one working day. For the fastest answer, WhatsApp us.</p>
         </div>
         <PlaceholderNote />
         <div className="grid g2" style={{ alignItems: "start" }}>
@@ -46,5 +46,6 @@ export default function ContactPage() {
         </div>
       </div>
     </section>
+    </>
   );
 }

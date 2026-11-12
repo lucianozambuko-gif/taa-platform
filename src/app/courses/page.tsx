@@ -1,3 +1,4 @@
+import PageHero from "@/components/PageHero";
 import Link from "next/link";
 import { CourseCard } from "@/components/CourseBits";
 import FilterPanel from "@/components/FilterPanel";
@@ -31,10 +32,10 @@ export default async function CoursesPage({ searchParams }: { searchParams: Prom
   const monthOrder = (k: string) => (k === "anytime" ? 0 : Date.parse("1 " + k) || 9e15);
   const intakes = [...new Set(all.flatMap((c) => intakeKeys(c.intakes)))].sort((a, b) => monthOrder(a) - monthOrder(b));
   return (
+    <>
+    <PageHero eyebrow="Find a course" title={<>Course catalogue</>} photo="training-and-practical-june-25-8"></PageHero>
     <section className="block" style={{ paddingTop: 36 }}>
       <div className="wrap">
-        <div className="eyebrow">Find a course</div>
-        <h1 style={{ fontSize: "clamp(1.8rem,3.6vw,2.6rem)", margin: "6px 0 24px" }}>Course catalogue</h1>
         <div className="cat">
           <FilterPanel active={Object.values(filters).filter(Boolean).length}>
           <form className="filter-body" action="/courses" aria-label="Filters">
@@ -82,5 +83,6 @@ export default async function CoursesPage({ searchParams }: { searchParams: Prom
         </div>
       </div>
     </section>
+    </>
   );
 }

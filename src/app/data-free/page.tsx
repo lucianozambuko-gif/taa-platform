@@ -1,3 +1,4 @@
+import PageHero from "@/components/PageHero";
 import Link from "next/link";
 
 export const metadata = {
@@ -16,12 +17,11 @@ const SIZES: [string, string][] = [
 
 export default function DataFreePage() {
   return (
+    <>
+    <PageHero eyebrow="Data-free and data saver" title={<>Study without worrying about data</>} photo="internal-training1"><p>Most of our learners study on prepaid data, so the site is built to use as little as possible and, on the data-free address, nothing at all.</p></PageHero>
     <section className="block" style={{ paddingTop: 36 }}>
       <div className="wrap stack" style={{ gap: 22, maxWidth: 860 }}>
         <div className="stack" style={{ gap: 10 }}>
-          <div className="eyebrow">Data-free and data saver</div>
-          <h1 style={{ fontSize: "clamp(1.9rem,4vw,2.7rem)" }}>Study without worrying about data</h1>
-          <p className="lead">Most of our learners study on prepaid data, so the site is built to use as little as possible and, on the data-free address, nothing at all.</p>
         </div>
 
         <div className="grid g2">
@@ -65,5 +65,6 @@ export default function DataFreePage() {
         </div>
       </div>
     </section>
+    </>
   );
 }

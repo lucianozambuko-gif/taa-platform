@@ -1,3 +1,4 @@
+import PageHero from "@/components/PageHero";
 import Link from "next/link";
 import Photo from "@/components/Photo";
 import { listPosts } from "@/lib/posts";
@@ -13,11 +14,11 @@ export default async function NewsPage({ searchParams }: { searchParams: Promise
   const [posts, all] = await Promise.all([listPosts(category), category ? listPosts() : Promise.resolve(null)]);
   const categories = [...new Set((all ?? posts).map((p) => p.category))];
   return (
+    <>
+    <PageHero eyebrow="News, insights and resources" title={<>News, intakes and advice</>} photo="pmb-training-5"></PageHero>
     <section className="block" style={{ paddingTop: 36 }}>
       <div className="wrap stack" style={{ gap: 22 }}>
         <div>
-          <div className="eyebrow">News, insights and resources</div>
-          <h1 style={{ fontSize: "clamp(1.8rem,3.8vw,2.7rem)", margin: "8px 0 10px" }}>News, intakes and advice</h1>
         </div>
         {categories.length > 1 && (
           <div className="row" style={{ gap: 6 }}>
@@ -39,5 +40,6 @@ export default async function NewsPage({ searchParams }: { searchParams: Promise
         {!posts.length && <p className="muted">No articles yet.</p>}
       </div>
     </section>
+    </>
   );
 }

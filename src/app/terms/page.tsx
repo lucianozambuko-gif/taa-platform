@@ -1,3 +1,4 @@
+import PageHero from "@/components/PageHero";
 import Link from "next/link";
 import { seoFor } from "@/lib/seo";
 
@@ -41,10 +42,10 @@ const SECTIONS: [string, string[]][] = [
 
 export default function TermsPage() {
   return (
+    <>
+    <PageHero eyebrow="Policies" title={<>Terms and learner policies</>} photo="pmb-training-5"></PageHero>
     <section className="block" style={{ paddingTop: 36 }}>
       <div className="wrap stack" style={{ maxWidth: 760, gap: 16 }}>
-        <div className="eyebrow">Policies</div>
-        <h1 style={{ fontSize: "clamp(1.8rem,3.8vw,2.5rem)" }}>Terms and learner policies</h1>
         <div className="notice"><b>Draft</b><span>Template wording for the demo. Training Africa Academy must approve the final terms, refund periods and appeal process.</span></div>
         {SECTIONS.map(([h, ps]) => (
           <div key={h} className="stack" style={{ gap: 6 }}>
@@ -55,5 +56,6 @@ export default function TermsPage() {
         <p className="muted">See also the <Link href="/privacy">privacy notice</Link>. Questions? <Link href="/contact">Contact us</Link>.</p>
       </div>
     </section>
+    </>
   );
 }

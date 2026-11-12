@@ -10,7 +10,7 @@ import { usePathname } from "next/navigation";
  */
 const SELECTOR = [
   ".sec-head", ".ccard-wrap", ".gallery-link", ".stats-band > div", ".quote", ".logos > div",
-  "main .panel", ".modes > div", ".path", ".route",
+  "main .panel", ".modes > div", ".path", ".route", ".specs > div", ".modlist", ".notice", ".grid > *",
 ].join(",");
 
 export default function Motion() {
@@ -18,7 +18,8 @@ export default function Motion() {
   useEffect(() => {
     const html = document.documentElement;
     const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    if (reduce || html.dataset.saver === "on" || document.querySelector(".portal-grid")) return;
+    const appPage = /^\/(learn|checkout|poe|certificate|orders|account|dashboard|admin|facilitator|moderator|employer|sales|content|campaigns|inbox|login|signup)(\/|$)/.test(path ?? "");
+    if (reduce || appPage || html.dataset.saver === "on" || document.querySelector(".portal-grid")) return;
     html.classList.add("motion");
 
     const els = Array.from(document.querySelectorAll<HTMLElement>(SELECTOR)).filter((el) => !el.closest(".portal-grid") && !el.dataset.rv);

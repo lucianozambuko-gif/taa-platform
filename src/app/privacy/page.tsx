@@ -1,12 +1,13 @@
+import PageHero from "@/components/PageHero";
 import { seoFor } from "@/lib/seo";
 export const generateMetadata = () => seoFor("/privacy");
 
 export default function PrivacyPage() {
   return (
+    <>
+    <PageHero eyebrow="POPIA" title={<>Privacy notice</>} photo="pmb-training-5"></PageHero>
     <section className="block" style={{ paddingTop: 36 }}>
       <div className="wrap stack" style={{ maxWidth: 760, gap: 16 }}>
-        <div className="eyebrow">POPIA</div>
-        <h1 style={{ fontSize: "clamp(1.8rem,3.8vw,2.5rem)" }}>Privacy notice</h1>
         <div className="notice"><b>Draft</b><span>Placeholder wording. Training Africa Academy's Information Officer must approve the final notice.</span></div>
         <h2 style={{ fontSize: "1.3rem" }}>What we collect</h2>
         <p>Your name, contact details and the information needed to enrol you, process payment and keep your learner record. For accredited programmes we may also need identity and education details required for reporting.</p>
@@ -26,5 +27,6 @@ export default function PrivacyPage() {
         <p>If we suspect your information has been accessed without permission, we contain the problem, assess the risk, and notify you and the Information Regulator as soon as reasonably possible, as POPIA section 22 requires.</p>
       </div>
     </section>
+    </>
   );
 }

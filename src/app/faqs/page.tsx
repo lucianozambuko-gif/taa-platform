@@ -1,3 +1,4 @@
+import PageHero from "@/components/PageHero";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { seoFor } from "@/lib/seo";
@@ -19,11 +20,11 @@ export default async function FaqsPage() {
   } catch {}
   const jsonLd = { "@context": "https://schema.org", "@type": "FAQPage", mainEntity: FAQS.map((f) => ({ "@type": "Question", name: f.q, acceptedAnswer: { "@type": "Answer", text: f.a } })) };
   return (
+    <>
+    <PageHero eyebrow="Resources and FAQs" title={<>Answers before you enrol</>} photo="training-and-practical-june-25-2"></PageHero>
     <section className="block" style={{ paddingTop: 36 }}>
       <div className="wrap stack" style={{ gap: 22, maxWidth: 860 }}>
         <div>
-          <div className="eyebrow">Resources and FAQs</div>
-          <h1 style={{ fontSize: "clamp(1.8rem,3.8vw,2.7rem)", margin: "8px 0 10px" }}>Answers before you enrol</h1>
         </div>
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd).replace(/</g, "\\u003c") }} />
         <div className="modlist">
@@ -37,5 +38,6 @@ export default async function FaqsPage() {
         <p className="muted">Still have a question? <Link href="/contact">Contact us</Link> or read the <Link href="/privacy">privacy notice</Link> and <Link href="/terms">terms and learner policies</Link>.</p>
       </div>
     </section>
+    </>
   );
 }

@@ -1,3 +1,4 @@
+import PageHero from "@/components/PageHero";
 import Link from "next/link";
 import { CourseCard } from "@/components/CourseBits";
 import { listCourses } from "@/lib/courses";
@@ -43,11 +44,11 @@ export default async function SearchPage({ searchParams }: { searchParams: Promi
   const total = courses.length + posts.length + faqs.length + pages.length;
 
   return (
+    <>
+    <PageHero eyebrow={t("nav.search")} title={<>{q ? <>Results for “{q}”</> : "Search the Academy"}</>} photo="training-and-practical-june-25-11"></PageHero>
     <section className="block" style={{ paddingTop: 36 }}>
       <div className="wrap stack" style={{ gap: 24 }}>
         <div className="stack" style={{ gap: 12, maxWidth: 720 }}>
-          <div className="eyebrow">{t("nav.search")}</div>
-          <h1 style={{ fontSize: "clamp(1.8rem,3.8vw,2.6rem)" }}>{q ? <>Results for “{q}”</> : "Search the Academy"}</h1>
           <form className="search" action="/search" role="search">
             <input name="q" defaultValue={q} aria-label={t("nav.search")} placeholder={t("home.searchPh")} autoFocus={!q} />
             <button className="btn btn-primary">{t("nav.search")}</button>
@@ -119,5 +120,6 @@ export default async function SearchPage({ searchParams }: { searchParams: Promi
         )}
       </div>
     </section>
+    </>
   );
 }
