@@ -1,6 +1,7 @@
 import { Suspense } from "react";
 import WorkNav from "./WorkNav";
 import TableCards from "./TableCards";
+import SideToggle from "./SideToggle";
 import { whatsappLink } from "@/lib/format";
 import { ROLE_LABEL } from "@/lib/roles";
 import { loadWorkspace } from "@/lib/workspace";
@@ -30,7 +31,7 @@ export default async function Workspace({ children }: { children: React.ReactNod
             <a className="small" href={whatsappLink(`Hi, I'm ${w.role === "employer" ? "an employer" : "on the Academy staff"} and need help with the system.`, "support")} target="_blank" rel="noopener">Need help? WhatsApp support</a>
           </div>
         </aside>
-        <div className="portal-main work-main">{children}</div>
+        <div className="portal-main work-main"><SideToggle />{children}</div>
         <TableCards />
       </div>
     </section>

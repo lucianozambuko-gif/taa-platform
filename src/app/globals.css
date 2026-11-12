@@ -1009,3 +1009,16 @@ html[data-saver="on"] .page-hero{background-image:none}
   .header-tools .menu-btn{padding:8px 11px}
 }
 @media (max-width:380px){.brand .name{font-size:.94rem}.brand .mark,.brand .mark svg{width:30px;height:30px}}
+
+/* Desktop: the workspace side menu can be hidden and brought back */
+.side-toggle{display:none}
+@media (min-width:901px){
+  .side-toggle{display:inline-flex;align-self:flex-start;width:max-content;align-items:center;gap:8px;margin:0 0 14px;padding:7px 12px;border-radius:10px;border:1px solid var(--line);background:#FFFFFF;color:var(--ink);font:inherit;font-size:.86rem;font-weight:600;cursor:pointer}
+  .side-toggle:hover{border-color:var(--accent);color:var(--accent)}
+  .side-toggle:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+  .work .portal-grid{transition:grid-template-columns .25s ease,gap .25s ease}
+  .work .portal-side{transition:opacity .2s ease}
+  html.side-hidden .work .portal-grid{grid-template-columns:0 1fr;gap:0}
+  html.side-hidden .work .portal-side{opacity:0;visibility:hidden;overflow:hidden;pointer-events:none}
+}
+@media (prefers-reduced-motion:reduce){.work .portal-grid,.work .portal-side{transition:none}}
