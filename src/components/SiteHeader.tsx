@@ -26,6 +26,7 @@ export default async function SiteHeader() {
         </Link>
         <Suspense fallback={null}><NavAutoClose /></Suspense>
         <div className="header-tools">
+          {!user && <Link href="/login" className="btn btn-primary btn-sm head-login">{t("nav.login")}</Link>}
           <DisplaySettings lang={lang} />
           <input type="checkbox" id="navtoggle" className="navtoggle" aria-label="Show menu" />
           <label htmlFor="navtoggle" className="menu-btn">Menu</label>

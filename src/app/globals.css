@@ -994,3 +994,18 @@ html[data-saver="on"] .page-hero{background-image:none}
 .wa-float.wa-icon:hover{background:#1EBE5A}
 @media (max-width:640px){.wa-float.wa-icon{width:54px;height:54px;padding:0}}
 @media (prefers-reduced-motion:no-preference){.wa-float.wa-icon{animation:pop .45s .8s cubic-bezier(.3,1.6,.5,1) both}}
+
+/* Log in button in the phone header (on computers it sits in the main menu) */
+.head-login{display:none}
+@media (max-width:900px){
+  .header-tools .head-login{display:inline-flex;color:var(--accent-ink);padding:8px 14px;box-shadow:none}
+  header.site .navlinks a[href="/login"]{display:none}
+}
+@media (max-width:380px){.brand .name small{display:none}.header-tools{gap:6px}.header-tools .head-login{padding:8px 10px}}
+@media (max-width:900px){
+  .header-tools .head-login{white-space:nowrap}
+  .brand .name{white-space:nowrap;font-size:1.02rem}
+  .brand .mark,.brand .mark svg{width:34px;height:34px}
+  .header-tools .menu-btn{padding:8px 11px}
+}
+@media (max-width:380px){.brand .name{font-size:.94rem}.brand .mark,.brand .mark svg{width:30px;height:30px}}
