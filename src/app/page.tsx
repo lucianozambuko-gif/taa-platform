@@ -17,9 +17,10 @@ export default async function HomePage() {
   const featured = courses.filter((c) => c.featured).slice(0, 3);
   return (
     <>
-      <section className="hero">
+      <section className="hero hero-photo" style={{ ["--hero" as string]: `url(${gallery("false-bay-college-5")})` }}>
         <div className="wrap hero-grid">
           <div>
+            <p className="motto">Advancing knowledge · Transforming lives</p>
             <div className="eyebrow">{t("home.eyebrow")}</div>
             <h1 style={{ marginTop: 10 }}>{t("home.h1")}</h1>
             <p className="lead">{t("home.lead")}</p>
@@ -41,7 +42,7 @@ export default async function HomePage() {
         </div>
       </section>
 
-      <div className="wrap">
+      <div className="wrap modes-wrap">
         <div className="modes">
           <div><b>Online, self-paced</b><span className="small muted">Start today, learn on your phone</span></div>
           <div><b>Blended</b><span className="small muted">Online theory + practical days</span></div>
@@ -94,7 +95,7 @@ export default async function HomePage() {
             </div>
             {site.sample && <span className="sample">Sample figures until supplied by the Academy</span>}
           </div>
-          <div className="stats">
+          <div className="stats stats-band">
             {site.stats.map((st) => <div key={st.label}><b className="tnum">{st.value}</b><span className="muted small">{st.label}</span></div>)}
           </div>
           <div className="grid g3">
@@ -132,7 +133,7 @@ export default async function HomePage() {
               Non-accredited skills courses are labelled clearly.
             </p>
           </div>
-          <div className="panel stack">
+          <div className="panel stack panel-dark">
             <div className="eyebrow">Assessment centre and venue hire</div>
             <h3>Training rooms, a practical cleaning lab and a computer room</h3>
             <p className="muted">Check available dates and send a booking request in under two minutes.</p>

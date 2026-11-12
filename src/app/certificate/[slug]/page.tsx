@@ -1,3 +1,4 @@
+import LogoMark from "@/components/LogoMark";
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import PrintButton from "@/components/PrintButton";
@@ -73,7 +74,7 @@ export default async function CertificatePage({ params }: { params: Promise<{ sl
           <div className="cert-inner">
             <div className="cert-brand">
               <span className="mark" aria-hidden="true">
-                <svg viewBox="0 0 64 64"><polygon points="6,58 18,58 25,32 13,32" fill="#FFFFFF" /><polygon points="23,58 35,58 42,20 30,20" fill="#DB0B0B" /><polygon points="40,58 52,58 59,8 47,8" fill="#FFFFFF" /></svg>
+                <LogoMark size={38} />
               </span>
               <span>Training <em>Africa</em> Academy</span>
             </div>
