@@ -883,3 +883,45 @@ footer.site .muted,footer.site .small{color:#B4B4BC}
   .modes-wrap{margin-top:-40px}
 }
 @media (prefers-reduced-motion:reduce){.ccard:hover,.path:hover,.quote:hover,.hero-photo .route:hover{transform:none}}
+
+/* ===== Motion: simple, purposeful, and off for reduced motion or data saver ===== */
+@media (prefers-reduced-motion:no-preference){
+  /* The logo draws itself: two strokes fall, then the red one, then the rising stroke */
+  .brand .mark line{stroke-dasharray:60;stroke-dashoffset:60;animation:drawStroke .7s cubic-bezier(.6,0,.2,1) forwards}
+  .brand .mark line:nth-child(2){animation-delay:.18s}
+  .brand .mark line:nth-child(3){animation-delay:.36s}
+  .brand:hover .mark line:nth-child(3){animation:rise .5s ease}
+  /* Hero: words rise in, the photo drifts slowly, the motto dot breathes */
+  .hero-photo .motto,.hero-photo .eyebrow,.hero-photo h1,.hero-photo .lead,.hero-photo .search,.hero-photo .route{animation:riseIn .7s cubic-bezier(.2,.7,.2,1) both}
+  .hero-photo .eyebrow{animation-delay:.08s}.hero-photo h1{animation-delay:.16s}.hero-photo .lead{animation-delay:.26s}
+  .hero-photo .search{animation-delay:.34s}.hero-photo .route{animation-delay:.42s}.hero-photo .route+.route{animation-delay:.52s}
+  .hero-photo{animation:drift 26s ease-in-out infinite alternate}
+  .motto::before{animation:breathe 2.4s ease-in-out infinite}
+  /* Arrows nudge on hover; the study card has a slow sheen */
+  .route .t span{display:inline-block;transition:transform .2s ease}
+  .route:hover .t span{transform:translateX(5px)}
+  .hero-photo .route.primary{background-size:200% 200%;animation:riseIn .7s .42s cubic-bezier(.2,.7,.2,1) both,sheen 7s 1.4s ease-in-out infinite}
+  /* Scroll reveal */
+  html.motion [data-rv]{opacity:0;transform:translateY(18px);transition:opacity .6s ease var(--d,0ms),transform .6s cubic-bezier(.2,.7,.2,1) var(--d,0ms)}
+  html.motion [data-rv="in"]{opacity:1;transform:none}
+  html.motion .sec-head[data-rv] h2::after{width:0;transition:width .7s cubic-bezier(.2,.7,.2,1) .25s}
+  html.motion .sec-head[data-rv="in"] h2::after{width:64px}
+  /* Gallery photos zoom gently on hover; compare bar slides up */
+  .gallery-link figure .photo img{transition:transform .5s ease}
+  .gallery-link:hover figure .photo img{transform:scale(1.07)}
+  .cmp-bar{animation:barUp .35s cubic-bezier(.2,.7,.2,1)}
+  /* Unread badges pop in */
+  .bn-dot,.nav-count,.pcount.alert{animation:pop .4s cubic-bezier(.3,1.6,.5,1) both}
+  .btn-primary{transition:transform .15s ease,box-shadow .15s ease,background .15s ease}
+  .btn-primary:hover{transform:translateY(-1px)}
+  .btn-primary:active{transform:translateY(1px)}
+}
+@keyframes drawStroke{to{stroke-dashoffset:0}}
+@keyframes rise{0%{transform:none}40%{transform:translate(2px,-3px)}100%{transform:none}}
+@keyframes riseIn{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:none}}
+@keyframes drift{from{background-position:50% 35%}to{background-position:50% 65%}}
+@keyframes breathe{0%,100%{box-shadow:0 0 0 4px rgba(255,90,79,.25)}50%{box-shadow:0 0 0 8px rgba(255,90,79,.08)}}
+@keyframes sheen{0%,100%{background-position:0% 50%}50%{background-position:100% 50%}}
+@keyframes barUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:none}}
+@keyframes pop{from{transform:scale(0)}to{transform:scale(1)}}
+html[data-saver="on"] .hero-photo,html[data-saver="on"] .brand .mark line{animation:none !important;stroke-dashoffset:0}
