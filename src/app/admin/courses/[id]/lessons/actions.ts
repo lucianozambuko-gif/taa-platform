@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { getUserAndProfile } from "@/lib/supabase/server";
 import { textToQuiz } from "@/lib/quizText";
+import { syncCaptionsToBunny } from "@/lib/bunny";
 
 async function requireEditor() {
   const { supabase, user, profile } = await getUserAndProfile();
@@ -96,7 +97,7 @@ export async function saveLesson(_: LessonState, fd: FormData): Promise<LessonSt
   if (!title) return { error: "Give the lesson a title." };
   const url = (k: string) => {
     const v = s(fd, k);
-    return v && (/^https:\/\//.test(v) || v.startsWith("storage:")) ? v : v ? "BAD" : null;
+    return v && (/^https:\/\//.test(v) || v.startsWith("storage:") || /^bunny:[0-9a-f-]{36}$/i.test(v)) ? v : v ? "BAD" : null;
   };
   const video = url("video_url");
   const captions = url("captions_url");
@@ -116,6 +117,7 @@ export async function saveLesson(_: LessonState, fd: FormData): Promise<LessonSt
     .upsert({ lesson_id: id, video_url: video, captions_url: captions, download_url: download, body: s(fd, "body") || null, quiz });
   if (e2) return { error: e2.message };
   await supabase.from("audit_log").insert({ actor: user.id, action: "lesson_save", entity: "lesson", entity_id: id, detail: { title } });
+  const cc = await syncCaptionsToBunny(supabase, video, captions);
   done(s(fd, "course_id"));
-  return { message: "Saved. Learners see the change straight away." };
+  return { message: `Saved. Learners see the change straight away.${cc ? " Captions are in the video player." : ""}` };
 }

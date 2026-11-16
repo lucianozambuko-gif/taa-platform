@@ -1,7 +1,7 @@
 -- Point the scheduled jobs (reminders, unpaid-checkout follow-ups, monthly report) at the cPanel site.
 -- Run in Supabase: SQL editor > New query. Replace the two values on the first lines, then Run.
 -- Run it again whenever the address changes (for example from the test subdomain to the main domain).
--- Alternative: skip this and use cPanel Cron Jobs instead (see DEPLOY-CPANEL.md, step 8).
+-- Alternative: skip this and use cPanel Cron Jobs instead (see DEPLOY-CPANEL.md, step 9).
 
 do $$
 declare

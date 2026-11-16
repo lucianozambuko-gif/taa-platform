@@ -6,6 +6,7 @@ import CompleteButton from "./CompleteButton";
 import SaveCourse from "@/components/SaveCourse";
 import Quiz from "./Quiz";
 import LessonVideo from "./LessonVideo";
+import { bunnyGuid, embedUrl, isBunnyRef } from "@/lib/bunny";
 
 export const dynamic = "force-dynamic";
 
@@ -28,11 +29,15 @@ export default async function LessonPage({ params }: { params: Promise<{ slug: s
     .maybeSingle();
   // Uploaded files live in private storage: give the enrolled learner a short-lived link.
   const signed = async (v: string | null | undefined) => {
+    // Bunny Stream: a signed player link that expires, only made for enrolled learners.
+    if (v && isBunnyRef(v)) return embedUrl(bunnyGuid(v));
     if (!v?.startsWith("storage:")) return v ?? null;
     const { data } = await supabase.storage.from("lesson-files").createSignedUrl(v.slice(8), 60 * 60 * 3);
     return data?.signedUrl ?? null;
   };
   const [videoUrl, captionsUrl, downloadUrl] = await Promise.all([signed(content?.video_url), signed(content?.captions_url), signed(content?.download_url)]);
+  // Bunny videos and uploaded files can be kept on the phone for offline viewing.
+  const canSave = isBunnyRef(content?.video_url) || !!content?.video_url?.startsWith("storage:");
   // Strip answers before sending questions to the browser.
   const questions = ((content?.quiz ?? []) as QuizQuestion[]).map(({ q, o }) => ({ q, o }));
 
@@ -85,6 +90,8 @@ export default async function LessonPage({ params }: { params: Promise<{ slug: s
                     captions={captionsUrl}
                     title={lesson.title}
                     minutes={lesson.minutes}
+                    lessonId={lesson.id}
+                    offline={canSave}
                     poster={<><div className="art" /><div className="ttl"><small>Lesson {index + 1} of {lessons.length}</small>{lesson.title}</div></>}
                   />
                 ) : (

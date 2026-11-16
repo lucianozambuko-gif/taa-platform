@@ -160,6 +160,7 @@ export async function menuFor(supabase: DB, userId: string, role: string | null 
         { label: "Admin", count: c.unread, children: [
           { href: "/admin?tab=users", label: "Users & roles" },
           { href: "/admin?tab=audit", label: "Audit log" },
+          { href: "/admin/setup", label: "Go-live check" },
           { href: "/inbox", label: "Messages", count: c.unread },
           account,
           guide,

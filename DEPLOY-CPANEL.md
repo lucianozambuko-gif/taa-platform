@@ -52,7 +52,7 @@ Either:
 - **File Manager:** copy `taa-platform/.env.example` to `taa-platform/.env` and fill it in, or
 - **Setup Node.js App → Edit → Environment variables:** add the same names and values (these win over the file).
 
-Required: `SITE_URL` (the https address from step 1), the three Supabase values, the PayFast values, `ALLOW_SANDBOX_SIMULATION=false` and `CRON_SECRET`.
+Required: `SITE_URL` (the https address from step 1), the three Supabase values, the PayFast values, `ALLOW_SANDBOX_SIMULATION=false`, `CRON_SECRET`, `RESEND_API_KEY` with `NOTIFY_FROM` (emails), and the Bunny Stream values (step 8).
 
 The site address is read when the app starts, so moving to the main domain later only needs `SITE_URL` changed, not a new package.
 
@@ -68,7 +68,28 @@ Supabase dashboard → **Authentication → URL Configuration → Redirect URLs*
 
 Nothing to change in PayFast. Every payment tells PayFast to confirm to `SITE_URL/api/payfast/notify`. Test with `PAYFAST_MODE=sandbox` first. Go live with `PAYFAST_MODE=live` and the live merchant ID, key and passphrase.
 
-### 8. Scheduled jobs (reminders, unpaid checkouts, monthly report)
+### 8. Lesson videos (Bunny Stream)
+
+Videos are uploaded straight from the staff member's browser to Bunny, so they never pass through cPanel and there's no size limit. Bunny converts each video for phones and plays it at the quality the learner's connection can handle.
+
+1. Create an account at bunny.net → **Stream → Add Video Library**. Name it "Training Africa Academy" and choose the storage region closest to South Africa (Johannesburg if it is offered).
+2. **Encoding tab:** switch on **240p, 360p, 480p and 720p**, and switch on **MP4 fallback** (needed for "Save video to this phone"). Save.
+3. **Security tab:** switch on **Embed view token authentication** and copy the key. Under **Allowed domains**, add your site's domain.
+4. **API tab:** copy the **Video Library ID**, the **API key** and the **CDN hostname** (looks like `vz-abc12345-678.b-cdn.net`).
+5. Put them in the settings and restart the app:
+
+   | Setting | Value |
+   | --- | --- |
+   | `BUNNY_STREAM_LIBRARY_ID` | Video Library ID |
+   | `BUNNY_STREAM_API_KEY` | API key (library, not account) |
+   | `BUNNY_STREAM_TOKEN_KEY` | Embed view token authentication key |
+   | `BUNNY_STREAM_CDN_HOST` | CDN hostname |
+
+6. Test: Admin → Courses → a course → **Online lessons** → open a video lesson → **Upload**. The progress shows while it uploads, then "Converting to phone-friendly sizes" until it says **Ready**. Captions (.vtt) are sent to the player automatically when you save.
+
+Videos uploaded before Bunny was set up (files up to 50 MB, or YouTube and Vimeo links) keep working.
+
+### 9. Scheduled jobs (reminders, unpaid checkouts, monthly report)
 
 Choose **one** of these:
 
@@ -81,15 +102,18 @@ Choose **one** of these:
   | Daily 07:05 | `curl -s -H "x-cron-key: YOUR_CRON_SECRET" https://YOUR-SITE/api/cron/daily > /dev/null` |
   | 1st of the month 07:10 | `curl -s -H "x-cron-key: YOUR_CRON_SECRET" https://YOUR-SITE/api/cron/monthly > /dev/null` |
 
-### 9. WhatsApp (only if the WhatsApp Cloud API is used)
+### 10. WhatsApp (only if the WhatsApp Cloud API is used)
 
 Meta Developer dashboard → WhatsApp → Configuration → Callback URL: `https://YOUR-SITE/api/whatsapp/webhook`, with the same `WHATSAPP_VERIFY_TOKEN`.
 
-### 10. Test before you share it
+### 11. Test before you share it
+
+Sign in as admin and open **Admin → Go-live check** (`/admin/setup`). It shows every service with a ✓ or what's missing and how to fix it.
 
 - [ ] Home, catalogue and a course page load on a phone
 - [ ] Sign up, confirm the email, log in
 - [ ] Sandbox payment → learner enrolled → first lesson opens
+- [ ] A Bunny video plays on a phone, and **Save video to this phone** works (then turn on flight mode and play it)
 - [ ] A group-quote or contact form arrives in the admin leads list
 - [ ] Staff logins (admin, sales, facilitator, moderator) open their workspaces
 - [ ] `https://YOUR-SITE/robots.txt` shows the new address in the Sitemap line
@@ -101,7 +125,8 @@ Meta Developer dashboard → WhatsApp → Configuration → Callback URL: `https
 3. Change `SITE_URL` to `https://trainingafricaacademy.co.za` and **Restart**.
 4. Add the main domain to the Supabase **Redirect URLs** and set it as the **Site URL**.
 5. Run `point-scheduled-jobs.sql` again with the new address (or update the cPanel cron commands).
-6. Update the WhatsApp callback URL if used.
+6. Add the main domain to Bunny's **Allowed domains** (Security tab).
+7. Update the WhatsApp callback URL if used.
 
 ## Updating the site later
 
@@ -123,5 +148,7 @@ Upload the new `cpanel-build/taa-platform-cpanel.zip`, extract it over the old f
 | `Cannot find module './server.js'` | The files were extracted one folder too deep (step 3) |
 | Page loads without styling | `.next/static` is missing: re-extract with hidden files included |
 | Logins send people to the old site | Add the address in Supabase Redirect URLs (step 6) and check `SITE_URL` |
+| A video shows "403" or won't play | Check `BUNNY_STREAM_TOKEN_KEY` matches the Security tab, and the site's domain is in Allowed domains |
+| "Save video to this phone" says it can't be saved | Switch on MP4 fallback in Bunny (Encoding tab) and set `BUNNY_STREAM_CDN_HOST`; only videos uploaded after that have an MP4 copy |
 | Payments stay "pending" | `SITE_URL` must be the public https address; PayFast can't reach a site behind a password or with an invalid certificate |
 | App stops under load | The plan's memory or process limit is too low; ask the host to raise it |

@@ -24,7 +24,7 @@ const GUIDE: { id: string; title: string; roles: Role[]; steps: string[] }[] = [
   { id: "lessons", title: "Building online lessons", roles: ["admin", "content"], steps: [
     "Open a course → Online lessons.",
     "Add a module, then add lessons to it: Video, Download (PDF) or Quiz.",
-    "Open a lesson to add content. Upload an MP4 (up to 50 MB) or paste a YouTube, Vimeo or video-host link. Add captions as a .vtt file.",
+    "Open a lesson to add content. Upload the video (any length: it goes to Bunny Stream, which converts it for phones and slow connections) or paste a YouTube or Vimeo link. Add captions as a .vtt file; they are sent to the video player automatically when you save.",
     "Downloads: upload the PDF. Only enrolled learners can open uploaded files.",
     "Quizzes: write each question on a line starting with Q:, answers starting with -, and mark the correct answer with *. Leave a blank line between questions. The pass mark is 70%.",
     "Use Move up / Move down to change the order. Lessons marked ‘Needs content’ are still empty.",

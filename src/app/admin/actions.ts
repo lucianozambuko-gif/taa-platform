@@ -1,6 +1,7 @@
 "use server";
 
 import { siteUrl } from "@/lib/env";
+import { syncCaptionsToBunny } from "@/lib/bunny";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { getUserAndProfile } from "@/lib/supabase/server";
@@ -574,6 +575,12 @@ export async function reviewProposal(_: ContentState, fd: FormData): Promise<Con
   if (decision === "rejected" && !note) return { error: "Tell the facilitator why, so they can fix it." };
   const { error } = await supabase.rpc("review_proposal", { proposal: String(fd.get("id") ?? ""), decision, note });
   if (error) return { error: error.message.includes("not pending") ? "Someone has already reviewed this." : "Couldn't save the decision." };
+  if (decision === "approved") {
+    // Approved video lessons: send their captions to the Bunny player too.
+    const { data: p } = await supabase.from("lesson_proposals").select("content").eq("id", String(fd.get("id") ?? "")).maybeSingle();
+    const c = (p?.content ?? {}) as { video_url?: string; captions_url?: string };
+    await syncCaptionsToBunny(supabase, c.video_url, c.captions_url);
+  }
   revalidatePath("/admin");
   return { message: decision === "approved" ? "Approved. It’s live for learners, and the facilitator has been told." : "Sent back to the facilitator with your note." };
 }
