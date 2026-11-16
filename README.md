@@ -40,9 +40,12 @@ Paid lesson content is protected by row-level security: only enrolled learners a
 
 ITN checks: signature, PayFast server validation, amount matches the order. Source-IP checking can be added before go-live.
 
-## Deploy (Vercel)
+## Deploy
 
-Import the repo in Vercel, add the environment variables from `.env.example` (set `NEXT_PUBLIC_SITE_URL` to the Vercel URL), and deploy.
+- **cPanel (Setup Node.js App):** see [DEPLOY-CPANEL.md](DEPLOY-CPANEL.md). `npm run build:cpanel` makes an upload-ready zip; no `npm install` on the server.
+- **Vercel:** import the repo, add the environment variables from `.env.example` and deploy.
+
+The site address is a runtime setting (`SITE_URL`, falling back to `NEXT_PUBLIC_SITE_URL`), so the same build runs on a test subdomain and then the main domain.
 
 ## Ownership
 

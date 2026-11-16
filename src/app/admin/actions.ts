@@ -1,5 +1,6 @@
 "use server";
 
+import { siteUrl } from "@/lib/env";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { getUserAndProfile } from "@/lib/supabase/server";
@@ -497,7 +498,7 @@ export async function bulkEnrol(_: BulkState, fd: FormData): Promise<BulkState> 
   if (!course) return { error: "Course not found." };
 
   const admin = createAdminClient();
-  const site = process.env.NEXT_PUBLIC_SITE_URL ?? "";
+  const site = siteUrl();
   let created = 0, enrolled = 0, already = 0;
   const problems: string[] = [...errors];
   for (const r of rows) {

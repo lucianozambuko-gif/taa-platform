@@ -1,3 +1,4 @@
+import { env } from "@/lib/env";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import LeadForm from "@/components/LeadForm";
@@ -233,7 +234,7 @@ export default async function EmployerPortal({ searchParams }: { searchParams: P
             <div className="eyebrow">Downloads</div>
             <a className="btn btn-ghost btn-sm" href="/employer/export" style={{ justifyContent: "flex-start" }}>Progress report (CSV)</a>
             <a className="btn btn-ghost btn-sm" href="/employer/export?type=bbbee" style={{ justifyContent: "flex-start" }}>B-BBEE skills summary (CSV)</a>
-            <TrackedLink className="btn btn-ghost btn-sm" href={process.env.NEXT_PUBLIC_CORPORATE_BROCHURE_URL || "/corporate-brochure.pdf"} target="_blank" rel="noopener" event="brochure_download" params={{ item: "corporate brochure (employer portal)" }} style={{ justifyContent: "flex-start" }}>Corporate brochure (PDF)</TrackedLink>
+            <TrackedLink className="btn btn-ghost btn-sm" href={env("NEXT_PUBLIC_CORPORATE_BROCHURE_URL") || "/corporate-brochure.pdf"} target="_blank" rel="noopener" event="brochure_download" params={{ item: "corporate brochure (employer portal)" }} style={{ justifyContent: "flex-start" }}>Corporate brochure (PDF)</TrackedLink>
           </div>
           <QuickLinks title="Plan more training" links={[["/employers#estimate", "Instant group estimate"], ["/courses?learner=employer", "Browse courses for teams"], ["/venue", "Assessment centre and venue hire"]]} />
         </aside>

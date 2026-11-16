@@ -1,3 +1,4 @@
+import { siteUrl } from "@/lib/env";
 // Course advisor: answers the questions people ask before enrolling, on the website chat and on WhatsApp.
 // Rule-based so it only ever states the Academy's real prices, dates and pages; it hands over to a person
 // on duty when it can't help. If ANTHROPIC_API_KEY is set, unmatched questions get a short answer written
@@ -20,7 +21,7 @@ export type AdvisorState = {
 export type Turn = { replies: Reply[]; state: AdvisorState; handover?: { team: DutyTeam; summary: string; name: string; phone: string }; matched: boolean };
 
 const MENU = ["Find a course", "Prices and dates", "Learnerships", "Training for my company", "Talk to a person"];
-const site = () => process.env.NEXT_PUBLIC_SITE_URL || "https://taa-platform-six.vercel.app";
+const site = () => siteUrl();
 const has = (t: string, ...words: string[]) => words.some((w) => new RegExp(`\\b${w}`).test(t));
 
 async function catalogue() {

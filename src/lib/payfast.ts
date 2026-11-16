@@ -1,3 +1,4 @@
+import { siteUrl } from "@/lib/env";
 import crypto from "node:crypto";
 
 /**
@@ -43,7 +44,7 @@ export type CheckoutInput = {
 
 /** Fields to post to PayFast's process URL, in PayFast's required order, plus the signature. */
 export function buildCheckoutFields(input: CheckoutInput): [string, string][] {
-  const site = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
+  const site = siteUrl();
   const fields: [string, string][] = [
     ["merchant_id", process.env.PAYFAST_MERCHANT_ID ?? ""],
     ["merchant_key", process.env.PAYFAST_MERCHANT_KEY ?? ""],

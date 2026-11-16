@@ -1,3 +1,4 @@
+import { siteUrl } from "@/lib/env";
 import Link from "next/link";
 import { rand } from "@/lib/format";
 import { followUpOrder, refundOrder } from "../actions";
@@ -39,7 +40,7 @@ export default async function OrdersTab({ supabase, sp }: { supabase: DB; sp: Re
             {list.map((o) => {
               const p = who.get(o.user_id);
               const course = o.courses as { title: string; slug: string } | null;
-              const wa = waLink(p?.phone, `Hi ${p?.full_name?.split(" ")[0] ?? ""}, this is Training Africa Academy. Your payment for ${course?.title} didn't go through. You can finish enrolling here: ${process.env.NEXT_PUBLIC_SITE_URL ?? ""}/checkout/${course?.slug}. Can we help?`);
+              const wa = waLink(p?.phone, `Hi ${p?.full_name?.split(" ")[0] ?? ""}, this is Training Africa Academy. Your payment for ${course?.title} didn't go through. You can finish enrolling here: ${siteUrl()}/checkout/${course?.slug}. Can we help?`);
               return (
                 <tr key={o.id}>
                   <td><Link className="mono" href={`/orders/${o.id}`}>{o.invoice_no}</Link><br /><span className="small muted">{when(o.created_at)}</span></td>

@@ -1,3 +1,4 @@
+import { siteUrl } from "@/lib/env";
 import Link from "next/link";
 import Photo from "@/components/Photo";
 import { CourseCard, KindBadge, PriceBlock } from "@/components/CourseBits";
@@ -54,7 +55,7 @@ export default async function CoursePage({ params }: { params: Promise<{ slug: s
   else if (enrolled) cta = <Link className="btn btn-primary" href="/dashboard">You're enrolled: view dashboard</Link>;
   else cta = <Link className="btn btn-primary" href={`/checkout/${course.slug}`}>{t("course.enrol")}</Link>;
 
-  const site = process.env.NEXT_PUBLIC_SITE_URL ?? "";
+  const site = siteUrl();
   const jsonLd = {
     "@context": "https://schema.org",
     "@type": "Course",

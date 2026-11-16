@@ -1,11 +1,12 @@
+import { siteUrl } from "@/lib/env";
 import type { MetadataRoute } from "next";
 import { createClient } from "@supabase/supabase-js";
 
-export const revalidate = 3600;
+export const dynamic = "force-dynamic";
 
 /** XML sitemap of public pages and published courses (F12). */
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const site = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
+  const site = siteUrl();
   const pages = ["", "/courses", "/online-learning", "/employers", "/learnerships", "/pathways", "/venue", "/about", "/facilitators", "/faqs", "/news", "/contact", "/privacy", "/terms"];
   let courses: { slug: string; updated_at: string }[] = [];
   let posts: { slug: string; updated_at: string }[] = [];

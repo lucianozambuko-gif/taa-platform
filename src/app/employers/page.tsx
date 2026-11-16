@@ -1,3 +1,4 @@
+import { env } from "@/lib/env";
 import PageHero from "@/components/PageHero";
 import LeadForm from "@/components/LeadForm";
 import TrackedLink from "@/components/TrackedLink";
@@ -17,7 +18,7 @@ export default async function EmployersPage({ searchParams }: { searchParams: Pr
       <section className="block" style={{ paddingTop: 36 }}>
         <div className="wrap">
           <div className="row" style={{ marginTop: 18 }}>
-            <TrackedLink className="btn btn-ghost" href={process.env.NEXT_PUBLIC_CORPORATE_BROCHURE_URL || "/corporate-brochure.pdf"} target="_blank" rel="noopener" event="brochure_download" params={{ item: "corporate" }}>
+            <TrackedLink className="btn btn-ghost" href={env("NEXT_PUBLIC_CORPORATE_BROCHURE_URL") || "/corporate-brochure.pdf"} target="_blank" rel="noopener" event="brochure_download" params={{ item: "corporate" }}>
               Download corporate brochure (PDF)
             </TrackedLink>
             <span className="small muted">Accredited and skills programmes, on-site delivery, progress reports</span>

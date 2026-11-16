@@ -1,3 +1,4 @@
+import { siteUrl, env } from "@/lib/env";
 import { CompareBar } from "@/components/Compare";
 import Motion from "@/components/Motion";
 import type { Metadata, Viewport } from "next";
@@ -24,14 +25,14 @@ export const metadata: Metadata = {
   description: "Skills courses, accredited programmes and learnerships in Johannesburg and online.",
   appleWebApp: { capable: true, title: "TA Academy", statusBarStyle: "default" },
   icons: { icon: "/icons/icon-192.png", apple: "/icons/apple-touch-icon.png" },
-  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || "https://taa-platform-six.vercel.app"),
+  metadataBase: new URL(siteUrl()),
   ...(process.env.GOOGLE_SITE_VERIFICATION ? { verification: { google: process.env.GOOGLE_SITE_VERIFICATION } } : {}),
 };
 
 export const viewport: Viewport = { width: "device-width", initialScale: 1, viewportFit: "cover", themeColor: "#FFFFFF", colorScheme: "light" };
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
-  const ga = process.env.NEXT_PUBLIC_GA_ID;
+  const ga = env("NEXT_PUBLIC_GA_ID");
   let signedIn = false;
   let role = "learner";
   let unread = 0;

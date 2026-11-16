@@ -1,3 +1,4 @@
+import { siteUrl } from "@/lib/env";
 import { NextResponse } from "next/server";
 import { createAdminClient, getUserAndProfile } from "@/lib/supabase/server";
 
@@ -30,7 +31,7 @@ export async function GET(req: Request) {
   ]);
   const p = (id: string | null) => people?.find((x) => x.id === id);
   const header = ["Learner", "Phone", "Sponsor", "Programme", "Code", "SAQA ID", "NQF", "Credits", "Accrediting body", "Enrolled", "Learner declaration", "Learner evidence files", "Assessor evidence files", "Attendance", "Result", "Assessor", "Assessed", "Assessor note", "Moderation", "Moderator", "Moderated", "Moderator report", "Portfolio link"];
-  const site = process.env.NEXT_PUBLIC_SITE_URL ?? "";
+  const site = siteUrl();
   const lines = rows.map((r) => {
     const c = r.courses as unknown as { title: string; code: string; saqa_id: string | null; nqf_level: string | null; credits: string | null; accreditation_body: string | null };
     const sess = (sessions ?? []).filter((s) => s.course_id === r.course_id).map((s) => s.id);

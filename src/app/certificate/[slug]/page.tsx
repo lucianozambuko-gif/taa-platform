@@ -1,3 +1,4 @@
+import { siteUrl } from "@/lib/env";
 import LogoMark from "@/components/LogoMark";
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
@@ -50,7 +51,7 @@ export default async function CertificatePage({ params }: { params: Promise<{ sl
     .maybeSingle();
   const completed = assessed && enrolment?.assessed_at ? new Date(enrolment.assessed_at) : last ? new Date(last.completed_at) : new Date();
   const certNo = enrolment?.cert_code ?? `TAA-${course.code.replace(/^TAA-/, "")}-${user.id.slice(0, 6).toUpperCase()}`;
-  const site = process.env.NEXT_PUBLIC_SITE_URL ?? "";
+  const site = siteUrl();
   const verifyUrl = `${site}/verify/${certNo}`;
   const linkedIn =
     "https://www.linkedin.com/profile/add?startTask=CERTIFICATION_NAME&" +

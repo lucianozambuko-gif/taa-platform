@@ -1,3 +1,4 @@
+import { siteUrl } from "@/lib/env";
 import { createAdminClient } from "@/lib/supabase/server";
 import { sendWhatsApp, whatsappConfigured } from "@/lib/whatsapp";
 
@@ -15,7 +16,7 @@ type Message = {
   whatsapp?: boolean;
 };
 
-const site = () => process.env.NEXT_PUBLIC_SITE_URL ?? "";
+const site = () => siteUrl();
 
 /** Sends an email through Resend when RESEND_API_KEY and NOTIFY_FROM are set. Returns true if accepted. */
 async function sendEmail(to: string, subject: string, body: string, link?: string | null) {
@@ -58,7 +59,7 @@ export async function notify(m: Message) {
     if (m.whatsapp !== false && m.userId && whatsappConfigured()) {
       const { data: p } = await admin.from("profiles").select("phone, whatsapp_opt_in").eq("id", m.userId).maybeSingle();
       if (p?.whatsapp_opt_in && p.phone) {
-        const site = process.env.NEXT_PUBLIC_SITE_URL ?? "";
+        const site = siteUrl();
         await sendWhatsApp(process.env.NOTIFY_TEST_TO_PHONE || p.phone, `${m.subject}. ${m.body}${m.link ? ` ${m.link.startsWith("http") ? m.link : site + m.link}` : ""}`);
       }
     }

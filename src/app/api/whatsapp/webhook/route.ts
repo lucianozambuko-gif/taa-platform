@@ -1,3 +1,4 @@
+import { siteUrl } from "@/lib/env";
 import { createHmac, timingSafeEqual } from "node:crypto";
 import { NextResponse } from "next/server";
 import { chatTurn } from "@/lib/advisorStore";
@@ -28,7 +29,7 @@ export async function POST(req: Request) {
   let payload: { entry?: { changes?: { value?: { messages?: WaMessage[] } }[] }[] };
   try { payload = JSON.parse(raw); } catch { return NextResponse.json({ ok: true }); }
   const messages = (payload.entry ?? []).flatMap((e) => e.changes ?? []).flatMap((c) => c.value?.messages ?? []);
-  const site = process.env.NEXT_PUBLIC_SITE_URL || "https://taa-platform-six.vercel.app";
+  const site = siteUrl();
   for (const m of messages) {
     const text = m.text?.body ?? m.interactive?.button_reply?.title ?? m.interactive?.list_reply?.title;
     if (!text) {
