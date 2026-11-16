@@ -832,7 +832,8 @@ body:has(.ws-shell) .cmp-bar{display:none}
 .hero-photo p.lead{color:#E7E7EA}
 .motto{display:inline-flex;align-items:center;gap:10px;margin:0 0 14px;padding:6px 14px 6px 10px;border-radius:99px;background:rgba(219,11,11,.18);border:1px solid rgba(255,90,79,.45);color:#FFFFFF;font-family:var(--display);font-weight:700;font-size:.92rem;letter-spacing:.01em}
 .motto::before{content:"";width:8px;height:8px;border-radius:50%;background:var(--red-glow);box-shadow:0 0 0 4px rgba(255,90,79,.25)}
-.hero-photo .search input{background:#FFFFFF;border-color:transparent}
+.hero-photo .search input{background:#FFFFFF;border-color:transparent;color:#15161A;caret-color:#DB0B0B;-webkit-text-fill-color:#15161A}
+.hero-photo .search input::placeholder{color:#5F6470;opacity:1;-webkit-text-fill-color:#5F6470}
 .hero-photo .route:not(.primary){background:rgba(255,255,255,.1);border-color:rgba(255,255,255,.28);color:#FFFFFF;backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px)}
 .hero-photo .route:not(.primary) p{color:#E2E2E6}
 .hero-photo .route:not(.primary) .t span{color:var(--red-glow)}
