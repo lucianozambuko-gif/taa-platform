@@ -8,11 +8,12 @@ import NavAutoClose from "./NavAutoClose";
 import { getT } from "@/lib/i18n";
 import RoleNav from "./RoleNav";
 import { menuFor } from "@/lib/menus";
+import { getSwitchOptions } from "@/lib/myRoles";
 
 export default async function SiteHeader() {
   const [{ supabase, user, profile }, { lang, t }] = await Promise.all([getUserAndProfile(), getT()]);
   // Staff and employers get a menu built around their work instead of the public website links.
-  const roleMenu = user ? await menuFor(supabase, user.id, profile?.role) : null;
+  const [roleMenu, switchTo] = user ? await Promise.all([menuFor(supabase, user.id, profile?.role), getSwitchOptions()]) : [null, []];
   return (
     <header className="site">
       <div className="wrap" style={{ position: "relative" }}>
@@ -34,7 +35,7 @@ export default async function SiteHeader() {
         <nav className="navlinks" aria-label="Main">
           {roleMenu ? (
             <>
-              <Suspense fallback={null}><RoleNav items={roleMenu} /></Suspense>
+              <Suspense fallback={null}><RoleNav items={roleMenu} switchTo={switchTo} /></Suspense>
             </>
           ) : (
             <>

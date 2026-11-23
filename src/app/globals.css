@@ -1023,3 +1023,17 @@ html[data-saver="on"] .page-hero{background-image:none}
   html.side-hidden .work .portal-side{opacity:0;visibility:hidden;overflow:hidden;pointer-events:none}
 }
 @media (prefers-reduced-motion:reduce){.work .portal-grid,.work .portal-side{transition:none}}
+
+/* Workspace switcher for staff with more than one role */
+.role-switch{padding:12px 14px;background:var(--surface);border:1px solid var(--line);border-radius:var(--r)}
+.role-switch-list{display:flex;flex-direction:column;gap:4px}
+.role-switch-list form{margin:0}
+.role-switch-item{width:100%;display:flex;align-items:center;gap:8px;padding:8px 10px;border-radius:8px;border:0;background:transparent;color:var(--ink);font:inherit;font-size:.92rem;text-align:left;cursor:pointer}
+button.role-switch-item:hover,button.role-switch-item:focus-visible{background:var(--sunk)}
+.role-switch-item.on{background:var(--sunk);font-weight:700;cursor:default}
+.role-switch-item .dot{width:8px;height:8px;border-radius:50%;border:2px solid var(--line);flex:none}
+.role-switch-item.on .dot{background:var(--accent);border-color:var(--accent)}
+.nav-switch > summary{border:1.5px solid var(--line)}
+.nav-switch-btn{width:100%;text-align:left;padding:8px 12px;border:0;border-radius:8px;background:transparent;color:var(--ink);font:inherit;font-size:.93rem;cursor:pointer;white-space:nowrap}
+.nav-switch-btn:hover,.nav-switch-btn:focus-visible{background:var(--sunk)}
+@media (max-width:900px){.role-switch{display:none}}

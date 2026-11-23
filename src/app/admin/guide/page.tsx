@@ -12,6 +12,7 @@ const GUIDE: { id: string; title: string; roles: Role[]; steps: string[] }[] = [
     "The menu at the top of every page is built for your role. Items with an arrow open a short list (for example Leads → Assigned to me). An orange number shows how many things are waiting for you. On a phone, tap Menu, or use the bar at the bottom of the screen.",
     "View website (in the menu) shows the public site as learners see it.",
     "Everything you change is saved straight away and written to the audit log with your name.",
+    "If you have more than one role (for example Facilitator and Sales), use the workspace button at the top of the menu, or Switch workspace in the side menu, to move between them. Each workspace has its own menu and only shows that role's work. You can also switch from My profile.",
   ]},
   { id: "courses", title: "Adding or changing a course", roles: ["admin", "content"], steps: [
     "Courses tab → Add a course, or click a course to edit it.",
@@ -92,7 +93,9 @@ const GUIDE: { id: string; title: string; roles: Role[]; steps: string[] }[] = [
     "Leads → Advisor chats shows every conversation and the questions it couldn't answer. Add those to the FAQs and it will answer them next time.",
   ]},
   { id: "users", title: "Users, roles and POPIA (admin)", roles: ["admin"], steps: [
-    "Users tab: change anyone's role. Facilitators also need courses assigned.",
+    "Users tab: click Change next to a person. Choose Learner, Employer or Staff. Staff can have several roles: tick each one (for example Facilitator and Sales) and choose which workspace they open in. They switch between their workspaces from their own menu, and each switch is written to the audit log.",
+    "Someone working in one workspace only has that role's access. A facilitator who switches to Sales sees sales work, not teaching work.",
+    "Facilitators also need courses assigned. A person who is both a facilitator and a moderator can't moderate results for courses they teach or results they recorded; another moderator must review those.",
     "When someone asks to be deleted: Users → Delete personal info → tick to confirm → Anonymise. Payment records stay for tax but no longer show their name.",
     "For an enquiry, use ‘Remove personal data’ on the lead.",
     "POPIA retention: remove personal details from old closed enquiries (for example older than 24 months).",

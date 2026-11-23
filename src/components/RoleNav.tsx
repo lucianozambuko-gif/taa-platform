@@ -4,11 +4,13 @@ import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
 import { useEffect, useRef } from "react";
 import type { MenuItem, MenuLink } from "@/lib/menus";
+import type { SwitchOption } from "@/lib/myRoles";
+import { switchRole } from "@/app/actions/switch-role";
 
 const Count = ({ n }: { n?: number }) => (n ? <span className="nav-count" aria-label={`${n} waiting`}>{n}</span> : null);
 
 /** A staff role's menu: direct links plus small dropdown groups. Shows which page you're on. */
-export default function RoleNav({ items }: { items: MenuItem[] }) {
+export default function RoleNav({ items, switchTo = [] }: { items: MenuItem[]; switchTo?: SwitchOption[] }) {
   const path = usePathname();
   const sp = useSearchParams();
   const ref = useRef<HTMLDivElement>(null);
@@ -48,6 +50,23 @@ export default function RoleNav({ items }: { items: MenuItem[] }) {
         ) : (
           link(i)
         ),
+      )}
+      {switchTo.length > 1 && (
+        <details className="nav-group nav-switch">
+          <summary>
+            {switchTo.find((o) => o.active)?.label ?? "Switch"}
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" aria-hidden="true"><path d="M6 9l6 6 6-6" /></svg>
+          </summary>
+          <div className="nav-drop">
+            <span className="small muted" style={{ padding: "6px 12px", display: "block" }}>Switch workspace</span>
+            {switchTo.filter((o) => !o.active).map((o) => (
+              <form key={o.role} action={switchRole}>
+                <input type="hidden" name="role" value={o.role} />
+                <button type="submit" className="nav-switch-btn">{o.label}</button>
+              </form>
+            ))}
+          </div>
+        </details>
       )}
     </div>
   );

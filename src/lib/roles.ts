@@ -70,3 +70,10 @@ export const ROOMS: [string, string, string][] = [
   ["Computer room", "16 workstations", "Online assessments, digital skills"],
   ["Boardroom", "10 seated", "Meetings, moderation sessions"],
 ];
+
+/** Roles an admin can give staff, in the order they're listed. A person can hold several and switch between them. */
+export const STAFF_ROLES = ["admin", "sales", "content", "facilitator", "moderator"] as const satisfies readonly Role[];
+export type StaffRole = (typeof STAFF_ROLES)[number];
+export const isStaffRole = (r: unknown): r is StaffRole => typeof r === "string" && (STAFF_ROLES as readonly string[]).includes(r);
+/** Sorts roles into the standard order (used for menus and the admin screen). */
+export const sortRoles = (roles: string[]): StaffRole[] => STAFF_ROLES.filter((r) => roles.includes(r));

@@ -5,13 +5,15 @@ import SideToggle from "./SideToggle";
 import { whatsappLink } from "@/lib/format";
 import { ROLE_LABEL } from "@/lib/roles";
 import { loadWorkspace } from "@/lib/workspace";
+import { getSwitchOptions } from "@/lib/myRoles";
+import RoleSwitcher from "./RoleSwitcher";
 
 /**
  * Frame for every staff and employer page: who is signed in, that role's own menu with live counts, and quick help.
  * Visitors and learners get the page without the frame (each page still does its own access check).
  */
 export default async function Workspace({ children }: { children: React.ReactNode }) {
-  const w = await loadWorkspace();
+  const [w, switchTo] = await Promise.all([loadWorkspace(), getSwitchOptions()]);
   if (!w) return <>{children}</>;
   const initials = w.name.split(/[\s@]/).filter(Boolean).slice(0, 2).map((x) => x[0]?.toUpperCase()).join("");
   return (
@@ -26,6 +28,7 @@ export default async function Workspace({ children }: { children: React.ReactNod
             </span>
           </div>
           <div className="work-label small"><b>{w.label}</b> · {ROLE_LABEL[w.role]}</div>
+          <RoleSwitcher options={switchTo} />
           <Suspense fallback={null}><WorkNav groups={w.groups} label={w.label} /></Suspense>
           <div className="portal-help">
             <a className="small" href={whatsappLink(`Hi, I'm ${w.role === "employer" ? "an employer" : "on the Academy staff"} and need help with the system.`, "support")} target="_blank" rel="noopener">Need help? WhatsApp support</a>

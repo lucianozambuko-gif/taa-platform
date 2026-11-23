@@ -4,10 +4,11 @@ import { KindBadge } from "@/components/CourseBits";
 import { LEAD_LABEL, rand } from "@/lib/format";
 import { getUserAndProfile } from "@/lib/supabase/server";
 import type { Course } from "@/lib/types";
-import { ROLE_HELP, ROLE_LABEL, WORKSPACE_LABEL, canOpen, homeFor, isBackOffice, type Role } from "@/lib/roles";
+import { ROLE_HELP, ROLE_LABEL, WORKSPACE_LABEL, canOpen, homeFor, isBackOffice, sortRoles, type Role, type StaffRole } from "@/lib/roles";
 import { WorkHead } from "@/components/WorkBits";
 import { RetentionForm } from "./ContentForms";
-import { anonymiseUser, assignCourse, sendReportNow, revokeEnrolment, setUserRole, togglePublished, unassignFacilitator, updatePrice } from "./actions";
+import { anonymiseUser, assignCourse, sendReportNow, revokeEnrolment, togglePublished, unassignFacilitator, updatePrice } from "./actions";
+import RoleEditor from "./RoleEditor";
 import LeadsTab from "./tabs/Leads";
 import OrdersTab from "./tabs/Orders";
 import VenueTab from "./tabs/Venue";
@@ -246,17 +247,23 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
       </div>
     );
   } else if (tab === "users") {
-    const [{ data: people }, { data: courseList }, { data: assigns }] = await Promise.all([
+    const [{ data: people }, { data: courseList }, { data: assigns }, { data: staffRows }] = await Promise.all([
       supabase.rpc("admin_users"),
       supabase.from("courses").select("id, title").order("title"),
       supabase.from("course_facilitators").select("course_id, user_id"),
+      supabase.from("staff_roles").select("user_id, role"),
     ]);
+    // Every staff role each person holds (they switch between them); falls back to the active role.
+    const rolesOf = new Map<string, string[]>();
+    for (const r of staffRows ?? []) rolesOf.set(r.user_id, [...(rolesOf.get(r.user_id) ?? []), r.role]);
+    const held = (u: { id: string; role: string }) => sortRoles(rolesOf.get(u.id) ?? [u.role]);
+    const holds = (u: { id: string; role: string }, r: string) => u.role === r || held(u).includes(r as StaffRole);
     type U = { id: string; email: string; full_name: string | null; phone: string | null; role: string; created_at: string; last_sign_in_at: string | null; enrolments: number };
     const everyone = (people ?? []) as U[];
     const q = (sp.q ?? "").trim().toLowerCase();
     const roleFilter = sp.role ?? "all";
-    const list = everyone.filter((u) => (roleFilter === "all" || u.role === roleFilter) && (!q || `${u.full_name ?? ""} ${u.email} ${u.phone ?? ""}`.toLowerCase().includes(q)));
-    const count = (r: string) => everyone.filter((u) => u.role === r).length;
+    const list = everyone.filter((u) => (roleFilter === "all" || holds(u, roleFilter)) && (!q || `${u.full_name ?? ""} ${u.email} ${u.phone ?? ""}`.toLowerCase().includes(q)));
+    const count = (r: string) => everyone.filter((u) => holds(u, r)).length;
     const titleOf = new Map((courseList ?? []).map((c) => [c.id, c.title]));
         const sel = { padding: "6px 8px", borderRadius: 6, border: "1.5px solid var(--line)", background: "var(--surface)", color: "var(--ink)" };
     body = (
@@ -289,21 +296,17 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
                   <td className="small">{u.last_sign_in_at ? date(u.last_sign_in_at) : "Never"}</td>
                   <td className="tnum">{u.role === "learner" ? u.enrolments : "—"}</td>
                   <td>
-                    {u.id === user.id ? (
-                      <span className="role-chip">Admin (you)</span>
-                    ) : (
-                      <form action={setUserRole} className="row" style={{ gap: 6, flexWrap: "nowrap" }}>
-                        <input type="hidden" name="user_id" value={u.id} />
-                        <select name="role" defaultValue={u.role} aria-label={`Role for ${u.full_name ?? u.email}`} style={sel}>
-                          {Object.entries(ROLE_LABEL).map(([k, v]) => <option key={k} value={k} title={ROLE_HELP[k as Role]}>{v}</option>)}
-                        </select>
-                        <input name="company" defaultValue={(u as U & { company?: string | null }).company ?? ""} placeholder="Company (employers)" aria-label="Employer company" style={{ ...sel, width: 150 }} />
-                        <button className="btn btn-ghost btn-sm">Save</button>
-                      </form>
-                    )}
+                    <RoleEditor
+                      userId={u.id}
+                      name={u.full_name ?? u.email}
+                      active={u.role}
+                      granted={u.role === "learner" || u.role === "employer" ? [] : held(u)}
+                      company={(u as U & { company?: string | null }).company ?? null}
+                      self={u.id === user.id}
+                    />
                   </td>
                   <td style={{ minWidth: 220 }}>
-                    {u.role !== "facilitator" ? <span className="small muted">{u.role === "admin" ? "All courses" : u.role === "learner" ? "—" : "Not a teaching role"}</span> : (
+                    {!holds(u, "facilitator") ? <span className="small muted">{holds(u, "admin") ? "All courses" : u.role === "learner" ? "—" : "Not a teaching role"}</span> : (
                       <div className="stack" style={{ gap: 6 }}>
                         {(assigns ?? []).filter((a) => a.user_id === u.id).map((a) => (
                           <form key={a.course_id} action={unassignFacilitator} className="row" style={{ gap: 6, flexWrap: "nowrap" }}>

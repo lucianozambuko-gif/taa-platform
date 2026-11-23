@@ -5,7 +5,7 @@ import { syncCaptionsToBunny } from "@/lib/bunny";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { getUserAndProfile } from "@/lib/supabase/server";
-import type { Role } from "@/lib/roles";
+import { sortRoles, type Role, type StaffRole } from "@/lib/roles";
 import { notify } from "@/lib/notify";
 
 /** Allows admins plus the listed staff roles; everyone else is sent home. */
@@ -159,17 +159,44 @@ export async function adminEnrol(_: EnrolState, fd: FormData): Promise<EnrolStat
   return { message: `Done. ${email} now has the course in their dashboard.` };
 }
 
-/** Changes an account's role. Admins can't remove their own admin role. */
-export async function setUserRole(fd: FormData) {
+/**
+ * Sets what an account can do. Learners and employers have one role. Staff can hold several
+ * roles (for example Facilitator and Sales) and switch between them from their menu; the
+ * "opens in" role is the workspace they land in. Admins can't remove their own admin role.
+ */
+export async function setUserRoles(fd: FormData) {
   const { supabase, user } = await requireAdmin();
   const id = String(fd.get("user_id") ?? "");
-  const role = String(fd.get("role") ?? "");
-  if (!id || !["learner", "employer", "facilitator", "moderator", "sales", "content", "admin"].includes(role) || (id === user.id && role !== "admin")) return;
+  const kind = String(fd.get("kind") ?? "");
+  if (!id || !["learner", "employer", "staff"].includes(kind)) return;
+  const self = id === user.id;
   const company = String(fd.get("company") ?? "").trim() || null;
-  if (role === "employer" && !company) return;
-  await supabase.from("profiles").update({ role, company: role === "employer" ? company : null }).eq("id", id);
-  if (role !== "facilitator") await supabase.from("course_facilitators").delete().eq("user_id", id);
-  await supabase.from("audit_log").insert({ actor: user.id, action: "role_change", entity: "profile", entity_id: id, detail: { role } });
+
+  if (kind !== "staff") {
+    if (self) return; // an admin can't turn their own account into a learner or employer
+    if (kind === "employer" && !company) return;
+    await supabase.from("staff_roles").delete().eq("user_id", id);
+    await supabase.from("profiles").update({ role: kind, company: kind === "employer" ? company : null }).eq("id", id);
+    await supabase.from("course_facilitators").delete().eq("user_id", id);
+    await supabase.from("audit_log").insert({ actor: user.id, action: "role_change", entity: "profile", entity_id: id, detail: { role: kind } });
+    revalidatePath("/admin");
+    return;
+  }
+
+  const roles = sortRoles(fd.getAll("roles").map(String));
+  if (!roles.length || (self && !roles.includes("admin"))) return;
+  const { data: current } = await supabase.from("profiles").select("role").eq("id", id).single();
+  const wanted = String(fd.get("active") ?? "");
+  // Your own active role stays as it is, so saving never moves you out of the admin workspace.
+  const active = self ? "admin" : roles.find((r) => r === wanted) ?? roles.find((r) => r === current?.role) ?? roles[0];
+
+  const { data: had } = await supabase.from("staff_roles").select("role").eq("user_id", id);
+  const removed = (had ?? []).map((r) => r.role as string).filter((r) => !roles.includes(r as StaffRole));
+  if (removed.length) await supabase.from("staff_roles").delete().eq("user_id", id).in("role", removed);
+  await supabase.from("staff_roles").upsert(roles.map((role) => ({ user_id: id, role, granted_by: user.id })), { onConflict: "user_id,role", ignoreDuplicates: true });
+  await supabase.from("profiles").update({ role: active, company: null }).eq("id", id);
+  if (!roles.includes("facilitator")) await supabase.from("course_facilitators").delete().eq("user_id", id);
+  await supabase.from("audit_log").insert({ actor: user.id, action: "role_change", entity: "profile", entity_id: id, detail: { roles, active } });
   revalidatePath("/admin");
 }
 
