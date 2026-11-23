@@ -1037,3 +1037,9 @@ button.role-switch-item:hover,button.role-switch-item:focus-visible{background:v
 .nav-switch-btn{width:100%;text-align:left;padding:8px 12px;border:0;border-radius:8px;background:transparent;color:var(--ink);font:inherit;font-size:.93rem;cursor:pointer;white-space:nowrap}
 .nav-switch-btn:hover,.nav-switch-btn:focus-visible{background:var(--sunk)}
 @media (max-width:900px){.role-switch{display:none}}
+
+/* Course picker on teaching pages */
+.course-picker{display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:12px 14px;background:var(--surface);border:1px solid var(--line);border-radius:var(--r)}
+.course-picker label{font-weight:700}
+.course-picker select{flex:1 1 280px;max-width:520px;padding:10px 12px;border-radius:8px;border:1.5px solid var(--line);background:var(--surface);color:var(--ink);font:inherit;font-weight:600}
+.course-picker[aria-busy="true"] select{opacity:.6}

@@ -1,4 +1,5 @@
 import Link from "next/link";
+import CoursePicker from "@/components/CoursePicker";
 import { redirect } from "next/navigation";
 import { getUserAndProfile } from "@/lib/supabase/server";
 import { quizToText } from "@/lib/quizText";
@@ -46,11 +47,7 @@ export default async function LessonsPage({ searchParams }: { searchParams: Prom
           <Link className="btn btn-ghost btn-sm" href="/facilitator/quizzes">Quiz results</Link>
         </div>
         {courses.length > 1 && (
-          <nav className="tabs" aria-label="Your courses">
-            {courses.map((c) => (
-              <Link key={c.id} href={`/facilitator/lessons?course=${c.slug}`} aria-current={c.id === active?.id ? "page" : undefined} style={{ padding: "10px 14px", fontWeight: 600, textDecoration: "none", color: c.id === active?.id ? "var(--accent)" : "var(--muted)", borderBottom: `2.5px solid ${c.id === active?.id ? "var(--accent)" : "transparent"}`, whiteSpace: "nowrap" }}>{c.title}</Link>
-            ))}
-          </nav>
+          <CoursePicker basePath="/facilitator/lessons" active={active?.slug} courses={courses.map((c) => ({ slug: c.slug, title: c.title }))} />
         )}
         {!active && <div className="panel"><p className="muted">No courses assigned to you yet.</p></div>}
         {active && (

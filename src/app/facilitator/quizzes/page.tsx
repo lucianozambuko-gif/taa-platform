@@ -1,4 +1,5 @@
 import Link from "next/link";
+import CoursePicker from "@/components/CoursePicker";
 import { redirect } from "next/navigation";
 import { getUserAndProfile } from "@/lib/supabase/server";
 import { quizToText } from "@/lib/quizText";
@@ -59,11 +60,7 @@ export default async function QuizzesPage({ searchParams }: { searchParams: Prom
           <p className="muted" style={{ marginTop: 6 }}>See who has passed each quiz, who keeps failing, and which questions most learners get wrong. You can suggest new questions for courses you teach; an admin or content editor approves them.</p>
         </div>
         {courses.length > 1 && (
-          <nav className="tabs" aria-label="Your courses">
-            {courses.map((c) => (
-              <Link key={c.id} href={`/facilitator/quizzes?course=${c.slug}`} aria-current={c.id === active?.id ? "page" : undefined} style={{ padding: "10px 14px", fontWeight: 600, textDecoration: "none", color: c.id === active?.id ? "var(--accent)" : "var(--muted)", borderBottom: `2.5px solid ${c.id === active?.id ? "var(--accent)" : "transparent"}`, whiteSpace: "nowrap" }}>{c.title}</Link>
-            ))}
-          </nav>
+          <CoursePicker basePath="/facilitator/quizzes" active={active?.slug} courses={courses.map((c) => ({ slug: c.slug, title: c.title }))} />
         )}
         {!courses.length && <div className="panel"><p className="muted">You don’t teach any online courses yet. Quizzes belong to the online part of a course.</p></div>}
         {active && !quizzes.length && (

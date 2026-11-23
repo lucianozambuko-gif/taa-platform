@@ -1,4 +1,5 @@
 import Link from "next/link";
+import CoursePicker from "@/components/CoursePicker";
 import { redirect } from "next/navigation";
 import { KindBadge } from "@/components/CourseBits";
 import { getUserAndProfile } from "@/lib/supabase/server";
@@ -90,13 +91,7 @@ export default async function LearnersPage({ searchParams }: { searchParams: Pro
           </div>
         ) : (
           <>
-            <nav className="tabs" aria-label="Your courses">
-              {courses.map((c) => (
-                <Link key={c.id} href={`/facilitator/learners?course=${c.slug}`} aria-current={c.id === active?.id ? "page" : undefined} style={{ padding: "10px 14px", fontWeight: 600, textDecoration: "none", color: c.id === active?.id ? "var(--accent)" : "var(--muted)", borderBottom: `2.5px solid ${c.id === active?.id ? "var(--accent)" : "transparent"}`, whiteSpace: "nowrap" }}>
-                  {c.title} <span className="tnum small">({all.filter((r) => r.course_id === c.id).length})</span>
-                </Link>
-              ))}
-            </nav>
+            <CoursePicker basePath="/facilitator/learners" active={active?.slug} courses={courses.map((c) => ({ slug: c.slug, title: c.title, count: all.filter((r) => r.course_id === c.id).length }))} />
             {active && (
               <div className="stack" style={{ gap: 12 }}>
                 <div className="row" style={{ justifyContent: "space-between" }}>
